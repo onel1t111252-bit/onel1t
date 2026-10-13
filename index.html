@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#090711">
+  <meta name="description" content="Особисте портфоліо Maksym Dymchuk — Onel1t. Технології, IT та кібербезпека.">
+  <title>Onel1t | Maksym Dymchuk — Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+  <div class="cursor-glow" aria-hidden="true"></div>
+  <header class="topbar">
+    <a class="brand" href="#home" aria-label="На початок"><span class="brand-mark">O</span><span>ONEL1T<span class="accent">.</span></span></a>
+    <button class="menu-toggle" aria-label="Відкрити меню" aria-expanded="false">☰</button>
+    <nav class="nav">
+      <a href="#about">Про мене</a><a href="#skills">Навички</a><a href="#experience">Досвід</a><a href="#projects">Проєкти</a><a class="nav-contact" href="#contact">Контакт ↗</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero section" id="home">
+      <div class="hero-copy reveal">
+        <div class="status"><span class="status-dot"></span> OPEN TO OPPORTUNITIES</div>
+        <p class="eyebrow">HELLO, WORLD! I'M</p>
+        <h1>Maksym<br><span class="gradient">Dymchuk</span><span class="accent">.</span></h1>
+        <div class="role-line"><span class="prompt">&gt;</span> <span id="typed-role">IT enthusiast</span><span class="typing-caret">_</span></div>
+        <p class="hero-text">Цікавлюся технологіями, IT та кібербезпекою. Постійно навчаюся, розвиваю практичні навички й шукаю можливості створювати корисні цифрові рішення.</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#projects">Переглянути портфоліо <span>↘</span></a>
+          <a class="button secondary" href="#contact">Зв’язатися</a>
+        </div>
+        <div class="hero-meta"><span><i></i> Україна / Європа</span><span class="mono">PROFILE: ONEL1T</span></div>
+      </div>
+      <div class="hero-visual reveal">
+        <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+        <div class="profile-card">
+          <div class="card-top"><span class="window-dots"><b></b><b></b><b></b></span><span class="mono">profile.json</span><span class="live">LIVE</span></div>
+          <div class="avatar">O<span class="avatar-plus">+</span></div>
+          <div class="card-name">Maksym Dymchuk</div><div class="card-handle">@onel1t</div>
+          <div class="card-divider"></div>
+          <div class="code-line"><span class="code-purple">const</span> profile = {</div>
+          <div class="code-line indent"><span class="code-pink">focus</span>: <span class="code-green">"IT & Security"</span>,</div>
+          <div class="code-line indent"><span class="code-pink">mindset</span>: <span class="code-green">"Always learning"</span>,</div>
+          <div class="code-line indent"><span class="code-pink">status</span>: <span class="code-green">"Building"</span></div>
+          <div class="code-line">};<span class="typing-caret">_</span></div>
+          <div class="card-bottom"><span>● AVAILABLE TO CONNECT</span><span class="mono">v.01</span></div>
+        </div>
+        <div class="floating-tag tag-top"><span>⌘</span> TECH MINDED</div>
+        <div class="floating-tag tag-bottom"><span>✳</span> CYBERSECURITY</div>
+      </div>
+      <a class="scroll-indicator" href="#about"><span></span> SCROLL TO EXPLORE</a>
+    </section>
+
+    <section class="section about" id="about">
+      <div class="section-heading reveal"><p class="eyebrow">01 / ABOUT</p><h2>Трохи <span class="gradient">про мене</span></h2></div>
+      <div class="about-grid">
+        <div class="about-text reveal"><p class="lead">Мені подобається розбиратися, як працюють технології, знаходити рішення та постійно прокачувати свої знання.</p><p>Навчаюся в Тернопільському національному технічному університеті (ТНТУ). Маю досвід роботи в телекомунікаційній сфері та досвід взаємодії з напрямом кіберполіції. Ціную відповідальність, уважність до деталей і командну роботу.</p><p class="note">* Інформацію про освіту, досвід і навички можна відредагувати у файлі <code>index.html</code>, щоб вона точно відповідала твоєму резюме.</p></div>
+        <div class="stats reveal"><div class="stat"><strong>01<span>+</span></strong><span>Постійне навчання</span></div><div class="stat"><strong>IT<span>/</span></strong><span>Основний інтерес</span></div><div class="stat"><strong>∞</strong><span>Ідей для розвитку</span></div></div>
+      </div>
+    </section>
+
+    <section class="section skills" id="skills">
+      <div class="section-heading reveal"><p class="eyebrow">02 / TOOLKIT</p><h2>Мій <span class="gradient">стек</span></h2><p class="section-subtitle">Напрями та інструменти, які вивчаю й розвиваю.</p></div>
+      <div class="skill-grid">
+        <article class="skill-card reveal"><div class="skill-icon">⌘</div><h3>IT & Support</h3><p>Робота з комп’ютерами, ОС, діагностика та пошук технічних рішень.</p><div class="tags"><span>Windows</span><span>Troubleshooting</span></div></article>
+        <article class="skill-card reveal"><div class="skill-icon">⌁</div><h3>Cybersecurity</h3><p>Інтерес до цифрової безпеки, мереж і відповідального використання технологій.</p><div class="tags"><span>Networking</span><span>Security basics</span></div></article>
+        <article class="skill-card reveal"><div class="skill-icon">{ }</div><h3>Development</h3><p>Вивчення програмування та створення невеликих цифрових проєктів.</p><div class="tags"><span>Python</span><span>C#</span><span>HTML/CSS</span></div></article>
+        <article class="skill-card reveal"><div class="skill-icon">↗</div><h3>Communication</h3><p>Комунікація з людьми, уважність до запитів і пошук зрозумілих рішень.</p><div class="tags"><span>Teamwork</span><span>Support</span></div></article>
+      </div>
+      <p class="micro-note reveal">Навички тут подані як напрями інтересу — залиш лише ті, якими справді володієш.</p>
+    </section>
+
+    <section class="section experience" id="experience">
+      <div class="section-heading reveal"><p class="eyebrow">03 / JOURNEY</p><h2>Освіта та <span class="gradient">досвід</span></h2></div>
+      <div class="timeline">
+        <article class="timeline-item reveal"><div class="timeline-marker"></div><div class="timeline-date">ОСВІТА</div><div class="timeline-content"><h3>Тернопільський національний технічний університет</h3><p class="timeline-type">Навчання · ТНТУ</p><p>Навчання у сфері технічних дисциплін та розвиток практичних знань. Додай спеціальність і роки навчання, щоб зробити цей блок точнішим.</p></div></article>
+        <article class="timeline-item reveal"><div class="timeline-marker"></div><div class="timeline-date">ДОСВІД</div><div class="timeline-content"><h3>Київстар</h3><p class="timeline-type">Телекомунікації / робочий досвід</p><p>Досвід роботи в телекомунікаційній сфері, взаємодії з клієнтськими запитами та сервісними процесами.</p></div></article>
+        <article class="timeline-item reveal"><div class="timeline-marker"></div><div class="timeline-date">ДОСВІД</div><div class="timeline-content"><h3>Взаємодія з кіберполіцією</h3><p class="timeline-type">Практичний досвід</p><p>Додай короткий опис конкретних завдань і своєї ролі. Не публікуй конфіденційні деталі або службову інформацію.</p></div></article>
+      </div>
+    </section>
+
+    <section class="section projects" id="projects">
+      <div class="section-heading reveal"><p class="eyebrow">04 / SELECTED WORK</p><h2>Обрані <span class="gradient">проєкти</span></h2><p class="section-subtitle">Тут можна показати власні роботи, навчальні проєкти та репозиторії GitHub.</p></div>
+      <div class="project-grid">
+        <article class="project-card reveal"><div class="project-art art-one"><span class="art-symbol">01</span><span class="art-caption">SYSTEM / WEB</span></div><div class="project-info"><div class="project-top"><h3>Personal Portfolio</h3><span>WEB</span></div><p>Особистий сайт-портфоліо з адаптивним дизайном та анімаціями.</p><div class="project-footer"><span>HTML · CSS · JS</span><a href="#contact" aria-label="Запитати про проєкт">↗</a></div></div></article>
+        <article class="project-card reveal"><div class="project-art art-two"><span class="art-symbol">02</span><span class="art-caption">NETWORK / LAB</span></div><div class="project-info"><div class="project-top"><h3>IT Lab Notes</h3><span>LEARNING</span></div><p>Місце для навчальних нотаток, технічних рішень і практичних вправ.</p><div class="project-footer"><span>IT · NETWORKING</span><a href="#contact" aria-label="Запитати про проєкт">↗</a></div></div></article>
+        <article class="project-card reveal"><div class="project-art art-three"><span class="art-symbol">03</span><span class="art-caption">SECURITY / STUDY</span></div><div class="project-info"><div class="project-top"><h3>Security Learning</h3><span>RESEARCH</span></div><p>Навчальні матеріали з кібербезпеки та безпечного використання технологій.</p><div class="project-footer"><span>SECURITY BASICS</span><a href="#contact" aria-label="Запитати про проєкт">↗</a></div></div></article>
+      </div>
+      <p class="micro-note reveal">Це демонстраційні картки, а не твердження про вже завершені проєкти. Заміни їх своїми реальними роботами.</p>
+    </section>
+
+    <section class="section contact" id="contact">
+      <div class="contact-panel reveal"><p class="eyebrow">05 / GET IN TOUCH</p><h2>Є ідея? <span class="gradient">Поговорімо.</span></h2><p>Відкритий до професійних знайомств, співпраці та цікавих IT-можливостей.</p><div class="contact-links"><a href="https://github.com/onel1t111252-bit" target="_blank" rel="noopener noreferrer">GitHub <span>↗</span></a><a href="mailto:your.email@example.com">Email <span>↗</span></a><button id="copy-handle" type="button">Скопіювати нік <span>⧉</span></button></div><p class="contact-hint" id="copy-status" aria-live="polite">Замінити email на свою актуальну адресу перед публікацією.</p></div>
+    </section>
+  </main>
+
+  <footer class="footer"><a class="brand" href="#home"><span class="brand-mark">O</span><span>ONEL1T<span class="accent">.</span></span></a><span>Designed & built with curiosity <span class="accent">♥</span></span><span class="mono">© <span id="year"></span> MAKSYM DYМCHUK</span></footer>
+  <script src="script.js"></script>
+</body>
+</html>
