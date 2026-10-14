@@ -45,8 +45,8 @@ document.getElementById("copy-handle")?.addEventListener("click", async () => {
   const status = document.getElementById("copy-status");
   try {
     await navigator.clipboard.writeText("@onel1t");
-    status.textContent = "Нік @onel1t скопійовано.";
+    status.textContent = "Username @onel1t copied to clipboard.";
   } catch {
-    status.textContent = "Твій нік: @onel1t";
+    status.textContent = "Your username: @onel1t";
   }
 });
