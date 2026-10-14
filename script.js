@@ -21,7 +21,10 @@ nav?.querySelectorAll("a").forEach((link) => link.addEventListener("click", () =
   if (toggle) toggle.textContent = "☰";
 }));
 
-const roles = ["IT enthusiast", "Cybersecurity learner", "Problem solver"];
+const isUkrainian = document.documentElement.lang === "uk";
+const roles = isUkrainian
+  ? ["IT-ентузіаст", "Вивчаю кібербезпеку", "Розв’язую проблеми"]
+  : ["IT enthusiast", "Cybersecurity learner", "Problem solver"];
 const roleTarget = document.getElementById("typed-role");
 let roleIndex = 0;
 if (roleTarget && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -45,8 +48,8 @@ document.getElementById("copy-handle")?.addEventListener("click", async () => {
   const status = document.getElementById("copy-status");
   try {
     await navigator.clipboard.writeText("@onel1t");
-    status.textContent = "Username @onel1t copied to clipboard.";
+    status.textContent = isUkrainian ? "Нікнейм @onel1t скопійовано." : "Username @onel1t copied to clipboard.";
   } catch {
-    status.textContent = "Your username: @onel1t";
+    status.textContent = isUkrainian ? "Твій нікнейм: @onel1t" : "Your username: @onel1t";
   }
 });
