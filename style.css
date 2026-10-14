@@ -11,3 +11,13 @@
 ::view-transition-old(root),::view-transition-new(root){animation-duration:.22s}
 @media(min-width:1100px){.section{width:84%}.skill-card{padding:28px 23px}.project-art{height:210px}}
 @media(hover:hover){.contact-panel{transition:border-color .25s,box-shadow .25s}.contact-panel:hover{border-color:#a66cff58;box-shadow:0 20px 70px #a66cff0a}}
+
+/* Language and CV controls */
+.header-tools{display:flex;align-items:center;gap:16px}
+.language-switch{display:flex;align-items:center;gap:7px;font:10px var(--mono);color:#827993}
+.language-switch a{padding:7px 8px;border:1px solid transparent;border-radius:5px;transition:color .2s,border-color .2s}
+.language-switch a:hover,.language-switch a.active{color:var(--text);border-color:var(--line)}
+.language-switch a.active{background:#a66cff12;color:#d7bdff}
+.cv-link{font:10px var(--mono);padding:9px 12px;border:1px solid var(--line);border-radius:6px;color:var(--text);transition:border-color .2s}
+.cv-link:hover{border-color:var(--purple)}
+@media(max-width:650px){.header-tools{gap:8px}.cv-link{padding:8px}.language-switch{gap:2px}.language-switch a{padding:7px 5px}}
