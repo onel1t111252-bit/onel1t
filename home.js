@@ -26,13 +26,29 @@ const observer=new IntersectionObserver(entries=>{
 
 sections.forEach(section=>observer.observe(section));
 
+// New three images stay only in Featured Projects.
 const featuredProjectImages={
   'C++ Console Toolkit':'Gemini_Generated_Image_wnnxk0wnnxk0wnnx (2).jpg',
   'Python Security Utilities':'Gemini_Generated_Image_wnnxk0wnnxk0wnnx (1).jpg',
   'Onel1t Portfolio':'Gemini_Generated_Image_wnnxk0wnnxk0wnnx.jpg'
 };
 
+// Projects uses the exact five images from the first set the user supplied.
+// A version query is intentional so browsers cannot reuse the previously cached wrong pictures.
+const projectsSectionImages={
+  'C++ Console Toolkit':'Gemini_Generated_Image_217vl4217vl4217v (5).jpg?v=original-projects-2244',
+  'Python Security Utilities':'Gemini_Generated_Image_217vl4217vl4217v (3).jpg?v=original-projects-2244',
+  'Onel1t Portfolio':'Gemini_Generated_Image_217vl4217vl4217v (4).jpg?v=original-projects-2244',
+  'Secure Network Lab':'Gemini_Generated_Image_217vl4217vl4217v (2).jpg?v=original-projects-2244',
+  'Arduino Radar':'Gemini_Generated_Image_217vl4217vl4217v.jpg?v=original-projects-2244'
+};
+
 document.querySelectorAll('#projects-preview .pc img[alt]').forEach(img=>{
   const next=featuredProjectImages[img.alt];
+  if(next) img.src=next;
+});
+
+document.querySelectorAll('#projects .pc img[alt]').forEach(img=>{
+  const next=projectsSectionImages[img.alt];
   if(next) img.src=next;
 });
