@@ -32,7 +32,7 @@ const projectImages={
   'Onel1t Portfolio':'Gemini_Generated_Image_wnnxk0wnnxk0wnnx.jpg'
 };
 
-document.querySelectorAll('.pc img[alt]').forEach(img=>{
+document.querySelectorAll('#projects-preview .pc img[alt]').forEach(img=>{
   const next=projectImages[img.alt];
   if(next) img.src=next;
 });
