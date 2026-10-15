@@ -26,13 +26,26 @@ const observer=new IntersectionObserver(entries=>{
 
 sections.forEach(section=>observer.observe(section));
 
-const projectImages={
+const featuredProjectImages={
   'C++ Console Toolkit':'Gemini_Generated_Image_wnnxk0wnnxk0wnnx (2).jpg',
   'Python Security Utilities':'Gemini_Generated_Image_wnnxk0wnnxk0wnnx (1).jpg',
   'Onel1t Portfolio':'Gemini_Generated_Image_wnnxk0wnnxk0wnnx.jpg'
 };
 
+const projectsSectionImages={
+  'C++ Console Toolkit':'image4.png',
+  'Python Security Utilities':'image2.png',
+  'Onel1t Portfolio':'image5.png',
+  'Secure Network Lab':'image3.png',
+  'Arduino Radar':'image.png'
+};
+
 document.querySelectorAll('#projects-preview .pc img[alt]').forEach(img=>{
-  const next=projectImages[img.alt];
+  const next=featuredProjectImages[img.alt];
+  if(next) img.src=next;
+});
+
+document.querySelectorAll('#projects .pc img[alt]').forEach(img=>{
+  const next=projectsSectionImages[img.alt];
   if(next) img.src=next;
 });
