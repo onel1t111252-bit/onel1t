@@ -25,3 +25,14 @@ const observer=new IntersectionObserver(entries=>{
 },{rootMargin:'-18% 0px -68% 0px',threshold:[0,.1,.25,.5]});
 
 sections.forEach(section=>observer.observe(section));
+
+const projectImages={
+  'C++ Console Toolkit':'Gemini_Generated_Image_wnnxk0wnnxk0wnnx (2).jpg',
+  'Python Security Utilities':'Gemini_Generated_Image_wnnxk0wnnxk0wnnx (1).jpg',
+  'Onel1t Portfolio':'Gemini_Generated_Image_wnnxk0wnnxk0wnnx.jpg'
+};
+
+document.querySelectorAll('.pc img[alt]').forEach(img=>{
+  const next=projectImages[img.alt];
+  if(next) img.src=next;
+});
