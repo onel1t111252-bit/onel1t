@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Bebas+Neue&display=swap" rel="stylesheet">
 <style>
+
 :root{--red:#e51c2a;--paper:#ece8e3;--muted:#918a85;--mono:'JetBrains Mono',monospace;--serif:'Cinzel',serif;--sans:'Inter',sans-serif;--display:'Bebas Neue',sans-serif}
 *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:70px}
 body{margin:0;background:#000;color:var(--paper);font-family:var(--sans);overflow-x:hidden;overflow-y:auto}
@@ -50,6 +51,8 @@ section[id],div[id]{scroll-margin-top:74px}
 .feats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:10px}
 .feats article{height:70px;border:1px solid rgba(255,255,255,.14);background:linear-gradient(100deg,#0b0b0b,#050505);display:flex;align-items:center;gap:16px;padding:0 18px;transition:.2s}
 .feats article:hover{transform:translateY(-3px);border-color:rgba(229,28,42,.5)}
+.feats article.dev-banner{padding:0;background:#050505 url('dev-banner.webp') center/cover no-repeat;border-color:rgba(255,255,255,.20);overflow:hidden}
+.feats article.dev-banner:hover{border-color:rgba(229,28,42,.65)}
 .feats b{font:300 28px var(--mono);color:var(--red)}
 .feats h3{margin:0 0 4px;font:600 11px var(--sans);letter-spacing:.06em}.feats p{margin:0;font-size:10px;color:#8d8783}
 .dash{display:grid;grid-template-columns:1.7fr 1fr;gap:14px;padding:6px 14px 18px}
@@ -85,9 +88,11 @@ footer{padding:16px 20px;display:flex;justify-content:space-between;border-top:1
 .cbox{padding:70px 24px;text-align:center;border:1px solid rgba(255,255,255,.1);background:radial-gradient(circle at 50% 0,rgba(229,28,42,.16),transparent 50%),#070707}.cbox h2{margin:0;font:72px/.9 var(--display)}.cbox p{max-width:560px;margin:16px auto 22px;font-size:13px;line-height:1.7;color:#98928e}.cbox .acts{justify-content:center}
 @media(max-width:900px){.vgrid,.pgrid.big{grid-template-columns:1fr}.cbox h2{font-size:52px}}
 @media(max-width:900px){.shell{width:100%;margin:0;display:block}.rail{display:none}.topbar{grid-template-columns:1fr auto auto}.menu{display:block}.gh{display:none}.nav{display:none;position:absolute;left:0;right:0;top:60px;flex-direction:column;gap:0;background:#050505}.nav.open{display:flex}.nav a{padding:14px 20px;border-top:1px solid rgba(255,255,255,.06)}.nav a.active:after{display:none}.hero{height:600px}.hero-c{left:22px;right:22px;top:auto;bottom:32px;width:auto;transform:none}.hero h1{font-size:76px}.motto,.hero-c p{width:100%}.pgrid{grid-template-columns:1fr}.feats{grid-template-columns:1fr}footer{flex-direction:column;gap:6px}}
+
 </style>
 </head>
 <body>
+
 <div class="shell">
 <aside class="rail">
 <div class="rune">◆</div><div class="vert">STRUGGLE</div>
@@ -109,6 +114,7 @@ footer{padding:16px 20px;display:flex;justify-content:space-between;border-top:1
 </nav>
 <div class="tools"><div class="lang"><a class="on" href="index.html">EN</a><a href="index-uk.html">UA</a></div><a class="gh" href="https://github.com/onel1t111252-bit" target="_blank" rel="noopener">GitHub</a><button class="menu" id="menu" aria-label="Menu">☰</button></div>
 </header>
+
 <section class="hero" id="home">
 <div class="hero-c">
 <div class="kick">IT STUDENT | CYBERSECURITY ENTHUSIAST</div>
@@ -119,12 +125,14 @@ footer{padding:16px 20px;display:flex;justify-content:space-between;border-top:1
 </div>
 <blockquote class="hq" style="margin:0">“DISCIPLINE IS THE QUIET FORM OF COURAGE.”<i>— ONEL1T</i></blockquote>
 </section>
+
 <section class="feats">
-<article><b>&lt;/&gt;</b><div><h3>DEVELOPMENT</h3><p>C++, Python, Web</p></div></article>
+<article class="dev-banner" aria-label="Development"></article>
 <article><b>⌬</b><div><h3>NETWORKING</h3><p>Cisco, LAN/WAN, Routing</p></div></article>
 <article><b>⛨</b><div><h3>CYBERSECURITY</h3><p>Security tools, Analysis</p></div></article>
 <article><b>◈</b><div><h3>PROBLEM SOLVING</h3><p>Logic, Algorithms</p></div></article>
 </section>
+
 <section class="view" id="about">
 <div class="ph"><span class="s">◆</span><h2>About me</h2><i>/ 01</i></div>
 <div class="vgrid">
@@ -132,6 +140,7 @@ footer{padding:16px 20px;display:flex;justify-content:space-between;border-top:1
 <div class="stats"><div><b>03+</b><span>MAIN DIRECTIONS</span></div><div><b>07+</b><span>TECHNOLOGIES</span></div><div><b>24/7</b><span>LEARNING</span></div><div><b>100%</b><span>FOCUS</span></div></div>
 </div>
 </section>
+
 <section class="dash">
 <div>
 <div id="skills"><div class="ph"><span class="s">◆</span><h2>Technical Skills</h2><i>/ 02</i></div>
@@ -154,6 +163,7 @@ footer{padding:16px 20px;display:flex;justify-content:space-between;border-top:1
 </div></div>
 </div>
 </section>
+
 <section class="view" id="projects">
 <div class="ph"><span class="s">◆</span><h2>Projects</h2><i>/ 05</i></div>
 <div class="pgrid big">
@@ -164,18 +174,24 @@ footer{padding:16px 20px;display:flex;justify-content:space-between;border-top:1
 <article class="pc"><div class="pi-img" style="height:140px;overflow:hidden;"><img src="image.png" alt="Arduino Radar" style="width:100%;height:100%;object-fit:cover;"></div><div class="pb"><h3>Arduino Radar</h3><p>Arduino Uno, an ultrasonic sensor and a servo scanning the surrounding area.</p><div class="pt"><span>Arduino</span><span>Servo</span><em>↗</em></div></div></article>
 </div>
 </section>
+
 <section class="view" id="contact">
 <div class="ph"><span class="s">◆</span><h2>Contact</h2><i>/ 06</i></div>
 <div class="cbox"><h2>Let's connect</h2><p>For collaboration, study projects or portfolio feedback, use the links below.</p><div class="acts"><a class="btn primary" href="mailto:maxymdymchuk@gmail.com">EMAIL ME</a><a class="btn" href="https://github.com/onel1t111252-bit" target="_blank" rel="noopener">GITHUB</a><a class="btn" href="cv.html">CV ↗</a></div></div>
 </section>
+
 <footer><span>© 2026 ONEL1T / Maksym Dymchuk</span><span>IT · CYBERSECURITY · DISCIPLINE · GROWTH</span></footer>
 </div>
 </div>
+
+
 <script>
 const nav=document.getElementById('nav');
 const menu=document.getElementById('menu');
 const links=[...document.querySelectorAll('.nav a,.rail nav a')];
+
 menu.onclick=()=>nav.classList.toggle('open');
+
 document.querySelectorAll('a[href^="#"]').forEach(a=>a.addEventListener('click',e=>{
   const selector=a.getAttribute('href');
   const target=document.querySelector(selector);
@@ -185,14 +201,19 @@ document.querySelectorAll('a[href^="#"]').forEach(a=>a.addEventListener('click',
   target.scrollIntoView({behavior:'smooth',block:'start'});
   history.replaceState(null,'',selector);
 }));
-const sections=['home','about','skills','projects','experience','contact'].map(id=>document.getElementById(id)).filter(Boolean);
+
+const sections=['home','about','skills','projects','experience','contact']
+  .map(id=>document.getElementById(id)).filter(Boolean);
+
 const observer=new IntersectionObserver(entries=>{
   const visible=entries.filter(e=>e.isIntersecting).sort((a,b)=>b.intersectionRatio-a.intersectionRatio)[0];
   if(!visible) return;
   const id=visible.target.id;
   links.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+id));
 },{rootMargin:'-18% 0px -68% 0px',threshold:[0,.1,.25,.5]});
+
 sections.forEach(section=>observer.observe(section));
 </script>
+
 </body>
 </html>
