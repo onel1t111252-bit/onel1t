@@ -11,9 +11,11 @@
 <style>
 :root{--red:#e51c2a;--paper:#ece8e3;--muted:#918a85;--mono:'JetBrains Mono',monospace;--serif:'Cinzel',serif;--sans:'Inter',sans-serif;--display:'Bebas Neue',sans-serif}
 *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:70px}
-body{margin:0;background:#000;color:var(--paper);font-family:var(--sans);overflow-x:hidden}
+body{margin:0;background:#000;color:var(--paper);font-family:var(--sans);overflow-x:hidden;overflow-y:auto}
 a{color:inherit;text-decoration:none}
+section[id],div[id]{scroll-margin-top:74px}
 .shell{width:min(96vw,1540px);margin:18px auto;display:grid;grid-template-columns:112px minmax(0,1fr);background:#040404;border:1px solid rgba(255,255,255,.08);box-shadow:0 35px 120px #000}
+.page{min-width:0}
 .rail{position:sticky;top:0;height:100vh;min-height:680px;border-right:1px solid rgba(255,255,255,.08);background:#030303 url('image6.png') center/cover no-repeat;padding:22px 13px;display:flex;flex-direction:column;align-items:center;overflow:hidden}
 .rune{font-size:46px;color:var(--red);line-height:1;text-shadow:0 0 22px rgba(229,28,42,.6);margin-bottom:14px}
 .vert{writing-mode:vertical-rl;font:600 15px var(--serif);letter-spacing:.3em;color:#aaa;margin-bottom:40px}
@@ -40,7 +42,7 @@ a{color:inherit;text-decoration:none}
 .hero h1{margin:12px 0 0;font:96px/.85 var(--display);letter-spacing:.02em;transform:skew(-6deg);text-shadow:4px 5px 0 #000}.hero h1 span{color:var(--red)}
 .motto{margin-top:12px;padding-bottom:10px;border-bottom:2px solid var(--red);width:400px;font:10px var(--mono);letter-spacing:.4em;color:#cfc9c5}
 .hero-c p{width:370px;margin:16px 0 0;font-size:12px;line-height:1.7;color:#bdb6b2}
-.acts{display:flex;gap:10px;margin-top:16px}
+.acts{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
 .btn{height:38px;padding:0 18px;display:flex;align-items:center;border:1px solid rgba(255,255,255,.3);font:600 10px var(--sans);letter-spacing:.04em;background:rgba(5,5,5,.7);transition:transform .2s}.btn:hover{transform:translateY(-2px)}
 .btn.primary{background:linear-gradient(135deg,#a50d16,var(--red));border-color:#e83040}
 .hq{position:absolute;z-index:2;right:6%;top:55%;font:600 19px/1.45 var(--serif);color:#e4dfdb;max-width:240px}
@@ -60,7 +62,6 @@ a{color:inherit;text-decoration:none}
 .pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .pc{border:1px solid rgba(255,255,255,.14);background:#090909;overflow:hidden;transition:.22s}
 .pc:hover{transform:translateY(-5px);border-color:rgba(229,28,42,.55)}
-.pi{height:70px;background:linear-gradient(180deg,transparent,rgba(0,0,0,.7)),url('image2.png') var(--bp)/260% auto}
 .pb{padding:14px}.pb h3{margin:0 0 7px;font:600 13px var(--sans)}.pb p{margin:0;min-height:48px;font-size:11px;line-height:1.5;color:#9a9490}
 .pt{display:flex;gap:6px;margin-top:10px}.pt span{padding:5px 9px;border:1px solid rgba(255,255,255,.18);font:9px var(--mono);color:#ccc}
 .pt em{margin-left:auto;font-style:normal;color:#ddd}
@@ -73,12 +74,9 @@ a{color:inherit;text-decoration:none}
 .xl .d{width:9px;height:9px;border-radius:50%;background:var(--red);box-shadow:0 0 10px rgba(229,28,42,.8);justify-self:center}
 .logo{width:46px;height:46px;border-radius:10px;display:grid;place-items:center;font:700 15px var(--display);letter-spacing:.05em;border:2px solid var(--red);color:#fff;background:#0b0b0b}
 .xl h3{margin:0 0 3px;font:700 13px var(--sans)}.xl p{margin:0;font-size:11px;line-height:1.5;color:#a9a39e}
-.about,.contact{margin:0 14px 16px;padding:30px;border:1px solid rgba(255,255,255,.1);background:#070707}
-.about h2,.contact h2{margin:0 0 14px;font:700 26px var(--serif)}.about p,.contact p{max-width:700px;font-size:12px;line-height:1.8;color:#98928e}
-.contact{text-align:center;background:radial-gradient(circle at 50% 0,rgba(229,28,42,.14),transparent 45%),#070707}.contact p{margin:0 auto 18px}.contact .acts{justify-content:center}
 footer{padding:16px 20px;display:flex;justify-content:space-between;border-top:1px solid rgba(255,255,255,.07);font:9px var(--mono);color:#66615e}
 @media(max-width:1180px){.hero-c{left:36%}.hq{display:none}.feats{grid-template-columns:1fr 1fr}.dash{grid-template-columns:1fr}}
-.view{padding:24px 24px 34px;min-height:560px;animation:vin .35s ease}.view[hidden],.home-part[hidden]{display:none}
+.view{padding:24px 24px 34px;min-height:560px;animation:vin .35s ease}
 @keyframes vin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 .vgrid{display:grid;grid-template-columns:1.2fr 1fr;gap:16px}
 .vcard{padding:28px;border:1px solid rgba(255,255,255,.12);background:#080808}.vcard h3{margin:0 0 14px;font:600 20px var(--serif)}.vcard p{font-size:13px;line-height:1.8;color:#a39d98}
@@ -94,17 +92,24 @@ footer{padding:16px 20px;display:flex;justify-content:space-between;border-top:1
 <aside class="rail">
 <div class="rune">◆</div><div class="vert">STRUGGLE</div>
 <nav>
-<a class="active" href="#home"><span>01</span>HOME</a><a href="#about"><span>02</span>ABOUT</a><a href="#skills"><span>03</span>SKILLS</a><a href="#projects"><span>04</span>PROJECTS</a><a href="#experience"><span>05</span>EXPERIENCE</a><a href="#contact"><span>06</span>CONTACT</a>
+<a class="active" href="#home"><span>01</span>HOME</a>
+<a href="#about"><span>02</span>ABOUT</a>
+<a href="#skills"><span>03</span>SKILLS</a>
+<a href="#projects"><span>04</span>PROJECTS</a>
+<a href="#experience"><span>05</span>EXPERIENCE</a>
+<a href="#contact"><span>06</span>CONTACT</a>
 </nav>
 <div class="rail-quote">“STRUGGLE.<br>ENDURE.<br>CONTINUE.”<b>— ONEL1T</b></div>
 </aside>
 <div class="page">
 <header class="topbar">
 <a class="brand" href="#home">ONEL<span>1</span>T</a>
-<nav class="nav" id="nav"><a class="active" href="#home">Home</a><a href="#about">About</a><a href="#skills">Skills</a><a href="#projects">Projects</a><a href="#experience">Experience</a><a href="#contact">Contact</a></nav>
+<nav class="nav" id="nav">
+<a class="active" href="#home">Home</a><a href="#about">About</a><a href="#skills">Skills</a><a href="#projects">Projects</a><a href="#experience">Experience</a><a href="#contact">Contact</a>
+</nav>
 <div class="tools"><div class="lang"><a class="on" href="index.html">EN</a><a href="index-uk.html">UA</a></div><a class="gh" href="https://github.com/onel1t111252-bit" target="_blank" rel="noopener">GitHub</a><button class="menu" id="menu" aria-label="Menu">☰</button></div>
 </header>
-<section class="hero home-part" id="home">
+<section class="hero" id="home">
 <div class="hero-c">
 <div class="kick">IT STUDENT | CYBERSECURITY ENTHUSIAST</div>
 <h1>ONEL<span>1</span>T</h1>
@@ -114,83 +119,80 @@ footer{padding:16px 20px;display:flex;justify-content:space-between;border-top:1
 </div>
 <blockquote class="hq" style="margin:0">“DISCIPLINE IS THE QUIET FORM OF COURAGE.”<i>— ONEL1T</i></blockquote>
 </section>
-<section class="feats home-part">
+<section class="feats">
 <article><b>&lt;/&gt;</b><div><h3>DEVELOPMENT</h3><p>C++, Python, Web</p></div></article>
 <article><b>⌬</b><div><h3>NETWORKING</h3><p>Cisco, LAN/WAN, Routing</p></div></article>
 <article><b>⛨</b><div><h3>CYBERSECURITY</h3><p>Security tools, Analysis</p></div></article>
 <article><b>◈</b><div><h3>PROBLEM SOLVING</h3><p>Logic, Algorithms</p></div></article>
 </section>
-<section class="dash home-part">
-<div>
-<div id="skills"><div class="ph"><span class="s">◆</span><h2>Technical Skills</h2><i>/ 01</i></div>
-<div class="chips"><span>Windows</span><span>Networking fundamentals</span><span>Cybersecurity basics</span><span>HTML</span><span>CSS</span><span>JavaScript</span><span>C++</span><span>C#</span><span>Python</span><span>Troubleshooting</span></div></div>
-<div id="projects-preview"><div class="ph"><span class="s">◆</span><h2>Featured Projects</h2><i>/ 02</i></div>
-<div class="pgrid">
-<article class="pc">
-  <div class="pi-img" style="height: 140px; overflow: hidden;"><img src="image4.png" alt="C++ Console Toolkit" style="width: 100%; height: 100%; object-fit: cover;"></div>
-  <div class="pb"><h3>C++ Console Toolkit</h3><p>Collection of console programs: arrays, matrices, algorithms and more.</p><div class="pt"><span>C++</span><span>Console</span><em>↗</em></div></div>
-</article>
-<article class="pc">
-  <div class="pi-img" style="height: 140px; overflow: hidden;"><img src="image2.png" alt="Python Security Utilities" style="width: 100%; height: 100%; object-fit: cover;"></div>
-  <div class="pb"><h3>Python Security Utilities</h3><p>Useful Python scripts: password strength checker, file hashing, log analysis.</p><div class="pt"><span>Python</span><span>Cybersecurity</span><em>↗</em></div></div>
-</article>
-<article class="pc">
-  <div class="pi-img" style="height: 140px; overflow: hidden;"><img src="image5.png" alt="Onel1t Portfolio" style="width: 100%; height: 100%; object-fit: cover;"></div>
-  <div class="pb"><h3>Onel1t Portfolio</h3><p>My personal website with modern design and dark style.</p><div class="pt"><span>HTML</span><span>CSS</span><span>JavaScript</span><em>↗</em></div></div>
-</article>
-</div></div>
-</div>
-<div>
-<div class="banner"><div>BETTER SKILLS<br>A BRIGHTER TOMORROW.</div></div>
-<div id="experience"><div class="ph"><span class="s">◆</span><h2>Experience</h2><i>/ 03</i></div>
-<div class="xl">
-<article><span class="d"></span><div class="logo">Y</div><div><h3>Yaware</h3><p>01.03.2025 – 01.04.2025<br>Internship · Security systems assistance</p></div></article>
-<article><span class="d"></span><div class="logo">FG</div><div><h3>Forte Group</h3><p>07.07.2025 – 30.07.2025<br>Internship · Security systems assistance</p></div></article>
-<article><span class="d"></span><div class="logo">M1</div><div><h3>MagneticOne</h3><p>07.07.2026 – 30.07.2026<br>Internship · Security systems assistance</p></div></article>
-</div></div>
-</div>
-</section>
-<section class="view" id="about" hidden>
+<section class="view" id="about">
 <div class="ph"><span class="s">◆</span><h2>About me</h2><i>/ 01</i></div>
 <div class="vgrid">
 <article class="vcard"><h3>Focused on useful skills</h3><p>IT student focused on cybersecurity, computer networks and software development. I study C++, Python and web technologies, and enjoy practical tasks: network topologies, security logic, hardware experiments and interface design.</p><p>I turn ideas into useful solutions and keep improving my technical discipline every day.</p></article>
 <div class="stats"><div><b>03+</b><span>MAIN DIRECTIONS</span></div><div><b>07+</b><span>TECHNOLOGIES</span></div><div><b>24/7</b><span>LEARNING</span></div><div><b>100%</b><span>FOCUS</span></div></div>
-</div></section>
-<section class="view" id="projects" hidden>
-<div class="ph"><span class="s">◆</span><h2>Projects</h2><i>/ 02</i></div>
-<div class="pgrid big"><article class="pc"><div class="pi-img" style="height:140px;overflow:hidden;"><img src="image4.png" alt="C++ Console Toolkit" style="width:100%;height:100%;object-fit:cover;"></div><div class="pb"><h3>C++ Console Toolkit</h3><p>Collection of console programs: arrays, matrices, algorithms and more.</p><div class="pt"><span>C++</span><span>Console</span><em>↗</em></div></div></article><article class="pc"><div class="pi-img" style="height:140px;overflow:hidden;"><img src="image2.png" alt="Python Security Utilities" style="width:100%;height:100%;object-fit:cover;"></div><div class="pb"><h3>Python Security Utilities</h3><p>Useful Python scripts: password strength checker, file hashing, log analysis.</p><div class="pt"><span>Python</span><span>Cybersecurity</span><em>↗</em></div></div></article><article class="pc"><div class="pi-img" style="height:140px;overflow:hidden;"><img src="image5.png" alt="Onel1t Portfolio" style="width:100%;height:100%;object-fit:cover;"></div><div class="pb"><h3>Onel1t Portfolio</h3><p>My personal website with modern design and dark style.</p><div class="pt"><span>HTML</span><span>CSS</span><span>JavaScript</span><em>↗</em></div></div></article><article class="pc"><div class="pi-img" style="height:140px;overflow:hidden;"><img src="image3.png" alt="Secure Network Lab" style="width:100%;height:100%;object-fit:cover;"></div><div class="pb"><h3>Secure Network Lab</h3><p>Cisco Packet Tracer project: topology, IP addressing, security risks and defensive technologies.</p><div class="pt"><span>Cisco</span><span>Networking</span><em>↗</em></div></div></article><article class="pc"><div class="pi-img" style="height:140px;overflow:hidden;"><img src="image.png" alt="Arduino Radar" style="width:100%;height:100%;object-fit:cover;"></div><div class="pb"><h3>Arduino Radar</h3><p>Arduino Uno, an ultrasonic sensor and a servo scanning the surrounding area.</p><div class="pt"><span>Arduino</span><span>Servo</span><em>↗</em></div></div></article></div></section>
-<section class="view" id="contact" hidden>
+</div>
+</section>
+<section class="dash">
+<div>
+<div id="skills"><div class="ph"><span class="s">◆</span><h2>Technical Skills</h2><i>/ 02</i></div>
+<div class="chips"><span>Windows</span><span>Networking fundamentals</span><span>Cybersecurity basics</span><span>HTML</span><span>CSS</span><span>JavaScript</span><span>C++</span><span>C#</span><span>Python</span><span>Troubleshooting</span></div></div>
+<div id="projects-preview"><div class="ph"><span class="s">◆</span><h2>Featured Projects</h2><i>/ 03</i></div>
+<div class="pgrid">
+<article class="pc"><div class="pi-img" style="height:140px;overflow:hidden;"><img src="image4.png" alt="C++ Console Toolkit" style="width:100%;height:100%;object-fit:cover;"></div><div class="pb"><h3>C++ Console Toolkit</h3><p>Collection of console programs: arrays, matrices, algorithms and more.</p><div class="pt"><span>C++</span><span>Console</span><em>↗</em></div></div></article>
+<article class="pc"><div class="pi-img" style="height:140px;overflow:hidden;"><img src="image2.png" alt="Python Security Utilities" style="width:100%;height:100%;object-fit:cover;"></div><div class="pb"><h3>Python Security Utilities</h3><p>Useful Python scripts: password strength checker, file hashing, log analysis.</p><div class="pt"><span>Python</span><span>Cybersecurity</span><em>↗</em></div></div></article>
+<article class="pc"><div class="pi-img" style="height:140px;overflow:hidden;"><img src="image5.png" alt="Onel1t Portfolio" style="width:100%;height:100%;object-fit:cover;"></div><div class="pb"><h3>Onel1t Portfolio</h3><p>My personal website with modern design and dark style.</p><div class="pt"><span>HTML</span><span>CSS</span><span>JavaScript</span><em>↗</em></div></div></article>
+</div></div>
+</div>
+<div>
+<div class="banner"><div>BETTER SKILLS<br>A BRIGHTER TOMORROW.</div></div>
+<div id="experience"><div class="ph"><span class="s">◆</span><h2>Experience</h2><i>/ 04</i></div>
+<div class="xl">
+<article><span class="d"></span><div class="logo">Y</div><div><h3>Yaware</h3><p>01.03.2025 – 01.04.2025<br>Internship · Security systems assistance</p></div></article>
+<article><span class="d"></span><div class="logo">FG</div><div><h3>Forte Group</h3><p>07.07.2025 – 30.07.2025<br>Internship · Security systems assistance</p></div></article>
+<article><span class="d"></span><div class="logo">M1</div><div><h3>MagneticOne</h3><p>07.07.2026 – 30.07.2026<br>Internship · Security systems assistance</p></div></article>
+<article><span class="d"></span><div class="logo">KS</div><div><h3>Kyivstar</h3><p>Until 05.09.2026<br>Customer communication, telecom services and technical questions</p></div></article>
+</div></div>
+</div>
+</section>
+<section class="view" id="projects">
+<div class="ph"><span class="s">◆</span><h2>Projects</h2><i>/ 05</i></div>
+<div class="pgrid big">
+<article class="pc"><div class="pi-img" style="height:140px;overflow:hidden;"><img src="image4.png" alt="C++ Console Toolkit" style="width:100%;height:100%;object-fit:cover;"></div><div class="pb"><h3>C++ Console Toolkit</h3><p>Collection of console programs: arrays, matrices, algorithms and more.</p><div class="pt"><span>C++</span><span>Console</span><em>↗</em></div></div></article>
+<article class="pc"><div class="pi-img" style="height:140px;overflow:hidden;"><img src="image2.png" alt="Python Security Utilities" style="width:100%;height:100%;object-fit:cover;"></div><div class="pb"><h3>Python Security Utilities</h3><p>Useful Python scripts: password strength checker, file hashing, log analysis.</p><div class="pt"><span>Python</span><span>Cybersecurity</span><em>↗</em></div></div></article>
+<article class="pc"><div class="pi-img" style="height:140px;overflow:hidden;"><img src="image5.png" alt="Onel1t Portfolio" style="width:100%;height:100%;object-fit:cover;"></div><div class="pb"><h3>Onel1t Portfolio</h3><p>My personal website with modern design and dark style.</p><div class="pt"><span>HTML</span><span>CSS</span><span>JavaScript</span><em>↗</em></div></div></article>
+<article class="pc"><div class="pi-img" style="height:140px;overflow:hidden;"><img src="image3.png" alt="Secure Network Lab" style="width:100%;height:100%;object-fit:cover;"></div><div class="pb"><h3>Secure Network Lab</h3><p>Cisco Packet Tracer project: topology, IP addressing, security risks and defensive technologies.</p><div class="pt"><span>Cisco</span><span>Networking</span><em>↗</em></div></div></article>
+<article class="pc"><div class="pi-img" style="height:140px;overflow:hidden;"><img src="image.png" alt="Arduino Radar" style="width:100%;height:100%;object-fit:cover;"></div><div class="pb"><h3>Arduino Radar</h3><p>Arduino Uno, an ultrasonic sensor and a servo scanning the surrounding area.</p><div class="pt"><span>Arduino</span><span>Servo</span><em>↗</em></div></div></article>
+</div>
+</section>
+<section class="view" id="contact">
 <div class="ph"><span class="s">◆</span><h2>Contact</h2><i>/ 06</i></div>
 <div class="cbox"><h2>Let's connect</h2><p>For collaboration, study projects or portfolio feedback, use the links below.</p><div class="acts"><a class="btn primary" href="mailto:maxymdymchuk@gmail.com">EMAIL ME</a><a class="btn" href="https://github.com/onel1t111252-bit" target="_blank" rel="noopener">GITHUB</a><a class="btn" href="cv.html">CV ↗</a></div></div>
 </section>
 <footer><span>© 2026 ONEL1T / Maksym Dymchuk</span><span>IT · CYBERSECURITY · DISCIPLINE · GROWTH</span></footer>
 </div>
 </div>
-
 <script>
+const nav=document.getElementById('nav');
+const menu=document.getElementById('menu');
 const links=[...document.querySelectorAll('.nav a,.rail nav a')];
-const VIEWS=['about','projects','contact'];
-const home=[...document.querySelectorAll('.home-part')];
-const nav=document.getElementById('nav'),menu=document.getElementById('menu');
-function route(){
-  const id=(location.hash||'#home').slice(1);
-  const isView=VIEWS.includes(id);
-  home.forEach(el=>el.hidden=isView);
-  VIEWS.forEach(v=>document.getElementById(v).hidden=(v!==id));
-  links.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+id));
-  const target=document.getElementById(id);
-  requestAnimationFrame(()=>{
-    if(isView||id==='home'||!target)scrollTo({top:0,behavior:'smooth'});
-    else target.scrollIntoView({behavior:'smooth',block:'start'});
-  });
-}
-addEventListener('hashchange',route);route();
-document.querySelectorAll('a[href^="#"]').forEach(a=>a.addEventListener('click',()=>{
-  nav.classList.remove('open');
-  if(a.getAttribute('href')===(location.hash||'#home'))setTimeout(route,0);
-}));
 menu.onclick=()=>nav.classList.toggle('open');
+document.querySelectorAll('a[href^="#"]').forEach(a=>a.addEventListener('click',e=>{
+  const selector=a.getAttribute('href');
+  const target=document.querySelector(selector);
+  if(!target) return;
+  e.preventDefault();
+  nav.classList.remove('open');
+  target.scrollIntoView({behavior:'smooth',block:'start'});
+  history.replaceState(null,'',selector);
+}));
+const sections=['home','about','skills','projects','experience','contact'].map(id=>document.getElementById(id)).filter(Boolean);
+const observer=new IntersectionObserver(entries=>{
+  const visible=entries.filter(e=>e.isIntersecting).sort((a,b)=>b.intersectionRatio-a.intersectionRatio)[0];
+  if(!visible) return;
+  const id=visible.target.id;
+  links.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+id));
+},{rootMargin:'-18% 0px -68% 0px',threshold:[0,.1,.25,.5]});
+sections.forEach(section=>observer.observe(section));
 </script>
-
 </body>
 </html>
