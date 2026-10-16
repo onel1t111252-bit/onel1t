@@ -23,19 +23,19 @@ if(menu&&nav){
   menu.onclick=()=>nav.classList.toggle('open');
 }
 
-/* Brush font closest to the supplied reference screenshot. */
+/* Readable hand-painted font: keeps the rough style but includes a clear numeral 1. */
 if(!document.getElementById('reference-brush-font')){
   const fontLink=document.createElement('link');
   fontLink.id='reference-brush-font';
   fontLink.rel='stylesheet';
-  fontLink.href='https://db.onlinewebfonts.com/c/396d8feaff69b773bbfef35f7287eeb7?family=Another+Danger+Slanted+-+Demo';
+  fontLink.href='https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap';
   document.head.appendChild(fontLink);
 }
 
 const uiStyle=document.createElement('style');
 uiStyle.textContent=`
 :root{
-  --brush:'Another Danger Slanted - Demo','Road Rage','Arial Black',sans-serif;
+  --brush:'Permanent Marker','Arial Black',sans-serif;
   --ui:'Roboto Condensed','Inter',Arial,sans-serif;
   --mono2:'Roboto Mono','JetBrains Mono',monospace;
 }
@@ -43,21 +43,23 @@ uiStyle.textContent=`
   font-family:var(--brush)!important;
   font-weight:400!important;
   font-style:normal!important;
-  letter-spacing:.012em!important;
-  line-height:.84!important;
-  transform:rotate(-1deg)!important;
+  letter-spacing:.01em!important;
+  line-height:.88!important;
+  transform:skewX(-5deg) rotate(-1deg)!important;
   text-transform:none!important;
   text-shadow:4px 5px 0 #000,0 0 22px rgba(0,0,0,.92)!important;
 }
-.hero h1 .nick-text{font-family:var(--brush)!important;font-weight:400!important;color:#fff!important}
+.hero h1 .nick-text,
 .hero h1 .nick-one{
-  font-family:'Roboto Condensed','Inter',Arial,sans-serif!important;
-  color:var(--red)!important;
-  font-weight:800!important;
+  font-family:var(--brush)!important;
+  font-weight:400!important;
   display:inline-block!important;
-  transform:skewX(-10deg) scaleX(.78)!important;
-  transform-origin:center!important;
-  margin:0 .015em!important;
+  transform:none!important;
+  margin:0!important;
+}
+.hero h1 .nick-text{color:#fff!important}
+.hero h1 .nick-one{
+  color:var(--red)!important;
   text-shadow:3px 4px 0 #000,0 0 18px rgba(229,28,42,.35)!important;
 }
 .brand{text-transform:none!important}
