@@ -1,0 +1,127 @@
+:root{
+  --mono:'Roboto Mono',monospace;
+  --serif:'Cormorant SC',serif;
+  --sans:'Roboto Condensed',Arial,sans-serif;
+  --display:'Permanent Marker',cursive;
+  --jp:'Noto Sans JP',sans-serif;
+}
+
+/* Typography tuned to match the supplied CV reference: condensed technical UI,
+   elegant serif section labels, and a rough brush-style hero name. */
+body,
+button,
+.cv-hero p,
+.cv-copy,
+.cv-role p,
+.cv-project p,
+.cv-course p,
+.cv-list li{
+  font-family:var(--sans);
+}
+
+.cv-brand{
+  font-family:var(--sans);
+  font-weight:800;
+  font-size:22px;
+  letter-spacing:.12em;
+  line-height:1;
+}
+
+.cv-lang a,
+.cv-nav .action,
+.cv-kicker,
+.cv-meta,
+.cv-stat small,
+.cv-title:before,
+.cv-tags span,
+.cv-time,
+.cv-role .cv-note,
+.cv-project-code,
+.cv-project-meta span,
+.cv-project-link,
+.cv-course b,
+.cv-focus small,
+.cv-link small,
+.cv-footer{
+  font-family:var(--mono);
+}
+
+.cv-title,
+.cv-stat strong,
+.cv-profile-lead,
+.cv-role h3,
+.cv-project h3,
+.cv-course h3,
+.cv-focus strong,
+.cv-link strong{
+  font-family:var(--serif);
+  font-weight:700;
+}
+
+.cv-title{
+  letter-spacing:.075em;
+}
+
+.cv-role h3,
+.cv-project h3,
+.cv-course h3,
+.cv-focus strong,
+.cv-link strong{
+  letter-spacing:.025em;
+}
+
+.cv-hero h1{
+  font-family:var(--display);
+  font-weight:400;
+  font-size:clamp(56px,5.4vw,88px);
+  line-height:.90;
+  letter-spacing:.005em;
+  text-transform:uppercase;
+  transform:skewX(-4deg) rotate(-1deg);
+  transform-origin:left center;
+  text-shadow:4px 4px 0 #000,0 0 20px rgba(0,0,0,.9);
+}
+
+.cv-hero h1 span{
+  font-family:inherit;
+  font-weight:inherit;
+}
+
+.cv-kicker{
+  font-size:8px;
+  font-weight:500;
+  letter-spacing:.24em;
+}
+
+.cv-hero p{
+  font-size:13px;
+  font-weight:400;
+}
+
+.cv-nav .action,
+.cv-lang a{
+  font-weight:500;
+}
+
+.cv-title,
+.cv-stat strong{
+  text-rendering:geometricPrecision;
+}
+
+/* Permanent Marker is Latin-focused; use a handwriting face with Cyrillic support on UA. */
+html[lang='uk'] .cv-hero h1{
+  font-family:'Caveat',cursive;
+  font-weight:700;
+  font-size:clamp(62px,5.8vw,94px);
+  line-height:.84;
+  transform:skewX(-5deg) rotate(-1deg);
+}
+
+@media(max-width:850px){
+  .cv-hero h1{font-size:clamp(52px,15vw,78px)}
+  html[lang='uk'] .cv-hero h1{font-size:clamp(56px,16vw,82px)}
+}
+
+@media print{
+  .cv-hero h1{transform:none;text-shadow:none}
+}
