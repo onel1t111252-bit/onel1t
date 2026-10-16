@@ -3,6 +3,13 @@ const menu=document.getElementById('menu');
 const rail=document.querySelector('.rail');
 const railNav=document.querySelector('.rail nav');
 
+/* Keep the nickname exactly as requested everywhere it is used as branding. */
+const exactNicknameHTML='Onel<span>1</span>t';
+document.querySelectorAll('.brand,.hero h1').forEach(el=>{el.innerHTML=exactNicknameHTML;});
+document.querySelectorAll('.rail-quote b,.hq i').forEach(el=>{el.textContent='— Onel1t';});
+document.querySelectorAll('footer span:first-child').forEach(el=>{el.innerHTML=el.innerHTML.replace(/ONEL1T/g,'Onel1t');});
+document.title=document.title.replace('ONEL1T','Onel1t');
+
 /* Remove the broken Experience tab from both navigation areas. */
 document.querySelectorAll('.nav a[href="#experience"],.rail nav a[href="#experience"]').forEach(a=>a.remove());
 
