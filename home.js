@@ -26,6 +26,13 @@ const observer=new IntersectionObserver(entries=>{
 
 sections.forEach(section=>observer.observe(section));
 
+// Make the DEVELOPMENT banner use the same visual crop as the other three cards.
+const devCard=document.querySelector('.feats .dev-card');
+if(devCard){
+  devCard.style.backgroundSize='cover';
+  devCard.style.backgroundPosition='center 58%';
+}
+
 // New three images stay only in Featured Projects.
 const featuredProjectImages={
   'C++ Console Toolkit':'Gemini_Generated_Image_wnnxk0wnnxk0wnnx (2).jpg',
