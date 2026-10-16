@@ -98,3 +98,28 @@ body .hero h1 .nick-one{
   letter-spacing:inherit!important;
   text-shadow:4px 5px 0 #000,0 0 22px rgba(0,0,0,.92)!important;
 }
+
+/* Final nickname treatment: Onel1t stays exact, with a sharp dark-fantasy face and a clearly visible red 1. */
+html body .hero .hero-c h1,
+html body .hero .hero-c h1 .nick-text,
+html body .hero .hero-c h1 .nick-one{
+  font-family:'Cinzel',serif!important;
+  font-weight:700!important;
+  font-style:normal!important;
+  text-transform:none!important;
+  letter-spacing:.015em!important;
+}
+html body .hero .hero-c h1{
+  font-size:94px!important;
+  line-height:.9!important;
+  transform:skewX(-5deg) rotate(-1deg)!important;
+  text-shadow:4px 5px 0 #000,0 0 22px rgba(0,0,0,.92)!important;
+}
+html body .hero .hero-c h1 .nick-text{color:#fff!important}
+html body .hero .hero-c h1 .nick-one{
+  color:var(--red)!important;
+  display:inline-block!important;
+  margin:0 .02em!important;
+  text-shadow:3px 4px 0 #000,0 0 18px rgba(229,28,42,.42)!important;
+}
+@media(max-width:900px){html body .hero .hero-c h1{font-size:72px!important}}
