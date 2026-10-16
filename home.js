@@ -4,11 +4,11 @@ const rail=document.querySelector('.rail');
 const railNav=document.querySelector('.rail nav');
 
 /* Keep the nickname exactly as requested everywhere it is used as branding. */
-const exactNicknameHTML='Onel<span>1</span>t';
+const exactNicknameHTML='<span class="nick-text">Onel</span><span class="nick-one">1</span><span class="nick-text">t</span>';
 document.querySelectorAll('.brand,.hero h1').forEach(el=>{el.innerHTML=exactNicknameHTML;});
 document.querySelectorAll('.rail-quote b,.hq i').forEach(el=>{el.textContent='— Onel1t';});
-document.querySelectorAll('footer span:first-child').forEach(el=>{el.innerHTML=el.innerHTML.replace(/ONEL1T/g,'Onel1t');});
-document.title=document.title.replace('ONEL1T','Onel1t');
+document.querySelectorAll('footer span:first-child').forEach(el=>{el.innerHTML=el.innerHTML.replace(/ONEL1T|Onelt|Onel1t/g,'Onel1t');});
+document.title=document.title.replace(/ONEL1T|Onelt/g,'Onel1t');
 
 /* Remove the broken Experience tab from both navigation areas. */
 document.querySelectorAll('.nav a[href="#experience"],.rail nav a[href="#experience"]').forEach(a=>a.remove());
@@ -46,9 +46,23 @@ uiStyle.textContent=`
   letter-spacing:.012em!important;
   line-height:.84!important;
   transform:rotate(-1deg)!important;
+  text-transform:none!important;
   text-shadow:4px 5px 0 #000,0 0 22px rgba(0,0,0,.92)!important;
 }
-.hero h1 span{font-family:inherit!important;font-weight:inherit!important}
+.hero h1 .nick-text{font-family:var(--brush)!important;font-weight:400!important;color:#fff!important}
+.hero h1 .nick-one{
+  font-family:'Roboto Condensed','Inter',Arial,sans-serif!important;
+  color:var(--red)!important;
+  font-weight:800!important;
+  display:inline-block!important;
+  transform:skewX(-10deg) scaleX(.78)!important;
+  transform-origin:center!important;
+  margin:0 .015em!important;
+  text-shadow:3px 4px 0 #000,0 0 18px rgba(229,28,42,.35)!important;
+}
+.brand{text-transform:none!important}
+.brand .nick-text{font-family:var(--ui)!important;font-weight:800!important}
+.brand .nick-one{font-family:var(--ui)!important;color:var(--red)!important;font-weight:800!important}
 .nav a,.feature-copy h3,.pb h3,.xl h3,.btn,.gh{font-family:var(--ui)!important}
 .kick,.motto,.rail nav a,.lang a,.chips span,.pt span,.ph i,.stats span,.rail-quote,footer{font-family:var(--mono2)!important}
 
