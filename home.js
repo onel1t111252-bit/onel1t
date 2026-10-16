@@ -1,102 +1,205 @@
 const nav=document.getElementById('nav');
 const menu=document.getElementById('menu');
-const links=[...document.querySelectorAll('.nav a,.rail nav a')];
+const rail=document.querySelector('.rail');
+const railNav=document.querySelector('.rail nav');
+
+/* Remove the broken Experience tab from both navigation areas. */
+document.querySelectorAll('.nav a[href="#experience"],.rail nav a[href="#experience"]').forEach(a=>a.remove());
+
+/* Keep the left-side numbering continuous after removing Experience. */
+document.querySelectorAll('.rail nav a').forEach((a,i)=>{
+  const n=a.querySelector('span');
+  if(n) n.textContent=String(i+1).padStart(2,'0');
+});
 
 if(menu&&nav){
   menu.onclick=()=>nav.classList.toggle('open');
 }
 
-/* Reference typography from the supplied screenshot. */
-if(!document.getElementById('reference-fonts')){
+/* Brush font closest to the supplied reference screenshot. */
+if(!document.getElementById('reference-brush-font')){
   const fontLink=document.createElement('link');
-  fontLink.id='reference-fonts';
+  fontLink.id='reference-brush-font';
   fontLink.rel='stylesheet';
-  fontLink.href='https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Noto+Sans+JP:wght@400;500;700&family=Road+Rage&family=Roboto+Condensed:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;600;700&display=swap';
+  fontLink.href='https://db.onlinewebfonts.com/c/396d8feaff69b773bbfef35f7287eeb7?family=Another+Danger+Slanted+-+Demo';
   document.head.appendChild(fontLink);
 }
 
-const typographyStyle=document.createElement('style');
-typographyStyle.textContent=`
+const uiStyle=document.createElement('style');
+uiStyle.textContent=`
 :root{
-  --mono:'Roboto Mono',monospace;
-  --serif:'Cinzel',serif;
-  --sans:'Roboto Condensed',Arial,sans-serif;
-  --display:'Road Rage',cursive;
-  --jp:'Noto Sans JP',sans-serif;
+  --brush:'Another Danger Slanted - Demo','Road Rage','Arial Black',sans-serif;
+  --ui:'Roboto Condensed','Inter',Arial,sans-serif;
+  --mono2:'Roboto Mono','JetBrains Mono',monospace;
 }
-body{font-family:var(--sans);font-weight:400;letter-spacing:.005em}
-.brand{font-family:var(--sans)!important;font-weight:800!important;letter-spacing:.12em!important}
-.nav a,.btn,.feature-copy h3,.pb h3,.xl h3,.gh{font-family:var(--sans)!important}
-.nav a{font-weight:500;letter-spacing:.015em}
-.btn,.gh{font-weight:600;letter-spacing:.045em}
-.kick,.motto,.rail nav a,.lang a,.chips span,.pt span,.ph i,.stats span,.rail-quote,footer{font-family:var(--mono)!important}
-.ph h2,.vcard h3,.hq,.banner div{font-family:var(--serif)!important}
-.ph h2{font-weight:600;letter-spacing:.11em}
-.hero h1{font-family:var(--display)!important;font-weight:400!important;letter-spacing:.025em!important;line-height:.84!important;transform:skew(-7deg) rotate(-1deg)!important;text-shadow:4px 5px 0 #000,0 0 22px rgba(0,0,0,.9)!important}
-.hero h1 span{font-family:inherit!important}
-.feature-copy h3,.pb h3,.xl h3{font-weight:700;letter-spacing:.015em}
-.feature-copy p,.pb p,.xl p,.hero-c p,.vcard p,.cbox p{font-family:var(--sans)!important}
-.vert{font-family:var(--jp),var(--serif)!important}
+.hero h1{
+  font-family:var(--brush)!important;
+  font-weight:400!important;
+  font-style:normal!important;
+  letter-spacing:.012em!important;
+  line-height:.84!important;
+  transform:rotate(-1deg)!important;
+  text-shadow:4px 5px 0 #000,0 0 22px rgba(0,0,0,.92)!important;
+}
+.hero h1 span{font-family:inherit!important;font-weight:inherit!important}
+.nav a,.feature-copy h3,.pb h3,.xl h3,.btn,.gh{font-family:var(--ui)!important}
+.kick,.motto,.rail nav a,.lang a,.chips span,.pt span,.ph i,.stats span,.rail-quote,footer{font-family:var(--mono2)!important}
 
-/* Scroll reveal restored and made smoother. */
-.scroll-reveal{opacity:0;transform:translateY(22px);transition:opacity .68s cubic-bezier(.2,.7,.2,1),transform .68s cubic-bezier(.2,.7,.2,1);transition-delay:var(--reveal-delay,0ms);will-change:opacity,transform}
+/* Left rail: smooth animated active marker. */
+.rail nav{position:relative!important}
+.rail nav a{
+  transition:color .26s ease,transform .30s cubic-bezier(.2,.75,.25,1),opacity .26s ease!important;
+  will-change:transform;
+}
+.rail nav a:before{opacity:0!important;box-shadow:none!important}
+.rail nav a.active{transform:translateX(6px)!important;color:#fff!important}
+.rail nav a:not(.active){opacity:.72}
+.rail-indicator{
+  position:absolute;
+  left:-13px;
+  top:0;
+  width:3px;
+  height:34px;
+  border-radius:3px;
+  background:var(--red);
+  box-shadow:0 0 8px rgba(229,28,42,.95),0 0 22px rgba(229,28,42,.55);
+  transform:translateY(0);
+  transition:transform .42s cubic-bezier(.18,.86,.22,1),height .28s ease,opacity .25s ease;
+  pointer-events:none;
+  z-index:5;
+}
+.rail.rail-pulse{animation:railPulse .48s ease}
+@keyframes railPulse{
+  0%,100%{filter:none}
+  45%{filter:drop-shadow(0 0 7px rgba(229,28,42,.25))}
+}
+
+/* Content reveal animation restored. */
+.scroll-reveal{
+  opacity:0;
+  transform:translateY(20px);
+  transition:opacity .62s cubic-bezier(.2,.7,.2,1),transform .62s cubic-bezier(.2,.7,.2,1);
+  transition-delay:var(--reveal-delay,0ms);
+}
 .scroll-reveal.is-visible{opacity:1;transform:none}
-@media(prefers-reduced-motion:reduce){.scroll-reveal{opacity:1!important;transform:none!important;transition:none!important}}
-`;
-document.head.appendChild(typographyStyle);
+@media(prefers-reduced-motion:reduce){
+  .scroll-reveal{opacity:1!important;transform:none!important;transition:none!important}
+  .rail-indicator,.rail nav a{transition:none!important}
+}
 
+/* Normalize the first and last feature cards. */
+.feats .feature-card.dev-card,
+.feats .feature-card.problem-card{position:relative;overflow:hidden}
+.feats .feature-card.dev-card{background-size:108% 120%!important;background-position:right bottom!important}
+.feats .feature-card.problem-card{background-size:100% 100%!important;background-position:center center!important}
+.feats .feature-card.dev-card::before,
+.feats .feature-card.problem-card::before{
+  content:"";position:absolute;inset:8px;border:1px solid rgba(255,255,255,.24);
+  border-radius:4px;pointer-events:none;z-index:1
+}
+.feats .feature-card.dev-card .feature-copy,
+.feats .feature-card.problem-card .feature-copy{position:relative;z-index:2}
+`;
+document.head.appendChild(uiStyle);
+
+const allLinks=[...document.querySelectorAll('.nav a[href^="#"],.rail nav a[href^="#"]')];
 const prefersReducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+/* Animated rail marker. */
+let railIndicator=null;
+if(railNav){
+  railIndicator=document.createElement('span');
+  railIndicator.className='rail-indicator';
+  railNav.appendChild(railIndicator);
+}
+
+function moveRailIndicator(id,animate=true){
+  if(!railNav||!railIndicator) return;
+  const link=railNav.querySelector(`a[href="#${id}"]`);
+  if(!link){railIndicator.style.opacity='0';return;}
+  railIndicator.style.opacity='1';
+  if(!animate) railIndicator.style.transition='none';
+  const y=link.offsetTop+(link.offsetHeight-34)/2;
+  railIndicator.style.transform=`translateY(${Math.max(0,y)}px)`;
+  if(!animate){
+    requestAnimationFrame(()=>railIndicator.style.transition='');
+  }
+}
+
+function setActive(id,animate=true){
+  allLinks.forEach(a=>a.classList.toggle('active',a.getAttribute('href')===`#${id}`));
+  moveRailIndicator(id,animate);
+}
+
 function smoothScrollTo(target){
-  const offset=72;
+  const header=document.querySelector('.topbar');
+  const offset=(header?header.offsetHeight:60)+10;
   const start=window.scrollY;
   const end=Math.max(0,target.getBoundingClientRect().top+start-offset);
-  if(prefersReducedMotion){
-    window.scrollTo(0,end);
-    return;
-  }
+  if(prefersReducedMotion){window.scrollTo(0,end);return;}
   const distance=end-start;
-  const duration=Math.min(900,Math.max(520,Math.abs(distance)*0.45));
-  let startTime=null;
-  const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
-  function step(time){
-    if(startTime===null) startTime=time;
-    const progress=Math.min((time-startTime)/duration,1);
-    window.scrollTo(0,start+distance*ease(progress));
-    if(progress<1) requestAnimationFrame(step);
+  const duration=Math.min(880,Math.max(500,Math.abs(distance)*.42));
+  let t0=null;
+  const ease=t=>1-Math.pow(1-t,4);
+  function step(now){
+    if(t0===null)t0=now;
+    const p=Math.min((now-t0)/duration,1);
+    window.scrollTo(0,start+distance*ease(p));
+    if(p<1)requestAnimationFrame(step);
   }
   requestAnimationFrame(step);
 }
 
-document.querySelectorAll('a[href^="#"]').forEach(a=>a.addEventListener('click',e=>{
-  const selector=a.getAttribute('href');
-  if(!selector||selector==='#') return;
-  const target=document.querySelector(selector);
-  if(!target) return;
+allLinks.forEach(a=>a.addEventListener('click',e=>{
+  const href=a.getAttribute('href');
+  if(!href||href==='#')return;
+  const target=document.querySelector(href);
+  if(!target)return;
   e.preventDefault();
-  if(nav) nav.classList.remove('open');
+  if(nav)nav.classList.remove('open');
+  const id=href.slice(1);
+  setActive(id,true);
+  if(rail){
+    rail.classList.remove('rail-pulse');
+    void rail.offsetWidth;
+    rail.classList.add('rail-pulse');
+  }
   smoothScrollTo(target);
-  history.replaceState(null,'',selector);
+  history.replaceState(null,'',href);
 }));
 
-const sections=['home','about','skills','projects','experience','contact']
-  .map(id=>document.getElementById(id)).filter(Boolean);
-
-if('IntersectionObserver' in window){
-  const observer=new IntersectionObserver(entries=>{
-    const visible=entries.filter(e=>e.isIntersecting).sort((a,b)=>b.intersectionRatio-a.intersectionRatio)[0];
-    if(!visible) return;
-    const id=visible.target.id;
-    links.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+id));
-  },{rootMargin:'-18% 0px -68% 0px',threshold:[0,.1,.25,.5]});
-  sections.forEach(section=>observer.observe(section));
+/* Reliable scroll-spy for top and side navigation. */
+const ids=[...new Set(allLinks.map(a=>a.getAttribute('href')).filter(Boolean).map(h=>h.slice(1)))];
+const trackedSections=ids.map(id=>document.getElementById(id)).filter(Boolean);
+let ticking=false;
+function updateScrollSpy(){
+  ticking=false;
+  if(!trackedSections.length)return;
+  const probe=window.scrollY+window.innerHeight*.38;
+  let active=trackedSections[0];
+  for(const section of trackedSections){
+    const top=section.getBoundingClientRect().top+window.scrollY;
+    if(top<=probe)active=section;else break;
+  }
+  if(window.innerHeight+window.scrollY>=document.documentElement.scrollHeight-12){
+    active=trackedSections[trackedSections.length-1];
+  }
+  setActive(active.id,true);
 }
+window.addEventListener('scroll',()=>{
+  if(!ticking){ticking=true;requestAnimationFrame(updateScrollSpy)}
+},{passive:true});
+window.addEventListener('resize',()=>{
+  updateScrollSpy();
+  const active=document.querySelector('.rail nav a.active');
+  if(active)moveRailIndicator(active.getAttribute('href').slice(1),false);
+});
 
-/* Scroll-in animation for the main content. */
+/* Scroll reveal. */
 const revealTargets=[...document.querySelectorAll('.feats .feature-card,.view,.vcard,.stats>div,.chips span,.pc,.banner,.xl article,.cbox')];
-revealTargets.forEach((el,index)=>{
+revealTargets.forEach((el,i)=>{
   el.classList.add('scroll-reveal');
-  el.style.setProperty('--reveal-delay',`${(index%4)*55}ms`);
+  el.style.setProperty('--reveal-delay',`${(i%4)*45}ms`);
 });
 if(prefersReducedMotion||!('IntersectionObserver' in window)){
   revealTargets.forEach(el=>el.classList.add('is-visible'));
@@ -108,18 +211,16 @@ if(prefersReducedMotion||!('IntersectionObserver' in window)){
         revealObserver.unobserve(entry.target);
       }
     });
-  },{threshold:.12,rootMargin:'0px 0px -7% 0px'});
+  },{threshold:.10,rootMargin:'0px 0px -6% 0px'});
   revealTargets.forEach(el=>revealObserver.observe(el));
 }
 
-// New three images stay only in Featured Projects.
+/* Project imagery. */
 const featuredProjectImages={
   'C++ Console Toolkit':'Gemini_Generated_Image_wnnxk0wnnxk0wnnx (2).jpg',
   'Python Security Utilities':'Gemini_Generated_Image_wnnxk0wnnxk0wnnx (1).jpg',
   'Onel1t Portfolio':'Gemini_Generated_Image_wnnxk0wnnxk0wnnx.jpg'
 };
-
-// Projects uses the exact five images from the first set the user supplied.
 const projectsSectionImages={
   'C++ Console Toolkit':'Gemini_Generated_Image_217vl4217vl4217v (5).jpg?v=original-projects-2244',
   'Python Security Utilities':'Gemini_Generated_Image_217vl4217vl4217v (3).jpg?v=original-projects-2244',
@@ -127,27 +228,15 @@ const projectsSectionImages={
   'Secure Network Lab':'Gemini_Generated_Image_217vl4217vl4217v (2).jpg?v=original-projects-2244',
   'Arduino Radar':'Gemini_Generated_Image_217vl4217vl4217v.jpg?v=original-projects-2244'
 };
-
 document.querySelectorAll('#projects-preview .pc img[alt]').forEach(img=>{
-  const next=featuredProjectImages[img.alt];
-  if(next) img.src=next;
+  const next=featuredProjectImages[img.alt];if(next)img.src=next;
 });
-
 document.querySelectorAll('#projects .pc img[alt]').forEach(img=>{
-  const next=projectsSectionImages[img.alt];
-  if(next) img.src=next;
+  const next=projectsSectionImages[img.alt];if(next)img.src=next;
 });
 
-// Normalize the first and last feature cards to match the two middle cards.
-const featureAlignmentStyle=document.createElement('style');
-featureAlignmentStyle.textContent=`
-.feats .feature-card.dev-card,
-.feats .feature-card.problem-card{position:relative;overflow:hidden}
-.feats .feature-card.dev-card{background-size:108% 120%!important;background-position:right bottom!important}
-.feats .feature-card.problem-card{background-size:100% 100%!important;background-position:center center!important}
-.feats .feature-card.dev-card::before,
-.feats .feature-card.problem-card::before{content:"";position:absolute;inset:8px;border:1px solid rgba(255,255,255,.24);border-radius:4px;pointer-events:none;z-index:1}
-.feats .feature-card.dev-card .feature-copy,
-.feats .feature-card.problem-card .feature-copy{position:relative;z-index:2}
-`;
-document.head.appendChild(featureAlignmentStyle);
+requestAnimationFrame(()=>{
+  updateScrollSpy();
+  const active=document.querySelector('.rail nav a.active');
+  if(active)moveRailIndicator(active.getAttribute('href').slice(1),false);
+});
