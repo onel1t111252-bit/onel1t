@@ -26,13 +26,6 @@ const observer=new IntersectionObserver(entries=>{
 
 sections.forEach(section=>observer.observe(section));
 
-// Make the DEVELOPMENT banner use the same visual crop as the other three cards.
-const devCard=document.querySelector('.feats .dev-card');
-if(devCard){
-  devCard.style.backgroundSize='cover';
-  devCard.style.backgroundPosition='center 58%';
-}
-
 // New three images stay only in Featured Projects.
 const featuredProjectImages={
   'C++ Console Toolkit':'Gemini_Generated_Image_wnnxk0wnnxk0wnnx (2).jpg',
@@ -41,7 +34,6 @@ const featuredProjectImages={
 };
 
 // Projects uses the exact five images from the first set the user supplied.
-// A version query is intentional so browsers cannot reuse the previously cached wrong pictures.
 const projectsSectionImages={
   'C++ Console Toolkit':'Gemini_Generated_Image_217vl4217vl4217v (5).jpg?v=original-projects-2244',
   'Python Security Utilities':'Gemini_Generated_Image_217vl4217vl4217v (3).jpg?v=original-projects-2244',
@@ -59,3 +51,38 @@ document.querySelectorAll('#projects .pc img[alt]').forEach(img=>{
   const next=projectsSectionImages[img.alt];
   if(next) img.src=next;
 });
+
+// The first and last feature artworks have different built-in framing.
+// Normalize them so all four cards share the same visual inset and height.
+const featureAlignmentStyle=document.createElement('style');
+featureAlignmentStyle.textContent=`
+.feats .feature-card.dev-card,
+.feats .feature-card.problem-card{
+  position:relative;
+  overflow:hidden;
+}
+.feats .feature-card.dev-card{
+  background-size:108% 120% !important;
+  background-position:right bottom !important;
+}
+.feats .feature-card.problem-card{
+  background-size:100% 100% !important;
+  background-position:center center !important;
+}
+.feats .feature-card.dev-card::before,
+.feats .feature-card.problem-card::before{
+  content:"";
+  position:absolute;
+  inset:8px;
+  border:1px solid rgba(255,255,255,.24);
+  border-radius:4px;
+  pointer-events:none;
+  z-index:1;
+}
+.feats .feature-card.dev-card .feature-copy,
+.feats .feature-card.problem-card .feature-copy{
+  position:relative;
+  z-index:2;
+}
+`;
+document.head.appendChild(featureAlignmentStyle);
