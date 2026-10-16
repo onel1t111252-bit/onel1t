@@ -85,3 +85,16 @@ footer{padding:16px 20px;display:flex;justify-content:space-between;border-top:1
 /* Normalize the baked-in framing of the first and last feature artwork so all four cards line up visually. */
 .feats article.feature-card.dev-card{background-size:102% 104%;background-position:calc(50% - 4px) -7px}
 .feats article.feature-card.problem-card{background-size:102% 160%;background-position:center -9px}
+
+/* Make the red 1 use the exact same brush face as the rest of Onel1t. */
+body .hero h1 .nick-one{
+  font-family:var(--brush)!important;
+  font-weight:400!important;
+  font-style:normal!important;
+  display:inline-block!important;
+  color:var(--red)!important;
+  transform:none!important;
+  margin:0!important;
+  letter-spacing:inherit!important;
+  text-shadow:4px 5px 0 #000,0 0 22px rgba(0,0,0,.92)!important;
+}
