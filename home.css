@@ -81,3 +81,7 @@ footer{padding:16px 20px;display:flex;justify-content:space-between;border-top:1
 .cbox{padding:70px 24px;text-align:center;border:1px solid rgba(255,255,255,.1);background:radial-gradient(circle at 50% 0,rgba(229,28,42,.16),transparent 50%),#070707}.cbox h2{margin:0;font:72px/.9 var(--display)}.cbox p{max-width:560px;margin:16px auto 22px;font-size:13px;line-height:1.7;color:#98928e}.cbox .acts{justify-content:center}
 @media(max-width:900px){.vgrid,.pgrid.big{grid-template-columns:1fr}.cbox h2{font-size:52px}}
 @media(max-width:900px){.shell{width:100%;margin:0;display:block}.rail{display:none}.topbar{grid-template-columns:1fr auto auto}.menu{display:block}.gh{display:none}.nav{display:none;position:absolute;left:0;right:0;top:60px;flex-direction:column;gap:0;background:#050505}.nav.open{display:flex}.nav a{padding:14px 20px;border-top:1px solid rgba(255,255,255,.06)}.nav a.active:after{display:none}.hero{height:600px}.hero-c{left:22px;right:22px;top:auto;bottom:32px;width:auto;transform:none}.hero h1{font-size:76px}.motto,.hero-c p{width:100%}.pgrid{grid-template-columns:1fr}.feats{grid-template-columns:1fr}.feats article{height:116px}.feats article.feature-card{padding-left:31%}footer{flex-direction:column;gap:6px}}
+
+/* Normalize the baked-in framing of the first and last feature artwork so all four cards line up visually. */
+.feats article.feature-card.dev-card{background-size:102% 104%;background-position:calc(50% - 4px) -7px}
+.feats article.feature-card.problem-card{background-size:102% 160%;background-position:center -9px}
