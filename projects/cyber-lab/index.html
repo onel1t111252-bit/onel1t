@@ -228,4 +228,45 @@ updateStats();renderLessons();renderReports();
 })();
 </script>
 
+
+<script>
+/* Independent navigation fallback: keeps the sidebar usable if the main app handler fails. */
+(function () {
+  const labels = {
+    overview: 'Overview',
+    soc: 'SOC Simulator',
+    network: 'Network Visualizer',
+    assistant: 'AI Assistant',
+    academy: 'Cyber Academy',
+    password: 'Password Lab',
+    phishing: 'Phishing Lab',
+    reports: 'Reports & Progress'
+  };
+  document.addEventListener('click', function (event) {
+    const button = event.target.closest('.nav button[data-view], [data-go]');
+    if (!button) return;
+    const view = button.dataset.view || button.dataset.go;
+    if (!labels[view]) return;
+    event.preventDefault();
+    document.querySelectorAll('.view').forEach(function (section) {
+      section.classList.toggle('active', section.id === 'view-' + view);
+    });
+    document.querySelectorAll('.nav button[data-view]').forEach(function (item) {
+      item.classList.toggle('active', item.dataset.view === view);
+    });
+    const crumb = document.getElementById('crumb');
+    if (crumb) crumb.textContent = labels[view];
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) sidebar.classList.remove('open');
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    try {
+      if (view === 'reports' && typeof renderReports === 'function') renderReports();
+      if (view === 'academy' && typeof renderLessons === 'function') renderLessons();
+    } catch (error) {
+      console.error('View refresh error:', error);
+    }
+  }, true);
+})();
+</script>
+
 </body></html>
