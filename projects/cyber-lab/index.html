@@ -264,18 +264,22 @@ const originalTextNodes=new WeakMap();
 let currentLanguage='en';
 function translateTextNode(node,lang=currentLanguage){
  if(!node||node.nodeType!==Node.TEXT_NODE)return;
+ const parent=node.parentElement;
+ if(parent&&/^(SCRIPT|STYLE|TEXTAREA|INPUT|OPTION)$/i.test(parent.tagName))return;
  if(!originalTextNodes.has(node))originalTextNodes.set(node,node.nodeValue);
  const original=originalTextNodes.get(node);
  const trimmed=original.trim();
  if(!trimmed)return;
  const entry=translations[trimmed];
- const leading=original.match(/^\\s*/)?.[0]||'', trailing=original.match(/\\s*$/)?.[0]||'';
+ const leading=original.match(/^\s*/)?.[0]||'';
+ const trailing=original.match(/\s*$/)?.[0]||'';
  const translated=lang==='en'?trimmed:(entry&&entry[lang]?entry[lang]:trimmed);
  node.nodeValue=leading+translated+trailing;
 }
 function translateTree(root,lang=currentLanguage){
  if(root.nodeType===Node.TEXT_NODE){translateTextNode(root,lang);return}
  if(root.nodeType!==Node.ELEMENT_NODE&&root.nodeType!==Node.DOCUMENT_NODE)return;
+ if(root.nodeType===Node.ELEMENT_NODE&&/^(SCRIPT|STYLE|TEXTAREA|INPUT)$/i.test(root.tagName))return;
  root.childNodes.forEach(n=>translateTree(n,lang));
 }
 function setLanguage(lang){
@@ -285,12 +289,16 @@ function setLanguage(lang){
  translateTree(document.body,lang);
 }
 try{currentLanguage=localStorage.getItem('cyberlab-language')||'en'}catch(e){}
+if(!['en','uk','cs'].includes(currentLanguage))currentLanguage='en';
 languageSelect.value=currentLanguage;
 languageSelect.addEventListener('change',()=>setLanguage(languageSelect.value));
-const languageObserver=new MutationObserver(records=>records.forEach(rec=>{
- rec.addedNodes.forEach(n=>translateTree(n,currentLanguage));
-}));
-languageObserver.observe(document.body,{subtree:true,childList:true});
+// Delegate navigation clicks so lab cards and navigation remain functional after language changes.
+document.addEventListener('click',event=>{
+ const navButton=event.target.closest('#nav button[data-view]');
+ if(navButton){event.preventDefault();go(navButton.dataset.view);return}
+ const goButton=event.target.closest('[data-go]');
+ if(goButton){event.preventDefault();go(goButton.dataset.go)}
+});
 if(currentLanguage!=='en')setLanguage(currentLanguage);
 
 </script>
