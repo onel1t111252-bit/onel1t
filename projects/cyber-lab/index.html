@@ -288,13 +288,9 @@ try{currentLanguage=localStorage.getItem('cyberlab-language')||'en'}catch(e){}
 languageSelect.value=currentLanguage;
 languageSelect.addEventListener('change',()=>setLanguage(languageSelect.value));
 const languageObserver=new MutationObserver(records=>records.forEach(rec=>{
- if(rec.type==='childList')rec.addedNodes.forEach(n=>translateTree(n,currentLanguage));
- else if(rec.type==='characterData'){
-   if(originalTextNodes.has(rec.target))originalTextNodes.set(rec.target,rec.target.nodeValue);
-   translateTextNode(rec.target,currentLanguage);
- }
+ rec.addedNodes.forEach(n=>translateTree(n,currentLanguage));
 }));
-languageObserver.observe(document.body,{subtree:true,childList:true,characterData:true});
+languageObserver.observe(document.body,{subtree:true,childList:true});
 if(currentLanguage!=='en')setLanguage(currentLanguage);
 
 </script>
