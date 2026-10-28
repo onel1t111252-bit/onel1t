@@ -1,18 +1,29 @@
-# Onel1t — personal portfolio
+# ONEL1T — Personal Portfolio
 
-Responsive personal portfolio website built with HTML, CSS, and vanilla JavaScript.
+Responsive personal cybersecurity portfolio built with HTML, CSS and vanilla JavaScript.
 
-## Preview locally
-Open `index.html` in a browser.
+## Live site
 
-## Publish with GitHub Pages
-1. Create a public repository named `onel1t111252-bit.github.io` in your GitHub account.
-2. Upload `index.html`, `style.css`, and `script.js` to the repository root.
-3. Open **Settings → Pages** and choose **Deploy from a branch**, branch `main`, folder `/ (root)`.
-4. Save and wait for the site to publish at `https://onel1t111252-bit.github.io/`.
+- English portfolio: https://onel1t111252-bit.github.io/onel1t/
+- Ukrainian portfolio: https://onel1t111252-bit.github.io/onel1t/index-uk.html
 
-## Before publishing
-- Replace `your.email@example.com` with your real public contact email.
-- Verify and personalize the education and work-history text.
-- Replace the sample project cards with real projects. Do not present the example cards as completed work.
-- Keep confidential or sensitive work details out of the public portfolio.
+## Featured projects
+
+- **ONEL1T NEXUS** — cybersecurity workspace demo for SOC event triage, threat-intelligence references, OSINT workflows, network visualization, investigations and local file hashing.
+  - Live demo: https://onel1t111252-bit.github.io/onel1t/projects/nexus/
+  - Project documentation: [projects/nexus/README.md](projects/nexus/README.md)
+- **Cyber Lab** — interactive security learning and analysis tools.
+  - Project: [projects/cyber-lab/](projects/cyber-lab/)
+
+## Run locally
+
+Open `index.html` in a modern browser. The site is static and has no build step.
+
+## Deployment
+
+The site is published with GitHub Pages from the repository's configured branch and folder. Changes may take a short time to appear after a commit.
+
+## Important demo limitations
+
+NEXUS is a portfolio prototype, not a production SOC platform. Dashboard telemetry and network assets are simulated; its analyst uses local rules rather than a connected AI model; OSINT links are references rather than automatic data ingestion. File hashing runs in the browser. Do not enter secrets or confidential incident data.
+
