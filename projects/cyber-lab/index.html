@@ -135,4 +135,97 @@ $('#export-report').onclick=()=>{const text='ONEL1T CYBER LAB — TRAINING REPOR
 $('#reset-progress').onclick=()=>{if(confirm('Reset all local XP, activity records, and completed lessons?')){state={xp:0,incidents:0,lessons:[],activities:[],socCorrect:0};save();renderReports();renderLessons();toast('Local progress reset')}};
 updateStats();renderLessons();renderReports();
 </script>
+
+<script>
+/* Independent fallback handlers for Password Lab and Phishing Lab. */
+(function () {
+  function initLabs() {
+    const byId = id => document.getElementById(id);
+    const password = byId('password-input');
+    const toggle = byId('toggle-password');
+    const bar = byId('password-bar');
+    const scoreText = byId('password-score');
+    const advice = byId('password-advice');
+    const checksBox = byId('password-checks');
+    if (password && bar && scoreText && advice && checksBox) {
+      const checkPassword = function () {
+        const p = password.value || '';
+        const checks = [
+          ['At least 12 characters', p.length >= 12],
+          ['Uppercase and lowercase letters', /[a-z]/.test(p) && /[A-Z]/.test(p)],
+          ['Contains a number', /\\d/.test(p)],
+          ['Contains a symbol', /[^A-Za-z0-9]/.test(p)],
+          ['Avoids common patterns', !/(1234|password|qwerty|admin|letmein)/i.test(p)]
+        ];
+        let points = checks.filter(item => item[1]).length;
+        if (p.length >= 16) points = Math.min(5, points + 1);
+        bar.style.width = (p ? points * 20 : 0) + '%';
+        bar.style.background = points < 2 ? 'var(--red)' : points < 4 ? 'var(--amber)' : 'var(--green)';
+        scoreText.textContent = !p ? 'Waiting for input' : points <= 1 ? 'Weak characteristics' : points <= 3 ? 'Moderate characteristics' : 'Strong characteristics';
+        advice.textContent = !p ? 'Use a long, unique passphrase and enable MFA where possible.' : points <= 3 ? 'Try a longer, unique passphrase; avoid predictable words and patterns.' : 'Good indicators. Use a unique password and a password manager; this check cannot detect breached passwords.';
+        checksBox.innerHTML = checks.map(item => '<div class="event"><span class="event-dot" style="background:' + (item[1] ? 'var(--green)' : 'var(--red)') + '"></span><div><strong>' + item[0] + '</strong><small>' + (item[1] ? 'Indicator present' : 'Indicator missing') + '</small></div></div>').join('');
+      };
+      password.addEventListener('input', checkPassword);
+      password.addEventListener('change', checkPassword);
+      if (toggle) toggle.addEventListener('click', function (event) {
+        event.preventDefault();
+        password.type = password.type === 'password' ? 'text' : 'password';
+        toggle.textContent = password.type === 'password' ? 'Show' : 'Hide';
+      });
+      checkPassword();
+    }
+
+    const form = byId('url-form');
+    const input = byId('url-input');
+    const result = byId('url-result');
+    if (form && input && result) {
+      const analyze = function (event) {
+        if (event) event.preventDefault();
+        const raw = input.value.trim();
+        if (!raw) {
+          result.textContent = 'Enter a URL first, for example: https://example.com/login';
+          input.focus();
+          return;
+        }
+        let url;
+        try {
+          url = new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(raw) ? raw : 'https://' + raw);
+          if (!url.hostname || !url.hostname.includes('.')) throw new Error('invalid hostname');
+        } catch (error) {
+          result.textContent = 'This does not look like a valid URL. Check the format and try again.';
+          return;
+        }
+        const host = url.hostname.toLowerCase();
+        const flags = [];
+        if (url.protocol !== 'https:') flags.push('URL does not use HTTPS');
+        if (/^\\d{1,3}(\\.\\d{1,3}){3}$/.test(host)) flags.push('Hostname is an IP address');
+        if (host.includes('xn--')) flags.push('Punycode hostname may require careful inspection');
+        if (host.split('.').length > 4) flags.push('Many subdomain levels');
+        if (host.length > 45) flags.push('Unusually long hostname');
+        if (url.username || url.password) flags.push('Contains user-info before the hostname');
+        if (/login|verify|secure|account|update|wallet|password/i.test(url.pathname + ' ' + url.search)) flags.push('Path/query contains a sensitive-action keyword');
+        if ((url.search.match(/=/g) || []).length > 5) flags.push('Many query parameters');
+        result.textContent = 'HOST: ' + host + '\nPROTOCOL: ' + url.protocol + '\n\n' +
+          (flags.length ? 'INDICATORS TO REVIEW (' + flags.length + ')\n\n' + flags.map((flag, i) => (i + 1) + '. ' + flag).join('\n') : 'No obvious heuristic indicators found. This does NOT mean the URL is safe.') +
+          '\n\nReminder: this is a local heuristic check only. No reputation service was queried; verify the domain independently.';
+        try {
+          if (typeof logActivity === 'function' && typeof save === 'function') {
+            logActivity('Phishing Lab', 'Analyzed URL pattern', '—');
+            save();
+          }
+        } catch (_) {}
+      };
+      form.addEventListener('submit', analyze);
+      const submit = form.querySelector('button[type="submit"], button:not([type])');
+      if (submit) submit.addEventListener('click', function (event) {
+        event.preventDefault();
+        analyze();
+      });
+    }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initLabs, { once: true });
+  else initLabs();
+})();
+</script>
+
 </body></html>
