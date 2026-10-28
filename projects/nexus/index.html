@@ -68,6 +68,41 @@ tbody tr:hover{background:#102238}
 .footer{border-top:1px solid #17283b;padding-top:16px}
 @media(max-width:720px){main{padding-top:16px}.topbar{padding-bottom:13px}.hero h1{font-size:31px}.module{min-height:145px}.sidebar{backdrop-filter:blur(22px)}}
 
+
+/* CYBERPUNK RED THEME */
+:root{--bg:#030405;--panel:#090a0c;--panel2:#101114;--line:#4b1118;--text:#f4f4f6;--muted:#9aa0a8;--cyan:#ff2638;--blue:#ff5867;--red:#ff2638;--amber:#ff9a38;--green:#00e6b0;--radius:13px}
+body{background:radial-gradient(ellipse at 55% -15%,#3a080d 0,transparent 43%),radial-gradient(ellipse at 100% 65%,#210509 0,transparent 36%),#030405}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;opacity:.22;background-image:linear-gradient(#ff1d2d12 1px,transparent 1px),linear-gradient(90deg,#ff1d2d12 1px,transparent 1px);background-size:30px 30px}
+.sidebar{background:rgba(5,5,7,.96);border-right-color:#4c1018;box-shadow:inset -1px 0 #ff1f3020}
+.logo{background:linear-gradient(135deg,#ff2538,#9b0614);color:white;box-shadow:0 0 26px #ff102d35}
+.nav button:hover{background:#26090e;color:#fff;border-color:#5a111a}
+.nav button.active{color:#fff;background:linear-gradient(100deg,#4b080f,#1d080b);border-color:#ff2638;box-shadow:inset 3px 0 0 #ff2638,0 0 22px #ff10251c}
+.side-bottom{background:linear-gradient(145deg,#16090c,#09090b);border-color:#4b1118}
+.topbar{border-bottom:1px solid #451018;padding-bottom:15px}
+.badge{color:#ff6572;background:#20070b;border-color:#7b1723;letter-spacing:.7px}
+.live-dot{background:#ff2638;box-shadow:0 0 10px #ff2638}
+.avatar{background:#1c090d;border-color:#6b1722}
+.btn{background:linear-gradient(145deg,#1b0b0f,#10090b);border-color:#65202a}
+.btn:hover{border-color:#ff2638;box-shadow:0 0 18px #ff26382a}
+.btn.primary{background:linear-gradient(115deg,#ff2638,#a90d20);color:#fff;box-shadow:0 0 22px #ff263828}
+.card{background:linear-gradient(145deg,rgba(17,10,13,.98),rgba(7,8,10,.98));border-color:#45131b;box-shadow:0 10px 30px #0008,inset 0 1px #ff26380b}
+.card:hover{border-color:#8e1d2b;box-shadow:0 12px 34px #0009,0 0 16px #ff26380c}
+.stat-icon,.module .bigico{background:linear-gradient(145deg,#2c0b11,#14090c);border-color:#6a1823;color:#ff5261}
+.module:after{background:#ff26380b}.module:hover:after{background:#ff26381b}
+.network-stage{background:radial-gradient(ellipse at center,#1a0a10 0,#0b080b 62%,#050506 100%);border-color:#6a1823;box-shadow:inset 0 0 70px #000b}
+th{background:#1b0b10;color:#ff9aa4}
+tbody tr:hover{background:#210b11}
+.field{background:#080709;border-color:#4d1720}
+.field:focus{border-color:#ff2638;box-shadow:0 0 0 3px #ff26381c}
+.case{background:linear-gradient(110deg,#170b0f,#09090b);border-color:#45131b}
+.case:hover{border-color:#ff2638}
+.footer{border-top-color:#451018}
+.return-home{display:inline-flex;align-items:center;gap:9px;text-decoration:none;white-space:nowrap;padding:9px 12px;font-size:12px;border-color:#9f1b2a;color:#fff;background:linear-gradient(110deg,#300910,#10080a);box-shadow:0 0 15px #ff263812}
+.return-home:hover{background:#420b13;color:#fff;box-shadow:0 0 22px #ff26382a}
+.return-home:first-letter{color:#ff5261}
+@media(max-width:900px){.return-home span{display:none}.return-home{padding:10px 12px}}
+@media(max-width:720px){.top-actions{gap:6px}.return-home{font-size:11px}.badge{display:none}}
+
 </style>
 </head>
 <body>
@@ -90,7 +125,7 @@ tbody tr:hover{background:#102238}
 <div class="side-bottom"><div><span class="live-dot"></span><b style="font-size:12px">Local environment</b></div><small>Demo telemetry active<br>Data stays in this browser</small></div>
 </aside>
 <main>
-<header class="topbar"><div style="display:flex;align-items:center;gap:13px"><button class="btn menu-toggle" id="menuToggle" type="button" aria-label="Toggle navigation" aria-controls="nav">☰</button><div class="mobile-brand">ONEL1T NEXUS</div><div class="crumb" id="crumb">Workspace / <b>Overview</b></div></div><div class="top-actions"><span class="badge"><span class="live-dot"></span> SYSTEM NOMINAL</span><div class="avatar">O1</div></div></header>
+<header class="topbar"><div style="display:flex;align-items:center;gap:13px"><button class="btn menu-toggle" id="menuToggle" type="button" aria-label="Toggle navigation" aria-controls="nav">☰</button><div class="mobile-brand">ONEL1T NEXUS</div><div class="crumb" id="crumb">Workspace / <b>Overview</b></div></div><div class="top-actions"><a class="btn return-home" href="../../index.html" aria-label="Повернутись до головного сайту">← <span>Повернутись до головного сайту</span></a><span class="badge"><span class="live-dot"></span> SYSTEM NOMINAL</span><div class="avatar">O1</div></div></header>
 
 <section class="view active" id="view-overview">
 <div class="hero"><div><div class="eyebrow">Unified cyber intelligence</div><h1>See the signal.<br>Understand the threat.</h1><p>A unified workspace for security operations, open-source investigations and network defense simulations.</p></div><button class="btn primary" data-go="cases">＋ New investigation</button></div>
