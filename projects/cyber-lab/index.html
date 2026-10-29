@@ -146,7 +146,7 @@ if(lang==='cz')return 'VZDĚLÁVACÍ ODPOVĚĎ\n\n'+answer.replace('Phishing is 
 return answer;
 }
 // Set this after deploying the backend on Render. Never put the Gemini key in this file.
-const AI_API_URL='https://YOUR-RENDER-SERVICE.onrender.com/api/chat';
+const AI_API_URL='https://onel1t-cyber-lab-ai.onrender.com/api/chat';
 const aiHistory=[];
 let aiBusy=false;
 function getAiLanguage(){let current='en';try{current=localStorage.getItem('onel1t-lang')||'en'}catch(e){}return current==='ua'?'uk':(current==='cz'?'cz':'en')}
