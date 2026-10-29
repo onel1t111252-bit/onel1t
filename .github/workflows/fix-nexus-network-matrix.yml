@@ -1,4 +1,4 @@
-name: Repair NEXUS Network Matrix interaction
+name: Load standalone NEXUS matrix inspector
 
 on:
   push:
@@ -13,66 +13,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Repair matrix controls
+      - name: Load independent matrix inspector
         shell: python
         run: |
           from pathlib import Path
           p=Path('projects/nexus/index.html')
           s=p.read_text(encoding='utf-8')
-
-          # Plain HTML controls guarantee a large mobile tap target even when SVG hit testing is flaky.
-          marker='<div class="network-legend">'
-          controls='''<div class="network-node-controls" aria-label="Network asset controls"><button type="button" class="network-node-btn" data-matrix-node="gateway">GW-01</button><button type="button" class="network-node-btn" data-matrix-node="web">WEB-01</button><button type="button" class="network-node-btn" data-matrix-node="db">DB-01</button><button type="button" class="network-node-btn" data-matrix-node="workstation">WS-07</button><button type="button" class="network-node-btn" data-matrix-node="siem">SIEM</button><button type="button" class="network-node-btn" data-matrix-node="api">API-02</button><button type="button" class="network-node-btn" data-matrix-node="backup">BK-01</button></div>'''
-          if 'data-matrix-node="gateway"' not in s:
-              s=s.replace(marker,controls+marker,1)
-
-          # Direct inline click on each SVG group, independent from event delegation.
-          pairs={'gateway':'gateway','web':'web','db':'db','workstation':'workstation','siem':'siem','api':'api','backup':'backup'}
-          for key in pairs:
-              old='<g class="node" data-node="'+key+'">'
-              new='<g class="node" data-node="'+key+'" role="button" tabindex="0" aria-pressed="false" onclick="inspectNetworkNode(\''+key+'\')">'
-              s=s.replace(old,new,1)
-
-          # Remove all old duplicate touch fallback lines.
-          lines=[]
-          for line in s.splitlines():
-              if line.startswith('// Mobile/touch fallback:'):
-                  continue
-              if "networkTouchReady" in line:
-                  continue
-              lines.append(line)
-          s='\n'.join(lines)
-
-          anchor='window.inspectNetworkNode=inspectNetworkNode;'
-          if 'data.matrixNode' not in s:
-              s=s.replace(anchor,anchor+"\ndocument.addEventListener('click',function(e){var b=e.target.closest('[data-matrix-node]');if(b){e.preventDefault();inspectNetworkNode(b.dataset.matrixNode);}});",1)
-
-          state="$$('.network-stage [data-node]').forEach(n=>{n.classList.toggle('selected',n.dataset.node===key);n.setAttribute('aria-pressed',n.dataset.node===key?'true':'false')});"
-          if "dataset.matrixNode===key" not in s:
-              s=s.replace(state,state+"$$('[data-matrix-node]').forEach(b=>{b.classList.toggle('selected',b.dataset.matrixNode===key)});",1)
-
-          css='''\n/* Network Matrix reliable mobile controls */\n#view-matrix .network-stage svg [data-node]{pointer-events:all;cursor:pointer;touch-action:manipulation}\n#view-matrix .network-stage svg [data-node] circle,#view-matrix .network-stage svg [data-node] text{pointer-events:all}\n.network-node-controls{display:grid;grid-template-columns:repeat(7,minmax(70px,1fr));gap:7px;margin:12px 0 4px}\n.network-node-btn{min-height:44px;border:1px solid #29465e;border-radius:10px;background:#0c1a2a;color:#bcd0e8;font-weight:800;touch-action:manipulation}\n.network-node-btn.selected{border-color:var(--cyan);background:var(--cyan);color:#07121c;box-shadow:0 0 16px #63f5df35}\n#view-matrix .network-stage [data-node].selected circle{fill:#214a56!important;stroke:#fff!important;stroke-width:4!important}\n@media(max-width:720px){.network-node-controls{grid-template-columns:repeat(2,minmax(0,1fr))}.network-node-btn{min-height:50px}}\n'''
-          if 'Network Matrix reliable mobile controls' not in s:
-              s=s.replace('</style>',css+'</style>',1)
+          tag='<script src="matrix-fix.js?v=20261029-2"></script>'
+          if tag not in s:
+              s=s.replace('</body>',tag+'\n</body>',1)
           p.write_text(s,encoding='utf-8')
-
       - name: Verify
         shell: python
         run: |
           from pathlib import Path
           s=Path('projects/nexus/index.html').read_text(encoding='utf-8')
-          assert 'data-matrix-node="gateway"' in s
-          assert "onclick=\"inspectNetworkNode('gateway')\"" in s
-          assert 'Network Matrix reliable mobile controls' in s
-          print('verified')
-
+          assert 'matrix-fix.js?v=20261029-2' in s
+          assert Path('projects/nexus/matrix-fix.js').exists()
+          print('standalone matrix inspector loaded')
       - name: Commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add projects/nexus/index.html
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m "Make NEXUS Network Matrix reliably clickable"
+          git commit -m "Load standalone NEXUS matrix inspector"
           git push
 
-# run: 4
+# run: 5
