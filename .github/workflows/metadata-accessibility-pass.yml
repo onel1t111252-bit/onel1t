@@ -1,0 +1,114 @@
+name: SEO and accessibility polish
+
+on:
+  push:
+    paths:
+      - '.github/workflows/metadata-accessibility-pass.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Improve metadata and keyboard accessibility
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          descriptions={
+            'cv.html':'CV of Maksym Dymchuk — cybersecurity student with hands-on IT internships, networking labs and software projects.',
+            'cv-uk.html':'Резюме Максима Димчука — студента з кібербезпеки з практичним досвідом IT-практик, мережевих лабораторій та програмних проєктів.',
+            'cv-cz.html':'CV Maksyma Dymčuka — studenta kyberbezpečnosti s praktickými IT stážemi, síťovými laboratořemi a softwarovými projekty.',
+            'projects/cpp-console-toolkit/index.html':'C++ console toolkit with practical exercises for arrays, matrices, sorting and input validation.',
+            'projects/python-security-utilities/index.html':'Python security utilities for password feedback, SHA-256 hashing and simple log review.',
+            'projects/password-strength-lab/index.html':'Interactive browser-based password strength lab with local educational checks and privacy-first feedback.',
+            'projects/ipv4-subnet-calculator/index.html':'Interactive IPv4 CIDR subnet calculator for network address, mask, broadcast and usable host ranges.',
+            'projects/phishing-link-analyzer/index.html':'Browser-based phishing link analyzer that explains common URL warning signs using transparent local heuristics.',
+            'projects/security-log-triage/index.html':'Interactive blue-team log triage lab for practicing authentication-event review and defensive investigation.',
+          }
+          base='https://onel1t111252-bit.github.io/onel1t/'
+
+          html_files=sorted(Path('.').rglob('*.html'))
+          for path in html_files:
+              rel=path.as_posix()
+              s=path.read_text(encoding='utf-8')
+              head_close=s.lower().find('</head>')
+              if head_close<0:continue
+              additions=[]
+              if rel in descriptions and 'name="description"' not in s[:head_close]:
+                  additions.append('<meta name="description" content="'+descriptions[rel].replace('"','&quot;')+'">')
+              canonical=base if rel=='index.html' else base+rel
+              if 'rel="canonical"' not in s[:head_close]:
+                  additions.append('<link rel="canonical" href="'+canonical+'">')
+              icon='favicon.svg' if '/' not in rel else '../../favicon.svg'
+              if 'rel="icon"' not in s[:head_close]:
+                  additions.append('<link rel="icon" href="'+icon+'" type="image/svg+xml">')
+              if additions:
+                  s=s[:head_close]+''.join(additions)+s[head_close:]
+              # Security hygiene for any current/future new-tab links.
+              s=re.sub(r'<a\b([^>]*\btarget=["\']_blank["\'][^>]*)>',lambda m:'<a'+(m.group(1) if re.search(r'\brel\s*=',m.group(1),re.I) else m.group(1)+' rel="noopener noreferrer"')+'>',s,flags=re.I)
+              # Project pages get a consistent keyboard focus ring without altering the visual design.
+              if rel.startswith('projects/') and 'id="global-focus-ring"' not in s:
+                  focus='<style id="global-focus-ring">:where(a,button,input,select,textarea):focus-visible{outline:2px solid #ff4056;outline-offset:3px}</style>'
+                  s=s.replace('</head>',focus+'</head>',1)
+              path.write_text(s,encoding='utf-8')
+
+          # Root/CV CSS focus-visible styles.
+          for name in ('home.css','cv-theme.css'):
+              p=Path(name);s=p.read_text(encoding='utf-8')
+              marker='/* Accessible keyboard focus */'
+              if marker not in s:
+                  s+='\n'+marker+'\n:where(a,button,input,select,textarea):focus-visible{outline:2px solid #ff4056;outline-offset:3px}\n'
+              p.write_text(s,encoding='utf-8')
+
+          # Main mobile menu: Escape and outside-click close it predictably.
+          p=Path('home-core.js');s=p.read_text(encoding='utf-8')
+          marker='/* Mobile navigation keyboard/outside-click behavior. */'
+          if marker not in s:
+              extra='''\n/* Mobile navigation keyboard/outside-click behavior. */\nif(menu&&nav){\n  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&nav.classList.contains('open')){nav.classList.remove('open');menu.setAttribute('aria-expanded','false');menu.focus();}});\n  document.addEventListener('click',e=>{if(nav.classList.contains('open')&&!nav.contains(e.target)&&!menu.contains(e.target)){nav.classList.remove('open');menu.setAttribute('aria-expanded','false');}});\n}\n'''
+              s=s.replace("if(menu&&nav){\n  menu.onclick=()=>{const open=nav.classList.toggle('open');menu.setAttribute('aria-expanded',open?'true':'false');};\n}\n", "if(menu&&nav){\n  menu.onclick=()=>{const open=nav.classList.toggle('open');menu.setAttribute('aria-expanded',open?'true':'false');};\n}\n"+extra,1)
+          p.write_text(s,encoding='utf-8')
+
+          # Rich social metadata for the three public portfolio landing pages.
+          landing={
+            'index.html':('Onel1t — Cybersecurity Portfolio','Maksym Dymchuk — IT and cybersecurity portfolio featuring interactive security labs, networking projects and software development work.',base),
+            'index-uk.html':('Onel1t — Портфоліо з кібербезпеки','Портфоліо Максима Димчука: кібербезпека, комп’ютерні мережі, інтерактивні лабораторії та програмування.',base+'index-uk.html'),
+            'index-cz.html':('Onel1t — Portfolio kyberbezpečnosti','Portfolio Maksyma Dymčuka zaměřené na kyberbezpečnost, počítačové sítě, interaktivní laboratoře a vývoj softwaru.',base+'index-cz.html'),
+          }
+          for name,(title,desc,url) in landing.items():
+              p=Path(name);s=p.read_text(encoding='utf-8')
+              if 'property="og:title"' not in s:
+                  social=''.join([
+                    '<meta property="og:type" content="website">',
+                    '<meta property="og:title" content="'+title+'">',
+                    '<meta property="og:description" content="'+desc+'">',
+                    '<meta property="og:url" content="'+url+'">',
+                    '<meta property="og:image" content="'+base+'assets/optimized/hero-bg.webp">',
+                    '<meta name="twitter:card" content="summary_large_image">',
+                  ])
+                  s=s.replace('</head>',social+'</head>',1)
+              p.write_text(s,encoding='utf-8')
+      - name: Verify
+        shell: python
+        run: |
+          from pathlib import Path
+          for name in ('index.html','index-uk.html','index-cz.html','cv.html','cv-uk.html','cv-cz.html'):
+              s=Path(name).read_text(encoding='utf-8')
+              assert 'rel="canonical"' in s and 'rel="icon"' in s
+          for name in ('projects/cpp-console-toolkit/index.html','projects/python-security-utilities/index.html','projects/password-strength-lab/index.html','projects/ipv4-subnet-calculator/index.html','projects/phishing-link-analyzer/index.html','projects/security-log-triage/index.html'):
+              s=Path(name).read_text(encoding='utf-8')
+              assert 'name="description"' in s and 'global-focus-ring' in s and 'rel="icon"' in s
+          assert 'Mobile navigation keyboard/outside-click behavior.' in Path('home-core.js').read_text(encoding='utf-8')
+          print('SEO/accessibility polish verified')
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add '*.html' '*.css' home-core.js projects/**/*.html 2>/dev/null || true
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Polish SEO metadata and keyboard accessibility"
+          git push
