@@ -10,17 +10,8 @@ document.querySelectorAll('.rail-quote b,.hq i').forEach(el=>{el.textContent='â€
 document.querySelectorAll('footer span:first-child').forEach(el=>{el.innerHTML=el.innerHTML.replace(/ONEL1T|Onelt|Onel1t/g,'Onel1t');});
 document.title=document.title.replace(/ONEL1T|Onelt/g,'Onel1t');
 
-/* Remove the broken Experience tab from both navigation areas. */
-document.querySelectorAll('.nav a[href="#experience"],.rail nav a[href="#experience"]').forEach(a=>a.remove());
-
-/* Keep the left-side numbering continuous after removing Experience. */
-document.querySelectorAll('.rail nav a').forEach((a,i)=>{
-  const n=a.querySelector('span');
-  if(n) n.textContent=String(i+1).padStart(2,'0');
-});
-
 if(menu&&nav){
-  menu.onclick=()=>nav.classList.toggle('open');
+  menu.onclick=()=>{const open=nav.classList.toggle('open');menu.setAttribute('aria-expanded',open?'true':'false');};
 }
 
 /* Readable hand-painted font: keeps the rough style but includes a clear numeral 1. */
@@ -181,6 +172,7 @@ allLinks.forEach(a=>a.addEventListener('click',e=>{
   if(!target)return;
   e.preventDefault();
   if(nav)nav.classList.remove('open');
+  if(menu)menu.setAttribute('aria-expanded','false');
   const id=href.slice(1);
   setActive(id,true);
   if(rail){
@@ -252,7 +244,7 @@ const projectsSectionImages={
   'Secure Network Lab':'Gemini_Generated_Image_217vl4217vl4217v (2).jpg?v=original-projects-2244',
   'Arduino Radar':'Gemini_Generated_Image_217vl4217vl4217v.jpg?v=original-projects-2244'
 };
-document.querySelectorAll('#projects-preview .pc img[alt]').forEach(img=>{
+document.querySelectorAll('#projects .pc img[alt]').forEach(img=>{
   const next=featuredProjectImages[img.alt];if(next)img.src=next;
 });
 document.querySelectorAll('#projects .pc img[alt]').forEach(img=>{

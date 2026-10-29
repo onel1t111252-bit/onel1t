@@ -11,7 +11,7 @@
   addIcon('apple-touch-icon','./favicon.png','image/png');
 
   // Project covers shared by EN / UA / CZ homepages.
-  const projectCards=document.querySelectorAll('#projects-preview .pgrid .pc');
+  const projectCards=document.querySelectorAll('#projects .pgrid .pc');
   const cyberImg=projectCards[0]?.querySelector('.pi-img img');
   const nexusImg=projectCards[1]?.querySelector('.pi-img img');
   if(cyberImg) cyberImg.src='1793298041137.jpg';
