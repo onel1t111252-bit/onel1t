@@ -1,5 +1,5 @@
 (()=>{
-  const version='favicon-20261016-2100';
+  const version='smooth-sections-20261029-1';
   const addIcon=(rel,href,type)=>{
     let link=document.querySelector(`link[rel="${rel}"]`);
     if(!link){link=document.createElement('link');link.rel=rel;document.head.appendChild(link);}
