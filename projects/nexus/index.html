@@ -134,15 +134,15 @@ tbody tr:hover{background:#210b11}
 <div class="brand"><div class="logo">N</div><div><strong>ONEL1T</strong><small>N E X U S</small></div></div>
 <div class="label">COMMAND CENTER</div>
 <nav class="nav" id="nav">
-<button class="active" data-view="overview"><span class="ico">◈</span> Overview</button>
-<button data-view="soc"><span class="ico">▦</span> SOC Operations</button>
-<button data-view="threats"><span class="ico">◎</span> Threat Map</button>
-<button data-view="analyst"><span class="ico">✧</span> AI Analyst</button>
-<button data-view="forensics"><span class="ico">⌁</span> Forensics Lab</button>
-<button data-view="osint"><span class="ico">⌕</span> OSINT Center</button>
-<button data-view="matrix"><span class="ico">⌘</span> Network Matrix</button>
-<button data-view="cases"><span class="ico">▤</span> Investigations</button>
-<button data-view="reports"><span class="ico">↗</span> Reports & Export</button>
+<button type="button" class="active" data-view="overview"><span class="ico">◈</span> Overview</button>
+<button type="button" data-view="soc"><span class="ico">▦</span> SOC Operations</button>
+<button type="button" data-view="threats"><span class="ico">◎</span> Threat Map</button>
+<button type="button" data-view="analyst"><span class="ico">✧</span> AI Analyst</button>
+<button type="button" data-view="forensics"><span class="ico">⌁</span> Forensics Lab</button>
+<button type="button" data-view="osint"><span class="ico">⌕</span> OSINT Center</button>
+<button type="button" data-view="matrix"><span class="ico">⌘</span> Network Matrix</button>
+<button type="button" data-view="cases"><span class="ico">▤</span> Investigations</button>
+<button type="button" data-view="reports"><span class="ico">↗</span> Reports & Export</button>
 </nav>
 <div class="label">WORKSPACE</div>
 <div class="side-bottom"><div><span class="live-dot"></span><b style="font-size:12px">Local environment</b></div><small>Demo telemetry active<br>Data stays in this browser</small></div>
@@ -151,7 +151,7 @@ tbody tr:hover{background:#210b11}
 <header class="topbar"><div style="display:flex;align-items:center;gap:13px"><button class="btn menu-toggle" id="menuToggle" type="button" aria-label="Toggle navigation" aria-controls="nav">☰</button><div class="mobile-brand">ONEL1T NEXUS</div><div class="crumb" id="crumb">Workspace / <b>Overview</b></div></div><div class="top-actions"><a class="btn return-home" href="../../index.html" aria-label="Повернутись до головного сайту">← <span>Повернутись до головного сайту</span></a><span class="badge"><span class="live-dot"></span> SYSTEM NOMINAL</span><div class="avatar">O1</div></div></header>
 
 <section class="view active" id="view-overview">
-<div class="hero"><div><div class="eyebrow">Unified cyber intelligence</div><h1>See the signal.<br>Understand the threat.</h1><p>A unified workspace for security operations, open-source investigations and network defense simulations.</p></div><button class="btn primary" data-go="cases">＋ New investigation</button></div>
+<div class="hero"><div><div class="eyebrow">Unified cyber intelligence</div><h1>See the signal.<br>Understand the threat.</h1><p>A unified workspace for security operations, open-source investigations and network defense simulations.</p></div><button type="button" class="btn primary" data-go="cases">＋ New investigation</button></div>
 <div class="grid stats">
 <div class="card"><div class="stat-top">Monitored signals <span class="stat-icon">⌁</span></div><div class="stat-value">1,284</div><div class="trend">↑ 8.4% <span class="muted">vs previous window</span></div></div>
 <div class="card"><div class="stat-top">Open incidents <span class="stat-icon">⚑</span></div><div class="stat-value" id="openCount">07</div><div><span class="tag red">2 high priority</span></div></div>
@@ -229,7 +229,7 @@ tbody tr:hover{background:#210b11}
 </section>
 
 <section class="view" id="view-reports">
-<div class="hero"><div><div class="eyebrow">05 / Reporting</div><h1>Reports & Export</h1><p>Generate a readable snapshot of the current demo workspace and your locally saved investigations.</p></div><button class="btn primary" id="downloadReport">↓ Export report (.txt)</button></div>
+<div class="hero"><div><div class="eyebrow">05 / Reporting</div><h1>Reports & Export</h1><p>Generate a readable snapshot of the current demo workspace and your locally saved investigations.</p></div><button type="button" class="btn primary" id="downloadReport">↓ Export report (.txt)</button></div>
 <div class="grid stats"><div class="card"><div class="stat-top">Demo events <span class="stat-icon">▦</span></div><div class="stat-value">08</div><div class="muted">Illustrative only</div></div><div class="card"><div class="stat-top">Lab assets <span class="stat-icon">⌘</span></div><div class="stat-value">07</div><div class="muted">Fictional topology</div></div><div class="card"><div class="stat-top">Saved cases <span class="stat-icon">▤</span></div><div class="stat-value" id="reportCaseCount">03</div><div class="muted">Stored in this browser</div></div><div class="card"><div class="stat-top">External lookups <span class="stat-icon">↗</span></div><div class="stat-value">0</div><div class="muted">No live queries performed</div></div></div>
 <div class="card"><div class="card-head"><h2>Report preview</h2><span>Updates from this session</span></div><div id="reportPreview" class="feed"></div><div class="notice">The report is a local demo summary, not a forensic finding or verified threat intelligence. Do not treat simulated indicators as real alerts.</div></div>
 </section>
