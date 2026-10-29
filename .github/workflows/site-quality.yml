@@ -1,0 +1,119 @@
+name: Site quality
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          find . -type f -name '*.js' -not -path './.git/*' -print0 | while IFS= read -r -d '' file; do
+            echo "node --check $file"
+            node --check "$file"
+          done
+      - name: Check Python syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          find . -type f -name '*.py' -not -path './.git/*' -print0 | while IFS= read -r -d '' file; do
+            echo "python -m py_compile $file"
+            python -m py_compile "$file"
+          done
+      - name: Audit HTML structure and local references
+        shell: python
+        run: |
+          from html.parser import HTMLParser
+          from pathlib import Path
+          from urllib.parse import unquote
+          import re, sys
+
+          root = Path('.').resolve()
+          errors = []
+          warnings = []
+
+          class AuditParser(HTMLParser):
+              def __init__(self, path):
+                  super().__init__(convert_charrefs=True)
+                  self.path = path
+                  self.ids = set()
+                  self.refs = []
+                  self.has_lang = False
+                  self.has_viewport = False
+              def handle_starttag(self, tag, attrs):
+                  d = dict(attrs)
+                  if tag == 'html' and d.get('lang'):
+                      self.has_lang = True
+                  if tag == 'meta' and d.get('name','').lower() == 'viewport':
+                      self.has_viewport = True
+                  ident = d.get('id')
+                  if ident:
+                      if ident in self.ids:
+                          errors.append(f'{self.path}: duplicate id="{ident}"')
+                      self.ids.add(ident)
+                  for attr in ('href','src'):
+                      value = d.get(attr)
+                      if value:
+                          self.refs.append((tag, attr, value))
+                  if tag == 'img' and 'alt' not in d:
+                      warnings.append(f'{self.path}: image without alt attribute: {d.get("src", "<inline>")}')
+                  if tag == 'button' and 'type' not in d:
+                      warnings.append(f'{self.path}: button without explicit type: {d.get("id") or d.get("class") or "<button>"}')
+
+          html_files = sorted(root.rglob('*.html'))
+          for path in html_files:
+              text = path.read_text(encoding='utf-8')
+              parser = AuditParser(path.relative_to(root))
+              try:
+                  parser.feed(text)
+              except Exception as exc:
+                  errors.append(f'{parser.path}: HTML parser error: {exc}')
+                  continue
+              if not parser.has_lang:
+                  errors.append(f'{parser.path}: missing html[lang]')
+              if not parser.has_viewport:
+                  errors.append(f'{parser.path}: missing viewport meta')
+              for tag, attr, raw in parser.refs:
+                  value = raw.strip()
+                  if not value or value.startswith(('#','http://','https://','mailto:','tel:','data:','javascript:','//')):
+                      continue
+                  clean = unquote(value.split('#',1)[0].split('?',1)[0])
+                  if not clean or clean.startswith('/'):
+                      continue
+                  target = (path.parent / clean).resolve()
+                  try:
+                      target.relative_to(root)
+                  except ValueError:
+                      errors.append(f'{parser.path}: reference escapes repository: {raw}')
+                      continue
+                  if not target.exists():
+                      errors.append(f'{parser.path}: missing local {attr}: {raw}')
+
+          # Check fragment links on the three portfolio home pages.
+          for name in ('index.html','index-uk.html','index-cz.html'):
+              path = root / name
+              if not path.exists():
+                  continue
+              text = path.read_text(encoding='utf-8')
+              ids = set(re.findall(r'\bid=["\']([^"\']+)["\']', text))
+              for frag in re.findall(r'href=["\']#([^"\']+)["\']', text):
+                  if frag and frag not in ids:
+                      errors.append(f'{name}: fragment #{frag} has no matching id')
+
+          for msg in warnings:
+              print(f'::warning::{msg}')
+          if errors:
+              for msg in errors:
+                  print(f'::error::{msg}')
+              sys.exit(1)
+          print(f'Audited {len(html_files)} HTML files successfully.')
