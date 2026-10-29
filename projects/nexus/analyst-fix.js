@@ -4,8 +4,9 @@ const form=document.getElementById('analystForm');
 const input=document.getElementById('analystInput');
 const context=document.getElementById('analystContext');
 const result=document.getElementById('analystResult');
-if(!form||!input||!context||!result)return;
-const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const button=document.getElementById('localAnalyzeBtn')||form?.querySelector('button');
+if(!form||!input||!context||!result||!button)return;
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
 function analyze(raw,ctx){
  const text=raw.toLowerCase();
  let severity='Medium',summary='Подія потребує перевірки контексту та зіставлення із сусідніми подіями.',actions=['Перевірте час, джерело та задіяний актив','Порівняйте подію зі звичайною активністю','Збережіть докази та позначте те, що ще не підтверджено'];
@@ -18,12 +19,17 @@ function analyze(raw,ctx){
 }
 function render(){
  const raw=input.value.trim();
- if(!raw){result.classList.add('show');result.innerHTML='<div class="notice"><b>Введіть подію для аналізу.</b><br>Наприклад: 12 невдалих входів для admin з незнайомої IP-адреси.</div>';result.scrollIntoView({behavior:'smooth',block:'nearest'});return;}
- const a=analyze(raw,context.value);
- const cls=a.severity==='High'?'red':a.severity==='Low'?'green':'amber';
+ if(!raw){result.classList.add('show');result.innerHTML='<div class="notice"><b>Введіть подію для аналізу.</b><br>Наприклад: 12 невдалих входів для admin з незнайомої IP-адреси.</div>';return false;}
+ const a=analyze(raw,context.value),cls=a.severity==='High'?'red':a.severity==='Low'?'green':'amber';
  result.classList.add('show');
  result.innerHTML='<div class="card-head"><h2>Результат локального аналізу</h2><span class="tag '+cls+'">'+esc(a.severity)+' · '+esc(a.ctx)+'</span></div><p style="font-size:13px">'+esc(a.summary)+'</p><b style="font-size:11px">Рекомендовані наступні кроки</b><ol style="padding-left:20px;color:var(--muted);font-size:12px">'+a.actions.map(x=>'<li style="margin:8px 0">'+esc(x)+'</li>').join('')+'</ol><div class="notice">Локальний rule-based аналіз: дані не надсилаються в мережу. Це навчальна рекомендація, а не автоматичний висновок.</div>';
- result.scrollIntoView({behavior:'smooth',block:'nearest'});
+ requestAnimationFrame(()=>result.scrollIntoView({behavior:'smooth',block:'nearest'}));
+ return false;
 }
-form.addEventListener('submit',e=>{e.preventDefault();e.stopImmediatePropagation();render();},true);
+window.runNexusAnalyst=render;
+form.setAttribute('action','javascript:void(0)');
+form.setAttribute('method','dialog');
+form.addEventListener('submit',e=>{e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();render();return false;},true);
+button.type='button';
+button.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();render();return false;},true);
 })();
