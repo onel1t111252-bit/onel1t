@@ -13,7 +13,7 @@ jobs:
   audit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Check JavaScript syntax
         shell: bash
         run: |
@@ -22,6 +22,40 @@ jobs:
             echo "node --check $file"
             node --check "$file"
           done
+      - name: Check inline JavaScript syntax
+        shell: python
+        run: |
+          from pathlib import Path
+          import re, subprocess, sys, tempfile
+
+          script_re = re.compile(r'<script\b([^>]*)>(.*?)</script\s*>', re.I | re.S)
+          failures = []
+          checked = 0
+          for path in sorted(Path('.').rglob('*.html')):
+              text = path.read_text(encoding='utf-8')
+              for idx, match in enumerate(script_re.finditer(text), 1):
+                  attrs, body = match.group(1), match.group(2)
+                  if re.search(r'\bsrc\s*=', attrs, re.I):
+                      continue
+                  type_match = re.search(r'\btype\s*=\s*["\']([^"\']+)', attrs, re.I)
+                  if type_match and type_match.group(1).lower() not in ('text/javascript','application/javascript','module'):
+                      continue
+                  if not body.strip():
+                      continue
+                  checked += 1
+                  suffix = '.mjs' if type_match and type_match.group(1).lower() == 'module' else '.js'
+                  with tempfile.NamedTemporaryFile('w', suffix=suffix, encoding='utf-8', delete=False) as tmp:
+                      tmp.write(body)
+                      tmp_path = tmp.name
+                  proc = subprocess.run(['node','--check',tmp_path], text=True, capture_output=True)
+                  Path(tmp_path).unlink(missing_ok=True)
+                  if proc.returncode:
+                      failures.append(f'{path}: inline script #{idx}: {proc.stderr.strip()}')
+          if failures:
+              for failure in failures:
+                  print(f'::error::{failure}')
+              sys.exit(1)
+          print(f'Checked {checked} inline JavaScript blocks.')
       - name: Check Python syntax
         shell: bash
         run: |
@@ -109,6 +143,13 @@ jobs:
               for frag in re.findall(r'href=["\']#([^"\']+)["\']', text):
                   if frag and frag not in ids:
                       errors.append(f'{name}: fragment #{frag} has no matching id')
+
+          # Flag unusually large images so performance regressions are visible.
+          for ext in ('*.png','*.jpg','*.jpeg','*.webp'):
+              for image in root.rglob(ext):
+                  size = image.stat().st_size
+                  if size > 2_000_000:
+                      warnings.append(f'{image.relative_to(root)}: large image {size/1_000_000:.1f} MB')
 
           for msg in warnings:
               print(f'::warning::{msg}')
