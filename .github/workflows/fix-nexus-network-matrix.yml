@@ -1,4 +1,4 @@
-name: Fix NEXUS analyst local action
+name: Deploy improved NEXUS analyst engine
 
 on:
   push:
@@ -13,45 +13,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Make AI Analyst non-navigating
+      - name: Load improved local analyst
         shell: python
         run: |
           from pathlib import Path
           p=Path('projects/nexus/index.html')
           s=p.read_text(encoding='utf-8')
-
-          old='<form id="analystForm">'
-          new='<form id="analystForm" action="javascript:void(0)" onsubmit="if(window.runNexusAnalyst){window.runNexusAnalyst();} return false;">'
-          s=s.replace(old,new,1)
-
-          old_btn='<button class="btn primary" type="submit">Analyze locally →</button>'
-          new_btn='<button class="btn primary" id="localAnalyzeBtn" type="button" onclick="if(window.runNexusAnalyst){window.runNexusAnalyst();} return false;">Analyze locally →</button>'
-          s=s.replace(old_btn,new_btn,1)
-
-          s=s.replace('analyst-fix.js?v=20261029-1','analyst-fix.js?v=20261029-3')
-          if 'analyst-fix.js?v=20261029-3' not in s:
-              s=s.replace('</body>','<script src="analyst-fix.js?v=20261029-3"></script>\n</body>',1)
-
+          s=s.replace('analyst-fix.js?v=20261029-3','analyst-fix.js?v=20261029-4')
+          if 'analyst-fix.js?v=20261029-4' not in s:
+              s=s.replace('</body>','<script src="analyst-fix.js?v=20261029-4"></script>\n</body>',1)
           p.write_text(s,encoding='utf-8')
-
-      - name: Verify analyst form
+      - name: Verify
         shell: python
         run: |
           from pathlib import Path
           s=Path('projects/nexus/index.html').read_text(encoding='utf-8')
-          assert 'id="analystForm" action="javascript:void(0)"' in s
           assert 'id="localAnalyzeBtn" type="button"' in s
-          assert 'window.runNexusAnalyst' in s
-          assert 'analyst-fix.js?v=20261029-3' in s
-          print('AI Analyst hard navigation fix verified')
-
+          assert 'analyst-fix.js?v=20261029-4' in s
+          assert Path('projects/nexus/analyst-fix.js').exists()
+          print('improved analyst engine linked')
       - name: Commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add projects/nexus/index.html
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m "Prevent NEXUS AI Analyst from navigating away"
+          git commit -m "Load improved NEXUS incident analyzer"
           git push
 
-# run: 7
+# run: 8
