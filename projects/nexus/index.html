@@ -154,8 +154,8 @@ tbody tr:hover{background:#210b11}
 <section class="view" id="view-soc">
 <div class="hero"><div><div class="eyebrow">01 / Security operations</div><h1>SOC Operations</h1><p>Triage event signals, inspect their context and track a simulated response workflow.</p></div><span class="tag amber">SIMULATED DATA</span></div>
 <div class="grid stats">
-<div class="card"><div class="stat-top">Total events <span class="stat-icon">▦</span></div><div class="stat-value" id="eventCount">08</div><div class="muted">In current demo feed</div></div>
-<div class="card"><div class="stat-top">Critical <span class="stat-icon">!</span></div><div class="stat-value" style="color:var(--red)">02</div><div class="muted">Needs analyst review</div></div>
+<div class="card"><div class="stat-top">Open incidents <span class="stat-icon">▦</span></div><div class="stat-value" id="socOpenCount">08</div><div class="muted">Not yet resolved</div></div>
+<div class="card"><div class="stat-top">Critical <span class="stat-icon">!</span></div><div class="stat-value" id="socCriticalCount" style="color:var(--red)">02</div><div class="muted">Needs analyst review</div></div>
 <div class="card"><div class="stat-top">Acknowledged <span class="stat-icon">✓</span></div><div class="stat-value" id="ackCount">01</div><div class="muted">Local session state</div></div>
 <div class="card"><div class="stat-top">Response SLA <span class="stat-icon">◷</span></div><div class="stat-value">12m</div><div class="muted">Illustrative target</div></div>
 </div>
@@ -211,7 +211,7 @@ tbody tr:hover{background:#210b11}
 
 <section class="view" id="view-reports">
 <div class="hero"><div><div class="eyebrow">05 / Reporting</div><h1>Reports & Export</h1><p>Generate a readable snapshot of the current demo workspace and your locally saved investigations.</p></div><button class="btn primary" id="downloadReport">↓ Export report (.txt)</button></div>
-<div class="grid stats"><div class="card"><div class="stat-top">Demo events <span class="stat-icon">▦</span></div><div class="stat-value" id="socOpenCount">08</div><div class="muted">Illustrative only</div></div><div class="card"><div class="stat-top">Lab assets <span class="stat-icon">⌘</span></div><div class="stat-value">07</div><div class="muted">Fictional topology</div></div><div class="card"><div class="stat-top">Saved cases <span class="stat-icon">▤</span></div><div class="stat-value" id="reportCaseCount">03</div><div class="muted">Stored in this browser</div></div><div class="card"><div class="stat-top">External lookups <span class="stat-icon">↗</span></div><div class="stat-value">0</div><div class="muted">No live queries performed</div></div></div>
+<div class="grid stats"><div class="card"><div class="stat-top">Demo events <span class="stat-icon">▦</span></div><div class="stat-value">08</div><div class="muted">Illustrative only</div></div><div class="card"><div class="stat-top">Lab assets <span class="stat-icon">⌘</span></div><div class="stat-value">07</div><div class="muted">Fictional topology</div></div><div class="card"><div class="stat-top">Saved cases <span class="stat-icon">▤</span></div><div class="stat-value" id="reportCaseCount">03</div><div class="muted">Stored in this browser</div></div><div class="card"><div class="stat-top">External lookups <span class="stat-icon">↗</span></div><div class="stat-value">0</div><div class="muted">No live queries performed</div></div></div>
 <div class="card"><div class="card-head"><h2>Report preview</h2><span>Updates from this session</span></div><div id="reportPreview" class="feed"></div><div class="notice">The report is a local demo summary, not a forensic finding or verified threat intelligence. Do not treat simulated indicators as real alerts.</div></div>
 </section>
 <div class="footer"><span>ONEL1T NEXUS · CYBER INTELLIGENCE WORKSPACE</span><span>Prototype v1.0 · Simulation data clearly labeled</span></div>
