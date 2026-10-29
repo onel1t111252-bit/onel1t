@@ -1,4 +1,4 @@
-name: Fix NEXUS Network Matrix touch interaction
+name: Repair NEXUS Network Matrix interaction
 
 on:
   push:
@@ -13,29 +13,86 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Patch Network Matrix interaction
+      - name: Repair Network Matrix controls
         shell: python
         run: |
           from pathlib import Path
+          import re
+
           p = Path('projects/nexus/index.html')
           s = p.read_text(encoding='utf-8')
 
-          css_anchor = '/* Reliable SVG node hit targets for touch and mouse */'
-          if '/* Network Matrix mobile interaction hardening */' not in s:
-              extra_css = '''\n/* Network Matrix mobile interaction hardening */\n#view-matrix .network-stage [data-node]{-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none}\n#view-matrix .network-stage [data-node] circle{transition:stroke .16s ease,stroke-width .16s ease,fill .16s ease,filter .16s ease}\n#view-matrix .network-stage [data-node].selected circle{fill:#214a56!important;stroke:#fff!important;stroke-width:4!important;filter:drop-shadow(0 0 9px #57e6dc)!important}\n'''
-              s = s.replace(css_anchor, extra_css + css_anchor, 1)
+          # Make every SVG node invoke the inspector directly. This avoids
+          # mobile SVG event-delegation inconsistencies.
+          s = re.sub(
+              r'<g class="node" data-node="([^"]+)"',
+              lambda m: '<g class="node" data-node="'+m.group(1)+'" role="button" tabindex="0" aria-pressed="false" onclick="inspectNetworkNode(\''+m.group(1)+'\')" onpointerup="if(event.pointerType===\'touch\'||event.pointerType===\'pen\'){inspectNetworkNode(\''+m.group(1)+'\')}"',
+              s
+          )
 
-          click_anchor = "document.addEventListener('click',e=>{const n=e.target.closest('#view-matrix svg [data-node]');"
-          if 'window.inspectNetworkNode=inspectNetworkNode;' not in s:
-              s = s.replace(click_anchor, "window.inspectNetworkNode=inspectNetworkNode;\n" + click_anchor, 1)
+          # Add a second, plain-HTML control row. These buttons are intentionally
+          # independent of SVG hit testing and work reliably on mobile browsers.
+          marker = '<div class="network-legend">'
+          controls = '''<div class="network-node-controls" aria-label="Network asset controls">
+<button type="button" class="network-node-btn" data-matrix-node="gateway">GW-01</button>
+<button type="button" class="network-node-btn" data-matrix-node="web">WEB-01</button>
+<button type="button" class="network-node-btn" data-matrix-node="db">DB-01</button>
+<button type="button" class="network-node-btn" data-matrix-node="workstation">WS-07</button>
+<button type="button" class="network-node-btn" data-matrix-node="siem">SIEM</button>
+<button type="button" class="network-node-btn" data-matrix-node="api">API-02</button>
+<button type="button" class="network-node-btn" data-matrix-node="backup">BK-01</button>
+</div>'''
+          if 'data-matrix-node="gateway"' not in s:
+              s = s.replace(marker, controls + marker, 1)
 
-          keyboard = "document.querySelectorAll('#view-matrix svg [data-node]').forEach(n=>{n.setAttribute('tabindex','0');n.setAttribute('role','button');n.setAttribute('aria-label','Inspect '+(n.dataset.node||'network node'));n.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();inspectNetworkNode(n.dataset.node)}})});"
-          if 'data-network-touch-ready' not in s:
-              touch = keyboard + "\n// Mobile/touch fallback: select the asset directly on pointer release.\ndocument.querySelectorAll('#view-matrix svg [data-node]').forEach(n=>{if(n.dataset.networkTouchReady)return;n.dataset.networkTouchReady='1';n.addEventListener('pointerup',e=>{if(e.pointerType==='touch'||e.pointerType==='pen'){e.preventDefault();inspectNetworkNode(n.dataset.node)}},{passive:false});n.addEventListener('touchend',e=>{e.preventDefault();inspectNetworkNode(n.dataset.node)},{passive:false})});"
-              s = s.replace(keyboard, touch, 1)
+          # Remove duplicated mobile fallback blocks from the previous patch.
+          fallback = "// Mobile/touch fallback: select the asset directly on pointer release.\\ndocument.querySelectorAll('#view-matrix svg [data-node]').forEach(n=>{if(n.dataset.networkTouchReady)return;n.dataset.networkTouchReady='1';n.addEventListener('pointerup',e=>{if(e.pointerType==='touch'||e.pointerType==='pen'){e.preventDefault();inspectNetworkNode(n.dataset.node)}},{passive:false});n.addEventListener('touchend',e=>{e.preventDefault();inspectNetworkNode(n.dataset.node)},{passive:false})});\\n"
+          s = s.replace(fallback, '')
+
+          # Add one delegated handler for the HTML fallback buttons.
+          js_anchor = "window.inspectNetworkNode=inspectNetworkNode;"
+          handler = """window.inspectNetworkNode=inspectNetworkNode;
+document.addEventListener('click',e=>{const b=e.target.closest('[data-matrix-node]');if(!b)return;e.preventDefault();inspectNetworkNode(b.dataset.matrixNode)});"""
+          if "b.dataset.matrixNode" not in s:
+              s = s.replace(js_anchor, handler, 1)
+
+          # Synchronize visual state between SVG nodes and HTML buttons.
+          old = "$$('.network-stage [data-node]').forEach(n=>{n.classList.toggle('selected',n.dataset.node===key);n.setAttribute('aria-pressed',n.dataset.node===key?'true':'false')});"
+          new = old + "$$('[data-matrix-node]').forEach(b=>{const active=b.dataset.matrixNode===key;b.classList.toggle('selected',active);b.setAttribute('aria-pressed',active?'true':'false')});"
+          if "b.dataset.matrixNode===key" not in s:
+              s = s.replace(old, new, 1)
+
+          # CSS for larger, reliable touch targets and selected state.
+          css_marker = '/* Network Matrix mobile interaction hardening */'
+          css = '''/* Network Matrix reliable controls */
+#view-matrix .network-stage svg [data-node]{pointer-events:all;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+#view-matrix .network-stage svg [data-node] circle,#view-matrix .network-stage svg [data-node] text{pointer-events:all}
+.network-node-controls{display:grid;grid-template-columns:repeat(7,minmax(70px,1fr));gap:7px;margin:12px 0 4px}
+.network-node-btn{min-height:42px;border:1px solid #29465e;border-radius:10px;background:#0c1a2a;color:#bcd0e8;font-weight:800;font-size:11px;touch-action:manipulation}
+.network-node-btn:hover,.network-node-btn.selected{border-color:var(--cyan);color:#07121c;background:var(--cyan);box-shadow:0 0 16px #63f5df35}
+#view-matrix .network-stage [data-node].selected circle{fill:#214a56!important;stroke:#fff!important;stroke-width:4!important;filter:drop-shadow(0 0 9px #57e6dc)!important}
+@media(max-width:720px){.network-node-controls{grid-template-columns:repeat(2,minmax(0,1fr))}.network-node-btn{min-height:48px;font-size:12px}}
+'''
+          if '/* Network Matrix reliable controls */' not in s:
+              if css_marker in s:
+                  s = s.replace(css_marker, css + '\n' + css_marker, 1)
+              else:
+                  s = s.replace('</style>', css + '\n</style>', 1)
 
           p.write_text(s, encoding='utf-8')
-      - name: Commit fix
+
+      - name: Verify patch
+        shell: python
+        run: |
+          from pathlib import Path
+          s=Path('projects/nexus/index.html').read_text(encoding='utf-8')
+          assert 'data-matrix-node="gateway"' in s
+          assert "onclick=\"inspectNetworkNode('gateway')\"" in s
+          assert 'Network Matrix reliable controls' in s
+          assert 'function inspectNetworkNode(key)' in s
+          print('NEXUS matrix interaction patch verified')
+
+      - name: Commit repair
         run: |
           if git diff --quiet -- projects/nexus/index.html; then
             echo "No patch needed"
@@ -44,7 +101,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add projects/nexus/index.html
-          git commit -m "Fix NEXUS Network Matrix taps on mobile"
+          git commit -m "Repair NEXUS Network Matrix interaction"
           git push
 
-# run: 2
+# run: 3
