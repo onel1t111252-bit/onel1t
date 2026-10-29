@@ -41,7 +41,6 @@ jobs:
           from pathlib import Path
           n=Path('projects/nexus/index.html').read_text(encoding='utf-8')
           c=Path('projects/cyber-lab/index.html').read_text(encoding='utf-8')
-          assert "$('[data-region]').forEach(" not in n
           assert "$$('[data-region]').forEach(" in n
           assert 'translations[k][langs[current]]' not in c
           assert 'translations[k][langIndex(current)]' in c
