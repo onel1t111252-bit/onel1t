@@ -383,7 +383,7 @@ if(header){
  box.addEventListener('click',e=>{const b=e.target.closest('button[data-lang]');if(b)setLang(b.dataset.lang)});
 }
 document.querySelectorAll('input[placeholder],textarea[placeholder]').forEach(el=>{const key=el.getAttribute('placeholder');if(translations[key])el.dataset.origPlaceholder=key});
-observer=new MutationObserver(records=>records.forEach(rec=>{if(rec.type==='childList')rec.addedNodes.forEach(n=>{if(n.nodeType===Node.ELEMENT_NODE)translate(n);else if(n.nodeType===Node.TEXT_NODE){if(!originals.has(n))originals.set(n,n.nodeValue);const k=originals.get(n).trim();if(translations[k])n.nodeValue=originals.get(n).replace(k,current==='en'?k:translations[k][langs[current]])}})}));
+observer=new MutationObserver(records=>records.forEach(rec=>{if(rec.type==='childList')rec.addedNodes.forEach(n=>{if(n.nodeType===Node.ELEMENT_NODE)translate(n);else if(n.nodeType===Node.TEXT_NODE){if(!originals.has(n))originals.set(n,n.nodeValue);const k=originals.get(n).trim();if(translations[k])n.nodeValue=originals.get(n).replace(k,current==='en'?k:translations[k][langIndex(current)])}})}));
 observer.observe(document.body,{subtree:true,childList:true});
 let saved='en';try{saved=localStorage.getItem('onel1t-lang')||'en'}catch(e){}
 setLang(['en','ua','cz'].includes(saved)?saved:'en');
