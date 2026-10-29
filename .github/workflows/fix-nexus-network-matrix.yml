@@ -1,0 +1,48 @@
+name: Fix NEXUS Network Matrix touch interaction
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-nexus-network-matrix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch Network Matrix interaction
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('projects/nexus/index.html')
+          s = p.read_text(encoding='utf-8')
+
+          css_anchor = '/* Reliable SVG node hit targets for touch and mouse */'
+          if '/* Network Matrix mobile interaction hardening */' not in s:
+              extra_css = '''\n/* Network Matrix mobile interaction hardening */\n#view-matrix .network-stage [data-node]{-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none}\n#view-matrix .network-stage [data-node] circle{transition:stroke .16s ease,stroke-width .16s ease,fill .16s ease,filter .16s ease}\n#view-matrix .network-stage [data-node].selected circle{fill:#214a56!important;stroke:#fff!important;stroke-width:4!important;filter:drop-shadow(0 0 9px #57e6dc)!important}\n'''
+              s = s.replace(css_anchor, extra_css + css_anchor, 1)
+
+          click_anchor = "document.addEventListener('click',e=>{const n=e.target.closest('#view-matrix svg [data-node]');"
+          if 'window.inspectNetworkNode=inspectNetworkNode;' not in s:
+              s = s.replace(click_anchor, "window.inspectNetworkNode=inspectNetworkNode;\n" + click_anchor, 1)
+
+          keyboard = "document.querySelectorAll('#view-matrix svg [data-node]').forEach(n=>{n.setAttribute('tabindex','0');n.setAttribute('role','button');n.setAttribute('aria-label','Inspect '+(n.dataset.node||'network node'));n.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();inspectNetworkNode(n.dataset.node)}})});"
+          if 'data-network-touch-ready' not in s:
+              touch = keyboard + "\n// Mobile/touch fallback: select the asset directly on pointer release.\ndocument.querySelectorAll('#view-matrix svg [data-node]').forEach(n=>{if(n.dataset.networkTouchReady)return;n.dataset.networkTouchReady='1';n.addEventListener('pointerup',e=>{if(e.pointerType==='touch'||e.pointerType==='pen'){e.preventDefault();inspectNetworkNode(n.dataset.node)}},{passive:false});n.addEventListener('touchend',e=>{e.preventDefault();inspectNetworkNode(n.dataset.node)},{passive:false})});"
+              s = s.replace(keyboard, touch, 1)
+
+          p.write_text(s, encoding='utf-8')
+      - name: Commit fix
+        run: |
+          if git diff --quiet -- projects/nexus/index.html; then
+            echo "No patch needed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add projects/nexus/index.html
+          git commit -m "Fix NEXUS Network Matrix taps on mobile"
+          git push
