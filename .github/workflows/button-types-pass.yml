@@ -1,0 +1,74 @@
+name: Explicit button semantics pass
+
+on:
+  push:
+    paths:
+      - '.github/workflows/button-types-pass.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Add explicit button types without changing behavior
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          script_re=re.compile(r'(<script\b[^>]*>.*?</script\s*>)',re.I|re.S)
+          token_re=re.compile(r'<form\b[^>]*>|</form\s*>|<button\b[^>]*>',re.I|re.S)
+
+          def patch_markup(text):
+              parts=[];pos=0;depth=0
+              for m in token_re.finditer(text):
+                  parts.append(text[pos:m.start()]);tag=m.group(0);low=tag.lower()
+                  if low.startswith('<form'):
+                      depth+=1
+                  elif low.startswith('</form'):
+                      depth=max(0,depth-1)
+                  elif low.startswith('<button') and not re.search(r'\btype\s*=',tag,re.I):
+                      kind='submit' if depth else 'button'
+                      tag=re.sub(r'<button\b',f'<button type="{kind}"',tag,count=1,flags=re.I)
+                  parts.append(tag);pos=m.end()
+              parts.append(text[pos:])
+              return ''.join(parts)
+
+          changed=[]
+          for path in sorted(Path('.').rglob('*.html')):
+              source=path.read_text(encoding='utf-8')
+              chunks=script_re.split(source)
+              for i in range(0,len(chunks),2):
+                  chunks[i]=patch_markup(chunks[i])
+              result=''.join(chunks)
+              if result!=source:
+                  path.write_text(result,encoding='utf-8');changed.append(str(path))
+          print('updated',len(changed),'HTML files')
+          for p in changed:print(' -',p)
+      - name: Verify all static buttons have explicit type
+        shell: python
+        run: |
+          from html.parser import HTMLParser
+          from pathlib import Path
+          import sys
+          missing=[]
+          class P(HTMLParser):
+              def __init__(self,path):super().__init__();self.path=path
+              def handle_starttag(self,tag,attrs):
+                  if tag=='button' and 'type' not in dict(attrs):missing.append(str(self.path))
+          for path in Path('.').rglob('*.html'):
+              p=P(path);p.feed(path.read_text(encoding='utf-8'))
+          if missing:
+              print('buttons still missing explicit type:',sorted(set(missing)));sys.exit(1)
+          print('all static buttons have explicit type')
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add '*.html' projects/**/*.html 2>/dev/null || true
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Make button behavior explicit across the site"
+          git push
