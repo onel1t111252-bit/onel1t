@@ -1,0 +1,110 @@
+name: Portfolio structural polish
+
+on:
+  push:
+    paths:
+      - '.github/workflows/perfect-site-pass.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Fix portfolio structure, accessibility and metadata
+        shell: python
+        run: |
+          from pathlib import Path
+
+          pages = {
+            'index.html': {
+              'desc':'Maksym Dymchuk — IT and cybersecurity portfolio featuring interactive security labs, networking projects and software development work.',
+              'exp_title':'Experience',
+              'exp_cards':[
+                ('MagneticOne — IT Internship','07.07.2026 – 30.07.2026 · Ternopil','Helped with security-system-related tasks, followed internal procedures and worked within the access limits assigned to the internship role.'),
+                ('Forte Group — IT Internship','07.07.2025 – 30.07.2025 · Ternopil','Supported security-system-related tasks under supervision and worked only within the permissions granted during the internship.'),
+                ('Yaware — IT Internship','01.03.2025 – 01.04.2025 · Ternopil','Assisted with work related to security systems and learned professional workflows while operating with restricted intern access.'),
+                ('Kyivstar','Telecommunications · ended 05.09.2026','Experience with customer communication, service processes, telecom products and technical questions.')],
+              'contact_marker':'Contact'
+            },
+            'index-uk.html': {
+              'desc':'Портфоліо Максима Димчука: кібербезпека, комп’ютерні мережі, інтерактивні лабораторії та програмування.',
+              'exp_title':'Досвід',
+              'exp_cards':[
+                ('MagneticOne — IT-практика','07.07.2026 – 30.07.2026 · Тернопіль','Допомагав із завданнями, пов’язаними із системами безпеки, дотримувався внутрішніх процедур і працював у межах доступу, наданого практиканту.'),
+                ('Forte Group — IT-практика','07.07.2025 – 30.07.2025 · Тернопіль','Під наглядом виконував практичні завдання, пов’язані із системами безпеки, та працював лише в межах наданих дозволів.'),
+                ('Yaware — IT-практика','01.03.2025 – 01.04.2025 · Тернопіль','Допомагав у роботі із системами безпеки та знайомився з професійними процесами в умовах обмеженого доступу практиканта.'),
+                ('Київстар','Телекомунікації · завершено 05.09.2026','Досвід комунікації з клієнтами, сервісних процесів, телеком-продуктів і технічних консультацій.')],
+              'contact_marker':'Контакти'
+            },
+            'index-cz.html': {
+              'desc':'Portfolio Maksyma Dymčuka zaměřené na kyberbezpečnost, počítačové sítě, interaktivní laboratoře a vývoj softwaru.',
+              'exp_title':'Zkušenosti',
+              'exp_cards':[
+                ('MagneticOne — IT stáž','07.07.2026 – 30.07.2026 · Ternopil','Pomáhal s úkoly souvisejícími s bezpečnostními systémy, dodržoval interní postupy a pracoval v rámci přístupů přidělených stážistovi.'),
+                ('Forte Group — IT stáž','07.07.2025 – 30.07.2025 · Ternopil','Pod dohledem podporoval úkoly související s bezpečnostními systémy a pracoval pouze v rámci udělených oprávnění.'),
+                ('Yaware — IT stáž','01.03.2025 – 01.04.2025 · Ternopil','Pomáhal s prací související s bezpečnostními systémy a seznamoval se s profesionálními postupy při omezeném přístupu stážisty.'),
+                ('Kyivstar','Telekomunikace · ukončeno 05.09.2026','Zkušenosti s komunikací se zákazníky, servisními procesy, telekomunikačními produkty a technickými dotazy.')],
+              'contact_marker':'Kontakt'
+            }
+          }
+
+          alternates = '<link rel="alternate" hreflang="en" href="index.html"><link rel="alternate" hreflang="uk" href="index-uk.html"><link rel="alternate" hreflang="cs" href="index-cz.html"><link rel="alternate" hreflang="x-default" href="index.html">'
+
+          for name,cfg in pages.items():
+              p=Path(name); s=p.read_text(encoding='utf-8')
+              if 'name="description"' not in s:
+                  s=s.replace('<meta name="theme-color" content="#030303">', '<meta name="theme-color" content="#030303"><meta name="description" content="'+cfg['desc']+'">'+alternates, 1)
+              s=s.replace('href="#projects"','href="#projects"')
+              s=s.replace('href="#projects-preview"','href="#projects"')
+              s=s.replace('id="projects-preview"','id="projects"')
+              s=s.replace('<button class="menu" id="menu" aria-label="Menu">','<button type="button" class="menu" id="menu" aria-label="Menu" aria-controls="nav" aria-expanded="false">')
+              s=s.replace('<img src=', '<img loading="lazy" decoding="async" src=')
+              if 'id="experience"' not in s:
+                  cards=''.join('<article class="pc"><div class="pb"><h3>'+title+'</h3><div class="pt"><span>'+meta+'</span></div><p>'+body+'</p></div></article>' for title,meta,body in cfg['exp_cards'])
+                  exp='<section class="view" id="experience"><div class="ph"><span class="s">◆</span><h2>'+cfg['exp_title']+'</h2><i>/ 04</i></div><div class="pgrid">'+cards+'</div></section>'
+                  marker='<section class="view" id="contact"><div class="ph"><span class="s">◆</span><h2>'+cfg['contact_marker']+'</h2>'
+                  s=s.replace(marker, exp+marker, 1)
+              s=s.replace('<h2>'+cfg['contact_marker']+'</h2><i>/ 06</i>', '<h2>'+cfg['contact_marker']+'</h2><i>/ 05</i>', 1)
+              p.write_text(s,encoding='utf-8')
+
+          p=Path('home.js'); s=p.read_text(encoding='utf-8')
+          s=s.replace("#projects-preview .pgrid .pc", "#projects .pgrid .pc")
+          p.write_text(s,encoding='utf-8')
+
+          p=Path('home-core.js'); s=p.read_text(encoding='utf-8')
+          start="/* Remove the broken Experience tab from both navigation areas. */\ndocument.querySelectorAll('.nav a[href=\"#experience\"],.rail nav a[href=\"#experience\"]').forEach(a=>a.remove());\n\n/* Keep the left-side numbering continuous after removing Experience. */\ndocument.querySelectorAll('.rail nav a').forEach((a,i)=>{\n  const n=a.querySelector('span');\n  if(n) n.textContent=String(i+1).padStart(2,'0');\n});\n\n"
+          s=s.replace(start,'')
+          s=s.replace("#projects-preview .pc img[alt]", "#projects .pc img[alt]")
+          s=s.replace("menu.onclick=()=>nav.classList.toggle('open');", "menu.onclick=()=>{const open=nav.classList.toggle('open');menu.setAttribute('aria-expanded',open?'true':'false');};")
+          s=s.replace("if(nav)nav.classList.remove('open');", "if(nav)nav.classList.remove('open');\n  if(menu)menu.setAttribute('aria-expanded','false');")
+          p.write_text(s,encoding='utf-8')
+      - name: Verify key fixes
+        shell: python
+        run: |
+          from pathlib import Path
+          for name in ('index.html','index-uk.html','index-cz.html'):
+              s=Path(name).read_text(encoding='utf-8')
+              assert 'id="projects"' in s
+              assert 'id="experience"' in s
+              assert 'href="#projects"' in s
+              assert 'href="#experience"' in s
+              assert 'name="description"' in s
+              assert 'hreflang="uk"' in s and 'hreflang="cs"' in s
+              assert 'loading="lazy" decoding="async"' in s
+              assert 'aria-expanded="false"' in s
+          core=Path('home-core.js').read_text(encoding='utf-8')
+          assert 'Remove the broken Experience tab' not in core
+          assert "#projects .pc img[alt]" in core
+          print('portfolio structural polish verified')
+      - name: Commit
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html index-uk.html index-cz.html home.js home-core.js
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Fix portfolio navigation, experience and accessibility"
+          git push
