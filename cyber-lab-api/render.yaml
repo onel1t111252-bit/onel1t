@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: onel1t-cyber-lab-ai
+    runtime: python
+    plan: free
+    rootDir: cyber-lab-api
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-3.1-flash-lite
+      - key: APP_ORIGIN
+        value: https://onel1t111252-bit.github.io
