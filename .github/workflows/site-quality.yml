@@ -88,11 +88,14 @@ jobs:
                   self.has_canonical = False
                   self.has_icon = False
                   self.has_title = False
+                  self.in_title = False
                   self.h1_count = 0
               def handle_starttag(self, tag, attrs):
                   d = dict(attrs)
                   if tag == 'html' and d.get('lang'):
                       self.has_lang = True
+                  if tag == 'title':
+                      self.in_title = True
                   if tag == 'meta' and d.get('name','').lower() == 'viewport':
                       self.has_viewport = True
                   if tag == 'meta' and d.get('name','').lower() == 'description' and d.get('content','').strip():
@@ -120,8 +123,11 @@ jobs:
                       rel = set(d.get('rel','').lower().split())
                       if 'noopener' not in rel:
                           errors.append(f'{self.path}: target="_blank" link missing rel="noopener"')
+              def handle_endtag(self, tag):
+                  if tag == 'title':
+                      self.in_title = False
               def handle_data(self, data):
-                  if self._last_start_tag == 'title' and data.strip():
+                  if self.in_title and data.strip():
                       self.has_title = True
 
           html_files = sorted(root.rglob('*.html'))
