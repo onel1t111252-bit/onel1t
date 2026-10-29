@@ -100,11 +100,12 @@ uiStyle.textContent=`
 /* Content reveal animation restored. */
 .scroll-reveal{
   opacity:0;
-  transform:translateY(20px);
-  transition:opacity .62s cubic-bezier(.2,.7,.2,1),transform .62s cubic-bezier(.2,.7,.2,1);
+  filter:blur(3px);
+  transform:translateY(26px) scale(.99);
+  transition:opacity .78s cubic-bezier(.2,.7,.2,1),transform .78s cubic-bezier(.2,.7,.2,1),filter .78s cubic-bezier(.2,.7,.2,1);
   transition-delay:var(--reveal-delay,0ms);
 }
-.scroll-reveal.is-visible{opacity:1;transform:none}
+.scroll-reveal.is-visible{opacity:1;filter:blur(0);transform:none}
 @media(prefers-reduced-motion:reduce){
   .scroll-reveal{opacity:1!important;transform:none!important;transition:none!important}
   .rail-indicator,.rail nav a{transition:none!important}
@@ -161,7 +162,7 @@ function smoothScrollTo(target){
   const end=Math.max(0,target.getBoundingClientRect().top+start-offset);
   if(prefersReducedMotion){window.scrollTo(0,end);return;}
   const distance=end-start;
-  const duration=Math.min(880,Math.max(500,Math.abs(distance)*.42));
+  const duration=Math.min(1080,Math.max(620,Math.abs(distance)*.48));
   let t0=null;
   const ease=t=>1-Math.pow(1-t,4);
   function step(now){
