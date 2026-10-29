@@ -1,4 +1,4 @@
-name: Deploy improved NEXUS analyst engine
+name: Deploy localized NEXUS analyst results
 
 on:
   push:
@@ -13,32 +13,35 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Load improved local analyst
+      - name: Load localized analyst
         shell: python
         run: |
           from pathlib import Path
           p=Path('projects/nexus/index.html')
           s=p.read_text(encoding='utf-8')
-          s=s.replace('analyst-fix.js?v=20261029-3','analyst-fix.js?v=20261029-4')
-          if 'analyst-fix.js?v=20261029-4' not in s:
-              s=s.replace('</body>','<script src="analyst-fix.js?v=20261029-4"></script>\n</body>',1)
+          for old in ['analyst-fix.js?v=20261029-1','analyst-fix.js?v=20261029-3','analyst-fix.js?v=20261029-4']:
+              s=s.replace(old,'analyst-fix.js?v=20261029-5')
+          if 'analyst-fix.js?v=20261029-5' not in s:
+              s=s.replace('</body>','<script src="analyst-fix.js?v=20261029-5"></script>\n</body>',1)
           p.write_text(s,encoding='utf-8')
       - name: Verify
         shell: python
         run: |
           from pathlib import Path
           s=Path('projects/nexus/index.html').read_text(encoding='utf-8')
-          assert 'id="localAnalyzeBtn" type="button"' in s
-          assert 'analyst-fix.js?v=20261029-4' in s
-          assert Path('projects/nexus/analyst-fix.js').exists()
-          print('improved analyst engine linked')
+          js=Path('projects/nexus/analyst-fix.js').read_text(encoding='utf-8')
+          assert 'analyst-fix.js?v=20261029-5' in s
+          assert "categories:{general:'Загальний'" in js
+          assert "categories:{general:'Obecné'" in js
+          assert "categories:{general:'General'" in js
+          print('localized analyst linked and verified')
       - name: Commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add projects/nexus/index.html
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m "Load improved NEXUS incident analyzer"
+          git commit -m "Load localized NEXUS analyst results"
           git push
 
-# run: 8
+# run: 9
