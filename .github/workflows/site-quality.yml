@@ -64,7 +64,7 @@ jobs:
             echo "python -m py_compile $file"
             python -m py_compile "$file"
           done
-      - name: Audit HTML structure and local references
+      - name: Audit HTML, links, accessibility and performance
         shell: python
         run: |
           from html.parser import HTMLParser
@@ -84,12 +84,25 @@ jobs:
                   self.refs = []
                   self.has_lang = False
                   self.has_viewport = False
+                  self.has_description = False
+                  self.has_canonical = False
+                  self.has_icon = False
+                  self.has_title = False
+                  self.h1_count = 0
               def handle_starttag(self, tag, attrs):
                   d = dict(attrs)
                   if tag == 'html' and d.get('lang'):
                       self.has_lang = True
                   if tag == 'meta' and d.get('name','').lower() == 'viewport':
                       self.has_viewport = True
+                  if tag == 'meta' and d.get('name','').lower() == 'description' and d.get('content','').strip():
+                      self.has_description = True
+                  if tag == 'link' and d.get('rel','').lower() == 'canonical' and d.get('href'):
+                      self.has_canonical = True
+                  if tag == 'link' and 'icon' in d.get('rel','').lower() and d.get('href'):
+                      self.has_icon = True
+                  if tag == 'h1':
+                      self.h1_count += 1
                   ident = d.get('id')
                   if ident:
                       if ident in self.ids:
@@ -100,9 +113,16 @@ jobs:
                       if value:
                           self.refs.append((tag, attr, value))
                   if tag == 'img' and 'alt' not in d:
-                      warnings.append(f'{self.path}: image without alt attribute: {d.get("src", "<inline>")}')
+                      errors.append(f'{self.path}: image without alt attribute: {d.get("src", "<inline>")}')
                   if tag == 'button' and 'type' not in d:
-                      warnings.append(f'{self.path}: button without explicit type: {d.get("id") or d.get("class") or "<button>"}')
+                      errors.append(f'{self.path}: button without explicit type: {d.get("id") or d.get("class") or "<button>"}')
+                  if tag == 'a' and d.get('target','').lower() == '_blank':
+                      rel = set(d.get('rel','').lower().split())
+                      if 'noopener' not in rel:
+                          errors.append(f'{self.path}: target="_blank" link missing rel="noopener"')
+              def handle_data(self, data):
+                  if self._last_start_tag == 'title' and data.strip():
+                      self.has_title = True
 
           html_files = sorted(root.rglob('*.html'))
           for path in html_files:
@@ -117,6 +137,16 @@ jobs:
                   errors.append(f'{parser.path}: missing html[lang]')
               if not parser.has_viewport:
                   errors.append(f'{parser.path}: missing viewport meta')
+              if not parser.has_description:
+                  errors.append(f'{parser.path}: missing non-empty meta description')
+              if not parser.has_canonical:
+                  errors.append(f'{parser.path}: missing canonical link')
+              if not parser.has_icon:
+                  errors.append(f'{parser.path}: missing favicon link')
+              if not parser.has_title:
+                  errors.append(f'{parser.path}: missing non-empty title')
+              if parser.h1_count == 0:
+                  errors.append(f'{parser.path}: no h1 heading')
               for tag, attr, raw in parser.refs:
                   value = raw.strip()
                   if not value or value.startswith(('#','http://','https://','mailto:','tel:','data:','javascript:','//')):
@@ -133,23 +163,34 @@ jobs:
                   if not target.exists():
                       errors.append(f'{parser.path}: missing local {attr}: {raw}')
 
-          # Check fragment links on the three portfolio home pages.
+          # Fragment navigation on localized landing pages must point to real sections.
           for name in ('index.html','index-uk.html','index-cz.html'):
               path = root / name
-              if not path.exists():
-                  continue
               text = path.read_text(encoding='utf-8')
               ids = set(re.findall(r'\bid=["\']([^"\']+)["\']', text))
               for frag in re.findall(r'href=["\']#([^"\']+)["\']', text):
                   if frag and frag not in ids:
                       errors.append(f'{name}: fragment #{frag} has no matching id')
 
-          # Flag unusually large images so performance regressions are visible.
+          # Warn only about large images that are still referenced by shipped HTML/CSS/JS.
+          corpus = '\n'.join(
+              p.read_text(encoding='utf-8', errors='ignore')
+              for pattern in ('*.html','*.css','*.js')
+              for p in root.rglob(pattern)
+          )
           for ext in ('*.png','*.jpg','*.jpeg','*.webp'):
               for image in root.rglob(ext):
                   size = image.stat().st_size
-                  if size > 2_000_000:
-                      warnings.append(f'{image.relative_to(root)}: large image {size/1_000_000:.1f} MB')
+                  rel = image.relative_to(root).as_posix()
+                  if size > 2_000_000 and (rel in corpus or image.name in corpus):
+                      warnings.append(f'{rel}: referenced image is {size/1_000_000:.1f} MB')
+
+          # Temporary repair workflows must never remain after a patch pass.
+          workflows = root / '.github' / 'workflows'
+          if workflows.exists():
+              for wf in workflows.glob('*.yml'):
+                  if wf.name != 'site-quality.yml':
+                      errors.append(f'Unexpected temporary workflow remains: {wf.relative_to(root)}')
 
           for msg in warnings:
               print(f'::warning::{msg}')
@@ -157,4 +198,4 @@ jobs:
               for msg in errors:
                   print(f'::error::{msg}')
               sys.exit(1)
-          print(f'Audited {len(html_files)} HTML files successfully.')
+          print(f'Audited {len(html_files)} HTML files successfully with {len(warnings)} performance warnings.')
