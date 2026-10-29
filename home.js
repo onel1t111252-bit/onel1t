@@ -1,5 +1,5 @@
 (()=>{
-  const version='smooth-sections-20261029-2';
+  const version='quality-pass-20261029-1';
   const addIcon=(rel,href,type)=>{
     let link=document.querySelector(`link[rel="${rel}"]`);
     if(!link){link=document.createElement('link');link.rel=rel;document.head.appendChild(link);}
@@ -14,8 +14,8 @@
   const projectCards=document.querySelectorAll('#projects .pgrid .pc');
   const cyberImg=projectCards[0]?.querySelector('.pi-img img');
   const nexusImg=projectCards[1]?.querySelector('.pi-img img');
-  if(cyberImg) cyberImg.src='1793298041137.jpg';
-  if(nexusImg) nexusImg.src='1793298027511.jpg';
+  if(cyberImg) cyberImg.src='assets/optimized/cyber-lab-cover.webp';
+  if(nexusImg) nexusImg.src='assets/optimized/nexus-cover.webp';
 
   const core=document.createElement('script');
   core.src=`./home-core.js?v=${version}`;
