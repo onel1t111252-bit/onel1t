@@ -3,6 +3,9 @@ const menu=document.getElementById('menu');
 const rail=document.querySelector('.rail');
 const railNav=document.querySelector('.rail nav');
 
+/* Share the selected homepage language with every project. */
+try{const pageLang=(document.documentElement.lang||'en').toLowerCase();localStorage.setItem('onel1t-lang',pageLang==='uk'?'ua':pageLang==='cs'?'cz':'en')}catch(_){}
+
 /* Keep the nickname exactly as requested everywhere it is used as branding. */
 const exactNicknameHTML='<span class="nick-text">Onel</span><span class="nick-one">1</span><span class="nick-text">t</span>';
 document.querySelectorAll('.brand,.hero h1').forEach(el=>{el.innerHTML=exactNicknameHTML;});
@@ -231,25 +234,7 @@ if(prefersReducedMotion||!('IntersectionObserver' in window)){
   revealTargets.forEach(el=>revealObserver.observe(el));
 }
 
-/* Project imagery. */
-const featuredProjectImages={
-  'C++ Console Toolkit':'Gemini_Generated_Image_wnnxk0wnnxk0wnnx (2).jpg',
-  'Python Security Utilities':'Gemini_Generated_Image_wnnxk0wnnxk0wnnx (1).jpg',
-  'Onel1t Portfolio':'Gemini_Generated_Image_wnnxk0wnnxk0wnnx.jpg'
-};
-const projectsSectionImages={
-  'C++ Console Toolkit':'Gemini_Generated_Image_217vl4217vl4217v (5).jpg?v=original-projects-2244',
-  'Python Security Utilities':'Gemini_Generated_Image_217vl4217vl4217v (3).jpg?v=original-projects-2244',
-  'Onel1t Portfolio':'Gemini_Generated_Image_217vl4217vl4217v (4).jpg?v=original-projects-2244',
-  'Secure Network Lab':'Gemini_Generated_Image_217vl4217vl4217v (2).jpg?v=original-projects-2244',
-  'Arduino Radar':'Gemini_Generated_Image_217vl4217vl4217v.jpg?v=original-projects-2244'
-};
-document.querySelectorAll('#projects .pc img[alt]').forEach(img=>{
-  const next=featuredProjectImages[img.alt];if(next)img.src=next;
-});
-document.querySelectorAll('#projects .pc img[alt]').forEach(img=>{
-  const next=projectsSectionImages[img.alt];if(next)img.src=next;
-});
+/* Project covers are defined by the page markup and home.js. */
 
 requestAnimationFrame(()=>{
   updateScrollSpy();
