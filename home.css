@@ -123,3 +123,6 @@ html body .hero .hero-c h1 .nick-one{
   text-shadow:3px 4px 0 #000,0 0 18px rgba(229,28,42,.42)!important;
 }
 @media(max-width:900px){html body .hero .hero-c h1{font-size:72px!important}}
+
+/* Accessible keyboard focus */
+:where(a,button,input,select,textarea):focus-visible{outline:2px solid #ff4056;outline-offset:3px}

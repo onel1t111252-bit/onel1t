@@ -17,6 +17,12 @@ if(menu&&nav){
   menu.onclick=()=>{const open=nav.classList.toggle('open');menu.setAttribute('aria-expanded',open?'true':'false');};
 }
 
+/* Mobile navigation keyboard/outside-click behavior. */
+if(menu&&nav){
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&nav.classList.contains('open')){nav.classList.remove('open');menu.setAttribute('aria-expanded','false');menu.focus();}});
+  document.addEventListener('click',e=>{if(nav.classList.contains('open')&&!nav.contains(e.target)&&!menu.contains(e.target)){nav.classList.remove('open');menu.setAttribute('aria-expanded','false');}});
+}
+
 /* Readable hand-painted font: keeps the rough style but includes a clear numeral 1. */
 if(!document.getElementById('reference-brush-font')){
   const fontLink=document.createElement('link');
