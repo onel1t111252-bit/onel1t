@@ -89,11 +89,28 @@ async def chat(payload: ChatRequest, request: Request):
         async with httpx.AsyncClient(timeout=35) as client:
             response = await client.post(url, params={"key": api_key}, json=body)
         if response.status_code == 429:
-            raise HTTPException(status_code=429, detail="The AI service reached its current free-tier limit. Please try again later.")
-        if response.status_code in (400, 401, 403, 404):
-            # Avoid returning provider response bodies or secret-related details to visitors.
-            raise HTTPException(status_code=502, detail="Gemini rejected the request. Check the configured model and API key in the server settings.")
-        response.raise_for_status()
+            raise HTTPException(status_code=429, detail="The Gemini API quota or rate limit was reached. Wait and try again later.")
+        if response.is_error:
+            # Log Google's diagnostic message, never the API key or request URL.
+            try:
+                provider_data = response.json()
+                provider_message = str(provider_data.get("error", {}).get("message", ""))
+                provider_status = str(provider_data.get("error", {}).get("status", ""))
+            except (ValueError, AttributeError):
+                provider_message, provider_status = "", ""
+            safe_message = (provider_message + " " + provider_status).lower()
+            print(f"Gemini API error: HTTP {response.status_code}; status={provider_status}; message={provider_message[:500]}")
+            if response.status_code in (401, 403) or "api key not valid" in safe_message or "invalid api key" in safe_message or "reported as leaked" in safe_message:
+                detail = "Gemini API key is invalid, revoked, blocked, or lacks permission. Create a new key in Google AI Studio and update GEMINI_API_KEY in Render Environment."
+            elif response.status_code == 404 or ("model" in safe_message and ("not found" in safe_message or "unsupported" in safe_message)):
+                detail = f"Gemini model '{GEMINI_MODEL}' was not found or is unavailable to this key. In Render Environment set GEMINI_MODEL to gemini-3.1-flash-lite, then redeploy."
+            elif "quota" in safe_message or "billing" in safe_message or "resource_exhausted" in safe_message:
+                detail = "Gemini quota, billing, or free-tier access blocked this request. Check usage and API access in Google AI Studio."
+            elif response.status_code == 400:
+                detail = "Gemini rejected the request parameters. Check the Render logs for the diagnostic message and verify GEMINI_MODEL."
+            else:
+                detail = f"Gemini API returned HTTP {response.status_code}. Check the Render logs for details."
+            raise HTTPException(status_code=502, detail=detail)
         data = response.json()
         answer = "".join(
             part.get("text", "")
