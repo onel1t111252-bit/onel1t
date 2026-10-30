@@ -1,0 +1,53 @@
+name: Patch SOC answer localization
+on:
+  push:
+    paths:
+      - '.github/workflows/patch-soc-answer-localization.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Patch SOC answer prefixes safely
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          loc = Path('projects/cyber-lab/localization-complete.js')
+          s = loc.read_text(encoding='utf-8')
+
+          old = "  if(base.startsWith('HOST: ')||base.startsWith('PROTOCOL: '))return translateMultiline(base,l);\n  return trExact(base,l);"
+          new = "  if((m=base.match(/^([A-C]\\.\\s*)(.+)$/)))return m[1]+trExact(m[2],l);\n  if(base.startsWith('HOST: ')||base.startsWith('PROTOCOL: '))return translateMultiline(base,l);\n  return trExact(base,l);"
+          if old not in s:
+              raise SystemExit('trDynamic anchor not found')
+          s = s.replace(old, new, 1)
+
+          old_rec = "||/^Question \\d+$/.test(base)||/^Added .+ at .+\\. Connections shown are illustrative; no real packets are sent\\.$/.test(base)"
+          new_rec = "||/^Question \\d+$/.test(base)||/^[A-C]\\.\\s+/.test(base)||/^Added .+ at .+\\. Connections shown are illustrative; no real packets are sent\\.$/.test(base)"
+          if old_rec not in s:
+              raise SystemExit('recognized anchor not found')
+          s = s.replace(old_rec, new_rec, 1)
+          loc.write_text(s, encoding='utf-8')
+
+          idx = Path('projects/cyber-lab/index.html')
+          h = idx.read_text(encoding='utf-8')
+          h2, n = re.subn(r'localization-complete\.js(?:\?v=[^"\']+)?', 'localization-complete.js?v=20261030-socanswers2', h)
+          if n < 1:
+              raise SystemExit('localization script reference not found')
+          idx.write_text(h2, encoding='utf-8')
+
+          wf = Path('.github/workflows/patch-soc-answer-localization.yml')
+          wf.unlink()
+          PY
+          node --check projects/cyber-lab/localization-complete.js
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Fix SOC answer localization for UA and CZ'
+          git push origin HEAD:main
