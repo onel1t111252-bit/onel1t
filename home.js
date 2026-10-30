@@ -1,5 +1,5 @@
 (()=>{
-  const version='aegis-launch-20261030-1';
+  const version='aegis-i18n-20261030-2';
   const addIcon=(rel,href,type)=>{
     let link=document.querySelector(`link[rel="${rel}"]`);
     if(!link){link=document.createElement('link');link.rel=rel;document.head.appendChild(link);}
