@@ -1,5 +1,5 @@
 (()=>{
-  const version='interactive-20261030-1';
+  const version='interactive-20261030-2';
   const addIcon=(rel,href,type)=>{
     let link=document.querySelector(`link[rel="${rel}"]`);
     if(!link){link=document.createElement('link');link.rel=rel;document.head.appendChild(link);}
@@ -15,6 +15,7 @@
   addCss('./home-10.css');
   addCss('./home-10-fix.css');
   addCss('./home-11.css');
+  addCss('./home-11-fix.css');
 
   const projectCards=document.querySelectorAll('#projects .pgrid .pc');
   const cyberImg=projectCards[0]?.querySelector('.pi-img img');
