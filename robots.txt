@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://onel1t111252-bit.github.io/onel1t/sitemap.xml
