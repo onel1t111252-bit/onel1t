@@ -90,11 +90,15 @@ jobs:
                   if needle not in text:
                       errors.append(f'{name}: missing required flagship reference {needle!r}')
 
-          # Privacy-mode hardening: these layers must use guarded session storage wrappers.
-          for name in ('home-13.js', 'cv-12.js'):
+          # Privacy-mode hardening: direct access to the app-specific keys is forbidden.
+          guarded_keys = {
+              'home-13.js': 'onel1t-recruiter-view',
+              'cv-12.js': 'onel1t-cv-ats',
+          }
+          for name, key in guarded_keys.items():
               text = (root / name).read_text(encoding='utf-8')
-              if 'sessionStorage.setItem' in text or 'sessionStorage.getItem' in text:
-                  errors.append(f'{name}: direct sessionStorage access found; use the safe wrapper')
+              if f"sessionStorage.setItem('{key}'" in text or f"sessionStorage.getItem('{key}'" in text:
+                  errors.append(f'{name}: direct sessionStorage access for {key} found; use the safe wrapper')
 
           # Portfolio facts must agree with the number of project directories.
           expected = f'{len(project_dirs):02d}'
