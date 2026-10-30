@@ -1,0 +1,39 @@
+name: Apply Cyber Lab SOC localization loader
+
+on:
+  push:
+    paths:
+      - '.github/workflows/patch-cyber-soc-localization.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch Cyber Lab script loading
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('projects/cyber-lab/index.html')
+          s=p.read_text(encoding='utf-8')
+          old='<script src="localization-complete.js?v=20261029-1"></script>'
+          new='<script src="localization-complete.js?v=20261030-4"></script>\n<script src="soc-localization-force.js?v=20261030-1"></script>'
+          if old in s:
+              s=s.replace(old,new,1)
+          elif 'soc-localization-force.js?v=20261030-1' not in s:
+              raise SystemExit('Expected localization loader was not found')
+          p.write_text(s,encoding='utf-8')
+          assert 'localization-complete.js?v=20261030-4' in s
+          assert 'soc-localization-force.js?v=20261030-1' in s
+          PY
+      - name: Commit loader update and remove one-time workflow
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/patch-cyber-soc-localization.yml
+          git add projects/cyber-lab/index.html
+          git commit -m 'Load forced Cyber Lab SOC localization'
+          git push
