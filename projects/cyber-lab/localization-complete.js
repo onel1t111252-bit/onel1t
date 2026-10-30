@@ -76,6 +76,7 @@ function trDynamic(base,l){
   if((m=base.match(/^Question (\d+)$/)))return l==='uk'?`Запитання ${m[1]}`:`Otázka ${m[1]}`;
   if((m=base.match(/^Added (.+) at (.+)\. Connections shown are illustrative; no real packets are sent\.$/))){const d=trWord(m[1],l);return l==='uk'?`Додано ${d} з адресою ${m[2]}. Показані з’єднання є ілюстративними; реальні пакети не надсилаються.`:`Přidáno zařízení ${d} s adresou ${m[2]}. Zobrazená spojení jsou pouze ilustrační; žádné skutečné pakety se neodesílají.`;}
   if((m=base.match(/^Added a simulated (.+)$/))){const d=trWord(m[1],l);return l==='uk'?`Додано змодельований пристрій: ${d}`:`Přidáno simulované zařízení: ${d}`;}
+  if((m=base.match(/^([A-C]\.\s*)(.+)$/)))return m[1]+trExact(m[2],l);
   if(base.startsWith('HOST: ')||base.startsWith('PROTOCOL: '))return translateMultiline(base,l);
   return trExact(base,l);
 }
@@ -91,7 +92,7 @@ function translateMultiline(base,l){
   }).join('\n');
 }
 
-function recognized(base){return !!T[base]||/^(\d+)% complete$/.test(base)||/^(\d+) \/ (\d+) complete$/.test(base)||/^(\d+) DEVICES$/.test(base)||/^LESSON \d+ · /.test(base)||/^Question \d+$/.test(base)||/^Added .+ at .+\. Connections shown are illustrative; no real packets are sent\.$/.test(base)||/^Added a simulated /.test(base)||base.startsWith('HOST: ')||base.startsWith('PROTOCOL: ')||base.includes('INDICATORS TO REVIEW (');}
+function recognized(base){return !!T[base]||/^(\d+)% complete$/.test(base)||/^(\d+) \/ (\d+) complete$/.test(base)||/^(\d+) DEVICES$/.test(base)||/^LESSON \d+ · /.test(base)||/^Question \d+$/.test(base)||/^[A-C]\.\s+/.test(base)||/^Added .+ at .+\. Connections shown are illustrative; no real packets are sent\.$/.test(base)||/^Added a simulated /.test(base)||base.startsWith('HOST: ')||base.startsWith('PROTOCOL: ')||base.includes('INDICATORS TO REVIEW (');}
 
 function translateTextNode(node){
   if(!node||node.nodeType!==3)return;
