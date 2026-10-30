@@ -1,5 +1,5 @@
 (()=>{
-  const version='ultimate-20261030-1';
+  const version='ultimate-20261030-2';
   const addIcon=(rel,href,type)=>{
     let link=document.querySelector(`link[rel="${rel}"]`);
     if(!link){link=document.createElement('link');link.rel=rel;document.head.appendChild(link);}
@@ -19,6 +19,11 @@
   ultimateCss.rel='stylesheet';
   ultimateCss.href=`./home-10.css?v=${version}`;
   document.head.appendChild(ultimateCss);
+
+  const ultimateFixCss=document.createElement('link');
+  ultimateFixCss.rel='stylesheet';
+  ultimateFixCss.href=`./home-10-fix.css?v=${version}`;
+  document.head.appendChild(ultimateFixCss);
 
   const projectCards=document.querySelectorAll('#projects .pgrid .pc');
   const cyberImg=projectCards[0]?.querySelector('.pi-img img');
