@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#050608">
-  <meta name="description" content="ONEL1T AEGIS — a local-first defensive security operations simulation for assets, incidents, risks, playbooks and reports.">
+  <meta name="description" content="ONEL1T AEGIS — a local-first defensive security operations simulation for incidents, assets, risks, response playbooks and analyst reporting.">
   <title>ONEL1T AEGIS | Defensive Security Operations Platform</title>
   <link rel="canonical" href="https://onel1t111252-bit.github.io/onel1t/projects/aegis/index.html">
   <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
@@ -49,7 +49,7 @@
             <button type="button" data-lang="cs">CZ</button>
           </div>
           <button type="button" class="ghost" id="resetLab" data-i18n="reset">Reset lab</button>
-          <button type="button" class="primary" id="loadDrill" data-i18n="loadDrill">Load drill</button>
+          <button type="button" class="primary" id="loadDrill" data-i18n="loadDrill">Load training scenario</button>
         </div>
       </header>
 
@@ -80,11 +80,11 @@
 
         <div class="overview-grid">
           <article class="panel recent-panel">
-            <div class="panel-head"><div><small data-i18n="liveQueue">LIVE QUEUE</small><h3 data-i18n="recentIncidents">Recent incidents</h3></div><button type="button" class="text-btn" data-jump="incidents" data-i18n="viewAll">VIEW ALL ↗</button></div>
+            <div class="panel-head"><div><small data-i18n="liveQueue">CURRENT QUEUE</small><h3 data-i18n="recentIncidents">Recent incidents</h3></div><button type="button" class="text-btn" data-jump="incidents" data-i18n="viewAll">VIEW ALL ↗</button></div>
             <div id="recentIncidents" class="incident-list compact"></div>
           </article>
           <article class="panel posture-panel">
-            <div class="panel-head"><div><small data-i18n="posture">POSTURE</small><h3 data-i18n="controlCoverage">Control coverage</h3></div><span class="status-dot" data-i18n="synthetic">SYNTHETIC</span></div>
+            <div class="panel-head"><div><small data-i18n="posture">SECURITY POSTURE</small><h3 data-i18n="controlCoverage">Control coverage</h3></div><span class="status-dot" data-i18n="synthetic">SYNTHETIC DATA</span></div>
             <div class="coverage-list" id="coverageList"></div>
           </article>
         </div>
@@ -94,7 +94,7 @@
           <div class="workflow-strip">
             <div><span>01</span><b data-i18n="wfObserve">Observe</b><p data-i18n="wfObserveText">Synthetic signals enter the queue.</p></div>
             <i>→</i><div><span>02</span><b data-i18n="wfContext">Context</b><p data-i18n="wfContextText">Map events to affected assets.</p></div>
-            <i>→</i><div><span>03</span><b data-i18n="wfDecide">Decide</b><p data-i18n="wfDecideText">Prioritize and select a response path.</p></div>
+            <i>→</i><div><span>03</span><b data-i18n="wfDecide">Decide</b><p data-i18n="wfDecideText">Prioritize and select a safe response path.</p></div>
             <i>→</i><div><span>04</span><b data-i18n="wfRecord">Record</b><p data-i18n="wfRecordText">Capture actions, status and lessons learned.</p></div>
           </div>
         </article>
@@ -103,12 +103,9 @@
       <section class="view" data-view-panel="incidents">
         <div class="section-head">
           <div><span class="eyebrow" data-i18n="incidentDesk">INCIDENT DESK</span><h2 data-i18n="triageQueue">Triage queue</h2><p data-i18n="triageCopy">Prioritize synthetic events, review asset context and document a defensive disposition.</p></div>
-          <div class="filters" id="incidentFilters"><button type="button" class="active" data-filter="all" data-i18n="all">All</button><button type="button" data-filter="open" data-i18n="open">Open</button><button type="button" data-filter="high" data-i18n="high">High</button><button type="button" data-filter="resolved" data-i18n="resolved">Resolved</button></div>
+          <div class="filters" id="incidentFilters"><button type="button" class="active" data-filter="all">All</button><button type="button" data-filter="open">Open</button><button type="button" data-filter="high">High priority</button><button type="button" data-filter="resolved">Resolved</button></div>
         </div>
-        <div class="incident-workspace">
-          <div class="incident-list" id="incidentList"></div>
-          <article class="panel incident-detail" id="incidentDetail"></article>
-        </div>
+        <div class="incident-workspace"><div class="incident-list" id="incidentList"></div><article class="panel incident-detail" id="incidentDetail"></article></div>
       </section>
 
       <section class="view" data-view-panel="assets">
@@ -135,6 +132,6 @@
       </section>
     </main>
   </div>
-  <script src="app.js?v=aegis-i18n-20261030-2"></script>
+  <script src="app.js?v=aegis-localization-20261030-3"></script>
 </body>
 </html>
