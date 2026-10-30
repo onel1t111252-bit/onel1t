@@ -34,7 +34,7 @@ const T={
   contactLabel:'KONTAKT',contactTitle:'Zajímá vás technická práce za ONEL1T?',contactText:'Prohlédněte si portfolio, zdrojový kód nebo mě kontaktujte přímo.',email:'EMAIL',github:'GITHUB',copy:'KOPÍROVAT EMAIL',copied:'ZKOPÍROVÁNO'
  }
 }[L];
-const email='maxymdymchuk@gmail.com';
+const email='onel1t111252@gmail.com';
 
 /* scroll progress */
 const progress=document.createElement('div');progress.className='cv-progress';progress.setAttribute('aria-hidden','true');document.body.prepend(progress);
