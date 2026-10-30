@@ -1,0 +1,5 @@
+/* Final responsive collision pass for the ONEL1T system HUD. */
+.system-hud{right:18px;width:min(290px,28vw)}
+@media(max-width:1180px){.system-hud{position:absolute;left:auto;right:16px;top:22px;bottom:auto;width:220px;transform:none;margin:0}}
+@media(max-width:900px){.system-hud{position:absolute;left:16px;right:16px;top:14px;bottom:auto;width:auto;transform:none;margin:0}.hud-grid{grid-template-columns:1fr 1fr}.hud-grid>div{min-height:58px}.hud-grid>div:nth-child(odd){border-right:1px solid rgba(255,255,255,.07)!important}.hud-grid>div:nth-child(-n+2){border-bottom:1px solid rgba(255,255,255,.07)!important}}
+@media(max-width:520px){.system-hud{left:10px;right:10px;top:10px}.hud-head{height:34px}.hud-grid small{font-size:6px;margin-bottom:5px}.hud-grid strong{font-size:8px}.hud-grid>div{padding:8px 9px;min-height:52px}}
