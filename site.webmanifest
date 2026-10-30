@@ -1,0 +1,13 @@
+{
+  "name": "Onel1t — Cybersecurity Portfolio",
+  "short_name": "Onel1t",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#030303",
+  "theme_color": "#030303",
+  "description": "Maksym Dymchuk — cybersecurity, networking and software development portfolio.",
+  "icons": [
+    {"src":"favicon.png","sizes":"192x192","type":"image/png"},
+    {"src":"favicon.png","sizes":"512x512","type":"image/png"}
+  ]
+}
