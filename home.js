@@ -1,5 +1,5 @@
 (()=>{
-  const version='career-20261030-1';
+  const version='proof-20261030-1';
   const addIcon=(rel,href,type)=>{
     let link=document.querySelector(`link[rel="${rel}"]`);
     if(!link){link=document.createElement('link');link.rel=rel;document.head.appendChild(link);}
@@ -17,6 +17,7 @@
   addCss('./home-11.css');
   addCss('./home-11-fix.css');
   addCss('./home-12.css');
+  addCss('./home-13.css');
 
   const projectCards=document.querySelectorAll('#projects .pgrid .pc');
   const cyberImg=projectCards[0]?.querySelector('.pi-img img');
@@ -29,7 +30,9 @@
     loadScript('./home-premium.js',()=>{
       loadScript('./home-10.js',()=>{
         loadScript('./home-11.js',()=>{
-          loadScript('./home-12.js');
+          loadScript('./home-12.js',()=>{
+            loadScript('./home-13.js');
+          });
         });
       });
     });
