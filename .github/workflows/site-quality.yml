@@ -14,6 +14,104 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+
+      - name: Check portfolio consistency
+        shell: python
+        run: |
+          from pathlib import Path
+          from urllib.parse import urlparse, unquote
+          import sys
+          import xml.etree.ElementTree as ET
+
+          root = Path('.').resolve()
+          errors = []
+
+          # Contact regression guard.
+          text_files = []
+          for pattern in ('*.html', '*.css', '*.js', '*.md', '*.txt', '*.xml'):
+              text_files.extend(root.rglob(pattern))
+          corpus = '\n'.join(p.read_text(encoding='utf-8', errors='ignore') for p in text_files)
+          if 'maxymdymchuk@gmail.com' in corpus:
+              errors.append('Old email address is still present in shipped content.')
+
+          # Every real project directory must be directly openable and indexed.
+          projects_root = root / 'projects'
+          project_dirs = sorted(d for d in projects_root.iterdir() if d.is_dir())
+          for project in project_dirs:
+              if not (project / 'index.html').exists():
+                  errors.append(f'{project.relative_to(root)}: missing index.html')
+
+          # Sitemap URLs must resolve to repository files, and every project landing page must be listed.
+          sitemap = root / 'sitemap.xml'
+          if not sitemap.exists():
+              errors.append('Missing sitemap.xml')
+          else:
+              try:
+                  tree = ET.parse(sitemap)
+                  ns = {'sm': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
+                  locs = [x.text.strip() for x in tree.findall('.//sm:loc', ns) if x.text and x.text.strip()]
+              except Exception as exc:
+                  locs = []
+                  errors.append(f'sitemap.xml parse error: {exc}')
+              local_paths = set()
+              for loc in locs:
+                  parsed = urlparse(loc)
+                  path = unquote(parsed.path)
+                  prefix = '/onel1t/'
+                  if path == '/onel1t/':
+                      local = root / 'index.html'
+                      local_paths.add('index.html')
+                  elif path.startswith(prefix):
+                      rel = path[len(prefix):]
+                      local = root / rel
+                      local_paths.add(rel)
+                  else:
+                      continue
+                  if not local.exists():
+                      errors.append(f'sitemap.xml points to missing file: {loc}')
+              for project in project_dirs:
+                  rel = (project / 'index.html').relative_to(root).as_posix()
+                  if rel not in local_paths:
+                      errors.append(f'sitemap.xml missing project landing page: {rel}')
+
+          # Flagship/current-state regression guards.
+          required = {
+              'home-13.js': ('ONEL1T AEGIS', 'projects/aegis/index.html'),
+              'home-15.js': ('ONEL1T AEGIS', 'projects/aegis/index.html'),
+              'cv-12.js': ('ONEL1T AEGIS', 'projects/aegis/index.html'),
+          }
+          for name, needles in required.items():
+              path = root / name
+              if not path.exists():
+                  errors.append(f'Missing required file: {name}')
+                  continue
+              text = path.read_text(encoding='utf-8')
+              for needle in needles:
+                  if needle not in text:
+                      errors.append(f'{name}: missing required flagship reference {needle!r}')
+
+          # Privacy-mode hardening: these layers must use guarded session storage wrappers.
+          for name in ('home-13.js', 'cv-12.js'):
+              text = (root / name).read_text(encoding='utf-8')
+              if 'sessionStorage.setItem' in text or 'sessionStorage.getItem' in text:
+                  errors.append(f'{name}: direct sessionStorage access found; use the safe wrapper')
+
+          # Portfolio facts must agree with the number of project directories.
+          expected = f'{len(project_dirs):02d}'
+          home14 = (root / 'home-14.js').read_text(encoding='utf-8')
+          if f"['{expected}','PORTFOLIO PROJECTS']" not in home14:
+              errors.append(f'home-14.js: English project count is not {expected}')
+          if f"['{expected}','ПРОЄКТІВ У ПОРТФОЛІО']" not in home14:
+              errors.append(f'home-14.js: Ukrainian project count is not {expected}')
+          if f"['{expected}','PROJEKTŮ V PORTFOLIU']" not in home14:
+              errors.append(f'home-14.js: Czech project count is not {expected}')
+
+          if errors:
+              for msg in errors:
+                  print(f'::error::{msg}')
+              sys.exit(1)
+          print(f'Portfolio consistency OK: {len(project_dirs)} project directories validated.')
+
       - name: Check JavaScript syntax
         shell: bash
         run: |
