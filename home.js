@@ -1,5 +1,5 @@
 (()=>{
-  const version='final-polish-20261030-1';
+  const version='aegis-launch-20261030-1';
   const addIcon=(rel,href,type)=>{
     let link=document.querySelector(`link[rel="${rel}"]`);
     if(!link){link=document.createElement('link');link.rel=rel;document.head.appendChild(link);}
@@ -19,6 +19,7 @@
   addCss('./home-12.css');
   addCss('./home-13.css');
   addCss('./home-14.css');
+  addCss('./home-15.css');
 
   const projectCards=document.querySelectorAll('#projects .pgrid .pc');
   const cyberImg=projectCards[0]?.querySelector('.pi-img img');
@@ -33,7 +34,9 @@
         loadScript('./home-11.js',()=>{
           loadScript('./home-12.js',()=>{
             loadScript('./home-13.js',()=>{
-              loadScript('./home-14.js');
+              loadScript('./home-14.js',()=>{
+                loadScript('./home-15.js');
+              });
             });
           });
         });
