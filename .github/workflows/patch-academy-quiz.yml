@@ -1,0 +1,40 @@
+name: Patch Academy quiz localization
+on:
+  push:
+    paths:
+      - '.github/workflows/patch-academy-quiz.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch only Academy quiz questions
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('projects/cyber-lab/localization-complete.js')
+          s=p.read_text(encoding='utf-8')
+          reps={
+          "'Which protocol translates domain names into IP addresses?':['Який протокол перетворює доменні імена на IP-адреси?','Který protokol převádí názvy domén na IP adresy?']":"'1. Which protocol translates domain names into IP addresses?':['1. Який протокол перетворює доменні імена на IP-адреси?','1. Který protokol převádí názvy domén na IP adresy?']",
+          "'What is the safest first step with a suspicious attachment?':['Який найбезпечніший перший крок із підозрілим вкладенням?','Jaký je nejbezpečnější první krok u podezřelé přílohy?']":"'2. What is the safest first step with a suspicious attachment?':['2. Який найбезпечніший перший крок із підозрілим вкладенням?','2. Jaký je nejbezpečnější první krok u podezřelé přílohy?']",
+          "'Why is multi-factor authentication useful?':['Чому багатофакторна автентифікація корисна?','Proč je vícefaktorové ověřování užitečné?']":"'3. Why is multi-factor authentication useful?':['3. Чому багатофакторна автентифікація корисна?','3. Proč je vícefaktorové ověřování užitečné?']",
+          "'An alert is not yet proof of compromise. What should an analyst do?':['Сповіщення ще не є доказом компрометації. Що має зробити аналітик?','Upozornění ještě není důkazem kompromitace. Co má analytik udělat?']":"'4. An alert is not yet proof of compromise. What should an analyst do?':['4. Сповіщення ще не є доказом компрометації. Що має зробити аналітик?','4. Upozornění ještě není důkazem kompromitace. Co má analytik udělat?']"
+          }
+          for old,new in reps.items():
+              if old not in s:
+                  raise SystemExit('Missing expected quiz translation: '+old[:80])
+              s=s.replace(old,new,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit patch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add projects/cyber-lab/localization-complete.js
+          git diff --cached --quiet && exit 0
+          git commit -m 'Fix Cyber Academy quiz question localization'
+          git push
