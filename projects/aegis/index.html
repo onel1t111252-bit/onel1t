@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#050608">
+  <meta name="description" content="ONEL1T AEGIS — a local-first defensive security operations simulation for assets, incidents, risks, playbooks and reports.">
+  <title>ONEL1T AEGIS | Defensive Security Operations Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=aegis-20261030-1">
+</head>
+<body>
+  <div class="aegis-shell">
+    <aside class="sidebar">
+      <a class="brand" href="../../index.html" aria-label="Back to ONEL1T portfolio">
+        <span class="brand-mark">A</span>
+        <span><b>ONEL1T</b><em>AEGIS</em></span>
+      </a>
+      <div class="system-state"><i></i><span data-i18n="localMode">LOCAL DEFENSE LAB</span></div>
+      <nav class="side-nav" aria-label="AEGIS sections">
+        <button class="active" data-view="overview"><span>01</span><b data-i18n="navOverview">Overview</b></button>
+        <button data-view="incidents"><span>02</span><b data-i18n="navIncidents">Incidents</b></button>
+        <button data-view="assets"><span>03</span><b data-i18n="navAssets">Assets</b></button>
+        <button data-view="risk"><span>04</span><b data-i18n="navRisk">Risk</b></button>
+        <button data-view="playbooks"><span>05</span><b data-i18n="navPlaybooks">Playbooks</b></button>
+        <button data-view="reports"><span>06</span><b data-i18n="navReports">Reports</b></button>
+      </nav>
+      <div class="sidebar-footer">
+        <small data-i18n="safeLab">SAFE SIMULATION</small>
+        <p data-i18n="safeCopy">Synthetic data only. No live scanning, exploitation or external target interaction.</p>
+        <a href="../../index.html" data-i18n="portfolio">← Portfolio</a>
+      </div>
+    </aside>
+
+    <main class="workspace">
+      <header class="topbar">
+        <div>
+          <span class="eyebrow" data-i18n="eyebrow">DEFENSIVE SECURITY OPERATIONS</span>
+          <h1 id="viewTitle">Operations Overview</h1>
+        </div>
+        <div class="top-actions">
+          <div class="lang-switch" role="group" aria-label="Language">
+            <button class="active" data-lang="en">EN</button>
+            <button data-lang="uk">UA</button>
+            <button data-lang="cs">CZ</button>
+          </div>
+          <button class="ghost" id="resetLab" data-i18n="reset">Reset lab</button>
+          <button class="primary" id="loadDrill" data-i18n="loadDrill">Load drill</button>
+        </div>
+      </header>
+
+      <section class="view active" data-view-panel="overview">
+        <div class="hero-panel">
+          <div class="hero-copy">
+            <div class="hero-kicker"><span>AEGIS / 01</span><b data-i18n="heroKicker">Unified defensive workspace</b></div>
+            <h2 data-i18n="heroTitle">See the system. Triage the signal. Document the response.</h2>
+            <p data-i18n="heroText">AEGIS connects synthetic incidents, asset context, risk decisions, response playbooks and reporting in one local-first training environment.</p>
+            <div class="hero-actions">
+              <button class="primary" data-jump="incidents" data-i18n="reviewIncidents">Review incidents</button>
+              <button class="ghost" data-jump="playbooks" data-i18n="openPlaybooks">Open playbooks</button>
+            </div>
+          </div>
+          <div class="signal-orbit" aria-hidden="true">
+            <div class="orbit-ring r1"></div><div class="orbit-ring r2"></div><div class="orbit-ring r3"></div>
+            <span class="orbit-core">AEGIS</span>
+            <span class="node n1">SOC</span><span class="node n2">ASSET</span><span class="node n3">RISK</span><span class="node n4">IR</span>
+          </div>
+        </div>
+
+        <div class="metric-grid">
+          <article><small data-i18n="mOpen">OPEN INCIDENTS</small><strong id="metricOpen">0</strong><span data-i18n="mOpenSub">Need analyst review</span></article>
+          <article><small data-i18n="mHigh">HIGH PRIORITY</small><strong id="metricHigh">0</strong><span data-i18n="mHighSub">Synthetic high-severity events</span></article>
+          <article><small data-i18n="mAssets">ASSETS</small><strong id="metricAssets">0</strong><span data-i18n="mAssetsSub">Tracked lab systems</span></article>
+          <article><small data-i18n="mRisk">RISK ITEMS</small><strong id="metricRisk">0</strong><span data-i18n="mRiskSub">Documented treatment decisions</span></article>
+        </div>
+
+        <div class="overview-grid">
+          <article class="panel recent-panel">
+            <div class="panel-head"><div><small data-i18n="liveQueue">LIVE QUEUE</small><h3 data-i18n="recentIncidents">Recent incidents</h3></div><button class="text-btn" data-jump="incidents" data-i18n="viewAll">VIEW ALL ↗</button></div>
+            <div id="recentIncidents" class="incident-list compact"></div>
+          </article>
+          <article class="panel posture-panel">
+            <div class="panel-head"><div><small data-i18n="posture">POSTURE</small><h3 data-i18n="controlCoverage">Control coverage</h3></div><span class="status-dot" data-i18n="synthetic">SYNTHETIC</span></div>
+            <div class="coverage-list" id="coverageList"></div>
+          </article>
+        </div>
+
+        <article class="panel architecture-panel">
+          <div class="panel-head"><div><small data-i18n="architecture">ARCHITECTURE</small><h3 data-i18n="connectedWorkflow">Connected defensive workflow</h3></div></div>
+          <div class="workflow-strip">
+            <div><span>01</span><b data-i18n="wfObserve">Observe</b><p data-i18n="wfObserveText">Synthetic signals enter the queue.</p></div>
+            <i>→</i><div><span>02</span><b data-i18n="wfContext">Context</b><p data-i18n="wfContextText">Map events to affected assets.</p></div>
+            <i>→</i><div><span>03</span><b data-i18n="wfDecide">Decide</b><p data-i18n="wfDecideText">Prioritize and select a response path.</p></div>
+            <i>→</i><div><span>04</span><b data-i18n="wfRecord">Record</b><p data-i18n="wfRecordText">Capture actions, status and lessons learned.</p></div>
+          </div>
+        </article>
+      </section>
+
+      <section class="view" data-view-panel="incidents">
+        <div class="section-head">
+          <div><span class="eyebrow" data-i18n="incidentDesk">INCIDENT DESK</span><h2 data-i18n="triageQueue">Triage queue</h2><p data-i18n="triageCopy">Prioritize synthetic events, review asset context and document a defensive disposition.</p></div>
+          <div class="filters" id="incidentFilters"><button class="active" data-filter="all" data-i18n="all">All</button><button data-filter="open" data-i18n="open">Open</button><button data-filter="high" data-i18n="high">High</button><button data-filter="resolved" data-i18n="resolved">Resolved</button></div>
+        </div>
+        <div class="incident-workspace">
+          <div class="incident-list" id="incidentList"></div>
+          <article class="panel incident-detail" id="incidentDetail"></article>
+        </div>
+      </section>
+
+      <section class="view" data-view-panel="assets">
+        <div class="section-head"><div><span class="eyebrow" data-i18n="assetContext">ASSET CONTEXT</span><h2 data-i18n="assetInventory">Asset inventory</h2><p data-i18n="assetCopy">Synthetic systems used to connect alerts with ownership, criticality and defensive controls.</p></div><label class="search"><span>⌕</span><input id="assetSearch" type="search" data-i18n-placeholder="searchAssets" placeholder="Search assets"></label></div>
+        <div class="asset-grid" id="assetGrid"></div>
+      </section>
+
+      <section class="view" data-view-panel="risk">
+        <div class="section-head"><div><span class="eyebrow" data-i18n="riskRegister">RISK REGISTER</span><h2 data-i18n="treatmentDecisions">Treatment decisions</h2><p data-i18n="riskCopy">Keep risk discussion connected to assets, controls and next actions.</p></div></div>
+        <div class="risk-grid" id="riskGrid"></div>
+      </section>
+
+      <section class="view" data-view-panel="playbooks">
+        <div class="section-head"><div><span class="eyebrow" data-i18n="responseLibrary">RESPONSE LIBRARY</span><h2 data-i18n="playbookTitle">Defensive playbooks</h2><p data-i18n="playbookCopy">Structured checklists for safe classroom and portfolio simulations.</p></div></div>
+        <div class="playbook-grid" id="playbookGrid"></div>
+      </section>
+
+      <section class="view" data-view-panel="reports">
+        <div class="section-head"><div><span class="eyebrow" data-i18n="reporting">REPORTING</span><h2 data-i18n="reportTitle">Analyst summary</h2><p data-i18n="reportCopy">Generate a clean text summary from the current local lab state.</p></div></div>
+        <div class="report-grid">
+          <article class="panel report-preview"><div class="panel-head"><div><small data-i18n="preview">PREVIEW</small><h3 data-i18n="currentSnapshot">Current snapshot</h3></div><button class="primary" id="downloadReport" data-i18n="downloadReport">Download report</button></div><pre id="reportPreview"></pre></article>
+          <article class="panel drill-panel"><div class="panel-head"><div><small data-i18n="training">TRAINING MODE</small><h3 data-i18n="loadScenario">Load a scenario</h3></div></div><div class="drill-list" id="drillList"></div></article>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="app.js?v=aegis-20261030-1"></script>
+</body>
+</html>
