@@ -1,5 +1,5 @@
 (()=>{
-  const version='premium-20261030-1';
+  const version='ultimate-20261030-1';
   const addIcon=(rel,href,type)=>{
     let link=document.querySelector(`link[rel="${rel}"]`);
     if(!link){link=document.createElement('link');link.rel=rel;document.head.appendChild(link);}
@@ -15,6 +15,11 @@
   premiumCss.href=`./home-premium.css?v=${version}`;
   document.head.appendChild(premiumCss);
 
+  const ultimateCss=document.createElement('link');
+  ultimateCss.rel='stylesheet';
+  ultimateCss.href=`./home-10.css?v=${version}`;
+  document.head.appendChild(ultimateCss);
+
   const projectCards=document.querySelectorAll('#projects .pgrid .pc');
   const cyberImg=projectCards[0]?.querySelector('.pi-img img');
   const nexusImg=projectCards[1]?.querySelector('.pi-img img');
@@ -28,6 +33,12 @@
     const premium=document.createElement('script');
     premium.src=`./home-premium.js?v=${version}`;
     premium.async=false;
+    premium.onload=()=>{
+      const ultimate=document.createElement('script');
+      ultimate.src=`./home-10.js?v=${version}`;
+      ultimate.async=false;
+      document.head.appendChild(ultimate);
+    };
     document.head.appendChild(premium);
   };
   document.head.appendChild(core);
