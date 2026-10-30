@@ -43,28 +43,41 @@ function translateAnswer(button,lang){
   const raw=button.textContent.trim();
   const m=raw.match(/^([A-C]\.\s*)(.+)$/);
   if(!m)return;
-  let base=button.dataset.socAnswerBase||REVERSE.get(m[2]);
+  const base=button.dataset.socAnswerBase||REVERSE.get(m[2]);
   if(!base)return;
   button.dataset.socAnswerBase=base;
   const text=lang==='en'?base:ANSWERS[base]?.[lang]||base;
-  button.textContent=m[1]+text;
+  const next=m[1]+text;
+  if(button.textContent!==next)button.textContent=next;
 }
 
+let applying=false;
 function apply(){
+  if(applying)return;
   const soc=document.getElementById('view-soc');
   if(!soc)return;
-  const lang=currentLang();
-  const question=soc.querySelector('#soc-answers')?.previousElementSibling;
-  if(question&&question.tagName==='H3')question.textContent=QUESTION[lang]||QUESTION.en;
-  soc.querySelectorAll('#soc-answers .answer').forEach(btn=>translateAnswer(btn,lang));
+  applying=true;
+  try{
+    const lang=currentLang();
+    const question=soc.querySelector('#soc-answers')?.previousElementSibling;
+    const questionText=QUESTION[lang]||QUESTION.en;
+    if(question&&question.tagName==='H3'&&question.textContent!==questionText){
+      question.textContent=questionText;
+    }
+    soc.querySelectorAll('#soc-answers .answer').forEach(btn=>translateAnswer(btn,lang));
+  } finally {
+    applying=false;
+  }
 }
 
 const soc=document.getElementById('view-soc');
 if(soc){
-  const observer=new MutationObserver(()=>queueMicrotask(apply));
-  observer.observe(soc,{subtree:true,childList:true,characterData:true});
+  // SOC re-renders answer buttons with innerHTML/appendChild. Watching child-list
+  // changes is enough and avoids a characterData feedback loop.
+  const observer=new MutationObserver(()=>setTimeout(apply,0));
+  observer.observe(soc,{subtree:true,childList:true});
 }
-new MutationObserver(()=>queueMicrotask(apply)).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+new MutationObserver(()=>setTimeout(apply,0)).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
 document.addEventListener('click',e=>{
   if(e.target.closest('.language-switch button[data-lang]')){
     setTimeout(apply,0);
