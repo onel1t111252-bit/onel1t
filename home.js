@@ -1,29 +1,20 @@
 (()=>{
-  const version='ultimate-20261030-2';
+  const version='interactive-20261030-1';
   const addIcon=(rel,href,type)=>{
     let link=document.querySelector(`link[rel="${rel}"]`);
     if(!link){link=document.createElement('link');link.rel=rel;document.head.appendChild(link);}
     if(type)link.type=type;
     link.href=`${href}?v=${version}`;
   };
+  const addCss=(href)=>{const link=document.createElement('link');link.rel='stylesheet';link.href=`${href}?v=${version}`;document.head.appendChild(link);};
   addIcon('icon','./favicon.png','image/png');
   addIcon('shortcut icon','./favicon.ico','image/x-icon');
   addIcon('apple-touch-icon','./favicon.png','image/png');
 
-  const premiumCss=document.createElement('link');
-  premiumCss.rel='stylesheet';
-  premiumCss.href=`./home-premium.css?v=${version}`;
-  document.head.appendChild(premiumCss);
-
-  const ultimateCss=document.createElement('link');
-  ultimateCss.rel='stylesheet';
-  ultimateCss.href=`./home-10.css?v=${version}`;
-  document.head.appendChild(ultimateCss);
-
-  const ultimateFixCss=document.createElement('link');
-  ultimateFixCss.rel='stylesheet';
-  ultimateFixCss.href=`./home-10-fix.css?v=${version}`;
-  document.head.appendChild(ultimateFixCss);
+  addCss('./home-premium.css');
+  addCss('./home-10.css');
+  addCss('./home-10-fix.css');
+  addCss('./home-11.css');
 
   const projectCards=document.querySelectorAll('#projects .pgrid .pc');
   const cyberImg=projectCards[0]?.querySelector('.pi-img img');
@@ -31,20 +22,12 @@
   if(cyberImg) cyberImg.src='assets/optimized/cyber-lab-cover.webp';
   if(nexusImg) nexusImg.src='assets/optimized/nexus-cover.webp';
 
-  const core=document.createElement('script');
-  core.src=`./home-core.js?v=${version}`;
-  core.async=false;
-  core.onload=()=>{
-    const premium=document.createElement('script');
-    premium.src=`./home-premium.js?v=${version}`;
-    premium.async=false;
-    premium.onload=()=>{
-      const ultimate=document.createElement('script');
-      ultimate.src=`./home-10.js?v=${version}`;
-      ultimate.async=false;
-      document.head.appendChild(ultimate);
-    };
-    document.head.appendChild(premium);
-  };
-  document.head.appendChild(core);
+  const loadScript=(src,onload)=>{const s=document.createElement('script');s.src=`${src}?v=${version}`;s.async=false;if(onload)s.onload=onload;document.head.appendChild(s);};
+  loadScript('./home-core.js',()=>{
+    loadScript('./home-premium.js',()=>{
+      loadScript('./home-10.js',()=>{
+        loadScript('./home-11.js');
+      });
+    });
+  });
 })();
