@@ -32,58 +32,39 @@ for(const [base,loc] of Object.entries(ANSWERS)){
 function currentLang(){
   const active=document.querySelector('.language-switch button.active[data-lang]');
   if(active?.dataset.lang)return active.dataset.lang;
-  try{
-    const saved=localStorage.getItem('onel1t-lang');
-    if(saved==='ua'||saved==='cz'||saved==='en')return saved;
-  }catch(e){}
   return document.documentElement.lang==='uk'?'ua':document.documentElement.lang==='cs'?'cz':'en';
 }
 
-function translateAnswer(button,lang){
-  const raw=button.textContent.trim();
-  const m=raw.match(/^([A-C]\.\s*)(.+)$/);
-  if(!m)return;
-  const base=button.dataset.socAnswerBase||REVERSE.get(m[2]);
-  if(!base)return;
-  button.dataset.socAnswerBase=base;
-  const text=lang==='en'?base:ANSWERS[base]?.[lang]||base;
-  const next=m[1]+text;
-  if(button.textContent!==next)button.textContent=next;
-}
-
-let applying=false;
 function apply(){
-  if(applying)return;
   const soc=document.getElementById('view-soc');
   if(!soc)return;
-  applying=true;
-  try{
-    const lang=currentLang();
-    const question=soc.querySelector('#soc-answers')?.previousElementSibling;
-    const questionText=QUESTION[lang]||QUESTION.en;
-    if(question&&question.tagName==='H3'&&question.textContent!==questionText){
-      question.textContent=questionText;
-    }
-    soc.querySelectorAll('#soc-answers .answer').forEach(btn=>translateAnswer(btn,lang));
-  } finally {
-    applying=false;
-  }
+  const lang=currentLang();
+  const question=soc.querySelector('#soc-answers')?.previousElementSibling;
+  if(question&&question.tagName==='H3')question.textContent=QUESTION[lang]||QUESTION.en;
+  soc.querySelectorAll('#soc-answers .answer').forEach(button=>{
+    const m=button.textContent.trim().match(/^([A-C]\.\s*)(.+)$/);
+    if(!m)return;
+    const base=button.dataset.socAnswerBase||REVERSE.get(m[2]);
+    if(!base)return;
+    button.dataset.socAnswerBase=base;
+    const translated=lang==='en'?base:(ANSWERS[base]?.[lang]||base);
+    const next=m[1]+translated;
+    if(button.textContent!==next)button.textContent=next;
+  });
 }
 
-const soc=document.getElementById('view-soc');
-if(soc){
-  // SOC re-renders answer buttons with innerHTML/appendChild. Watching child-list
-  // changes is enough and avoids a characterData feedback loop.
-  const observer=new MutationObserver(()=>setTimeout(apply,0));
-  observer.observe(soc,{subtree:true,childList:true});
-}
-new MutationObserver(()=>setTimeout(apply,0)).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+// No MutationObserver: translate only after actions that can change SOC content/language.
 document.addEventListener('click',e=>{
-  if(e.target.closest('.language-switch button[data-lang]')){
+  const target=e.target;
+  if(target.closest('.language-switch button[data-lang]') ||
+     target.closest('#soc-next') ||
+     target.closest('[data-view="soc"]') ||
+     target.closest('[data-go="soc"]')){
     setTimeout(apply,0);
-    setTimeout(apply,80);
+    setTimeout(apply,60);
   }
 });
+
 apply();
-setTimeout(apply,100);
+setTimeout(apply,120);
 })();
