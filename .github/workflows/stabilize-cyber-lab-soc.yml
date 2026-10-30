@@ -22,7 +22,6 @@ jobs:
           p = Path('projects/cyber-lab/index.html')
           s = p.read_text(encoding='utf-8')
 
-          # Remove the extra force-localizer and bump the main localization cache key.
           s = re.sub(r'\n?<script src="soc-localization-force\.js\?v=[^"]+"></script>', '', s)
           s = s.replace('localization-complete.js?v=20261030-4', 'localization-complete.js?v=20261030-5')
 
@@ -64,7 +63,6 @@ jobs:
   socLocked=false;
 }
 function answerSoc'''
-
           s, n = re.subn(r'function renderSoc\(\)\{.*?\}\nfunction answerSoc', render, s, count=1, flags=re.S)
           if n != 1:
               raise SystemExit(f'renderSoc replacement count={n}')
@@ -91,12 +89,10 @@ function answerSoc'''
   save();
 }
 $('#soc-next').onclick'''
-
           s, n = re.subn(r'function answerSoc\(i,btn\)\{.*?\}\n\$\(\'#soc-next\'\)\.onclick', answer, s, count=1, flags=re.S)
           if n != 1:
               raise SystemExit(f'answerSoc replacement count={n}')
 
-          # Re-render the current SOC scenario immediately when language changes.
           old = " translate();\n const label=document.querySelector('[data-home-label]');"
           new = " translate();\n if(typeof renderSoc==='function')renderSoc();\n const label=document.querySelector('[data-home-label]');"
           if old in s:
