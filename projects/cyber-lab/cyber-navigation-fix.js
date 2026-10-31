@@ -3,9 +3,10 @@
 const KEY='onel1t-cyber-last-view';
 const views=['overview','soc','network','assistant','academy','password','phishing','reports'];
 const valid=v=>views.includes(v);
+const storedLang=()=>{try{return localStorage.getItem('onel1t-lang')||''}catch(e){return''}};
 const readLang=()=>{
   const active=document.querySelector('.language-switch [data-lang].active');
-  const raw=(active?.dataset.lang||localStorage.getItem('onel1t-lang')||'en').toLowerCase();
+  const raw=(active?.dataset.lang||storedLang()||'en').toLowerCase();
   if(raw==='ua'||raw==='uk')return'uk';
   if(raw==='cz'||raw==='cs')return'cs';
   return'en';
