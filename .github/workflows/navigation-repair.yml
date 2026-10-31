@@ -1,0 +1,101 @@
+name: Navigation repair
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  repair:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Repair navigation, persistence and cache versions
+        shell: python
+        run: |
+          from pathlib import Path
+
+          def replace(path, old, new, required=True):
+              p=Path(path); text=p.read_text(encoding='utf-8')
+              if old not in text:
+                  if required: raise SystemExit(f'Missing expected pattern in {path}: {old!r}')
+                  return False
+              p.write_text(text.replace(old,new),encoding='utf-8')
+              return True
+
+          # Force every return-to-portfolio action to the real homepage, overriding saved section state.
+          replace('projects/mini-localization.js','#projects','#home')
+          for name in ('password-strength-lab','ipv4-subnet-calculator','phishing-link-analyzer','security-log-triage'):
+              replace(f'projects/{name}/index.html','../../index.html#projects','../../index.html#home',required=False)
+
+          for path in ('projects/cpp-console-toolkit/index.html','projects/python-security-utilities/index.html'):
+              p=Path(path); t=p.read_text(encoding='utf-8')
+              for old,new in (
+                  ('../../index-uk.html','../../index-uk.html#home'),
+                  ('../../index-cz.html','../../index-cz.html#home'),
+                  ('../../index.html','../../index.html#home'),
+              ):
+                  t=t.replace(old,new)
+              p.write_text(t,encoding='utf-8')
+
+          # Case studies always return to the top of the selected-language portfolio.
+          for path in ('projects/case-study.js','projects/case-study-polish.js','projects/cyber-lab/case-study.html','projects/nexus/case-study.html','projects/aegis/case-study.html'):
+              p=Path(path); t=p.read_text(encoding='utf-8')
+              for old,new in (
+                  ('../../index-uk.html','../../index-uk.html#home'),
+                  ('../../index-cz.html','../../index-cz.html#home'),
+                  ('../../index.html','../../index.html#home'),
+              ):
+                  t=t.replace(old,new)
+              p.write_text(t,encoding='utf-8')
+
+          # Load the new Cyber Lab navigation/persistence layer without touching its core/localization engine.
+          p=Path('projects/cyber-lab/index.html'); t=p.read_text(encoding='utf-8')
+          tag='<script src="cyber-navigation-fix.js?v=20261031-1"></script>'
+          if 'cyber-navigation-fix.js' not in t:
+              t=t.replace('</body>',tag+'\n</body>')
+          p.write_text(t,encoding='utf-8')
+
+          # Bust old cached navigation scripts on phones.
+          replace('projects/aegis/index.html','aegis-portfolio-link.js?v=20261031-2','aegis-portfolio-link.js?v=20261031-3')
+          replace('projects/nexus/index.html','nexus-home-link.js?v=20261031-1','nexus-home-link.js?v=20261031-2')
+
+          # Add regression guards to the existing quality audit.
+          q=Path('.github/workflows/site-quality.yml'); s=q.read_text(encoding='utf-8')
+          marker='          # Navigation regression guards.\n'
+          if marker not in s:
+              anchor='          # Privacy-mode hardening: direct access to the app-specific keys is forbidden.\n'
+              block='''          # Navigation regression guards.\n          navigation_checks = {\n              'projects/aegis/aegis-portfolio-link.js': ('../../index.html#home', '../../index-uk.html#home', '../../index-cz.html#home', 'aegis-main-site-link'),\n              'projects/nexus/nexus-home-link.js': ('../../index.html#home', 'onel1t-nexus-last-view'),\n              'projects/cyber-lab/cyber-navigation-fix.js': ('../../index.html#home', 'onel1t-cyber-last-view'),\n              'home-position-persistence.js': ('onel1t-home-last-section',),\n          }\n          for name, needles in navigation_checks.items():\n              path = root / name\n              if not path.exists():\n                  errors.append(f'Missing navigation file: {name}')\n                  continue\n              text = path.read_text(encoding='utf-8')\n              for needle in needles:\n                  if needle not in text:\n                      errors.append(f'{name}: missing navigation guard {needle!r}')\n\n'''
+              if anchor not in s: raise SystemExit('Could not locate quality-audit insertion point')
+              s=s.replace(anchor,block+anchor)
+              q.write_text(s,encoding='utf-8')
+
+      - name: Static smoke checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          node --check projects/aegis/aegis-portfolio-link.js
+          node --check projects/aegis/aegis-view-persistence.js
+          node --check projects/nexus/nexus-home-link.js
+          node --check projects/cyber-lab/cyber-navigation-fix.js
+          node --check projects/mini-localization.js
+          node --check projects/case-study.js
+          node --check projects/case-study-polish.js
+          grep -q 'cyber-navigation-fix.js?v=20261031-1' projects/cyber-lab/index.html
+          grep -q 'aegis-portfolio-link.js?v=20261031-3' projects/aegis/index.html
+          grep -q 'nexus-home-link.js?v=20261031-2' projects/nexus/index.html
+          ! grep -R --include='*.html' --include='*.js' -nE 'index(-uk|-cz)?\.html#projects' projects
+      - name: Commit repaired site and remove this temporary workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          rm -f .github/workflows/navigation-repair.yml
+          git add -A
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Complete site navigation and reload audit'
+          git push origin HEAD:main
