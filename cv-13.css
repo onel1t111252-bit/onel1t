@@ -24,3 +24,4 @@
 .cv-aegis-media>span,.cv-aegis-media>small{display:none!important;}
 .cv-aegis-media:before{content:none!important;}
 @media(max-width:520px){.cv-aegis-media{background-position:center 48%!important;}}
+.cv-aegis-media img{width:100%;height:100%;object-fit:cover;display:block;}
