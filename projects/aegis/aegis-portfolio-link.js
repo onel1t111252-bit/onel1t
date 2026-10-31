@@ -3,9 +3,9 @@
   'use strict';
 
   const COPY={
-    en:{project:'← AEGIS home',projectAria:'Back to AEGIS overview',portfolio:'← Portfolio',portfolioAria:'Back to ONEL1T portfolio',portfolioHref:'../../index.html'},
-    uk:{project:'← Головна AEGIS',projectAria:'Повернутися на головну AEGIS',portfolio:'← Портфоліо',portfolioAria:'Повернутися до портфоліо ONEL1T',portfolioHref:'../../index-uk.html'},
-    cs:{project:'← Hlavní AEGIS',projectAria:'Zpět na hlavní stránku AEGIS',portfolio:'← Portfolio',portfolioAria:'Zpět na portfolio ONEL1T',portfolioHref:'../../index-cz.html'}
+    en:{project:'← AEGIS home',projectAria:'Back to AEGIS overview',portfolio:'Portfolio ↗',portfolioFooter:'← Portfolio',portfolioAria:'Back to ONEL1T portfolio',portfolioHref:'../../index.html#home'},
+    uk:{project:'← Головна AEGIS',projectAria:'Повернутися на головну AEGIS',portfolio:'Портфоліо ↗',portfolioFooter:'← Портфоліо',portfolioAria:'Повернутися до портфоліо ONEL1T',portfolioHref:'../../index-uk.html#home'},
+    cs:{project:'← Hlavní AEGIS',projectAria:'Zpět na hlavní stránku AEGIS',portfolio:'Portfolio ↗',portfolioFooter:'← Portfolio',portfolioAria:'Zpět na portfolio ONEL1T',portfolioHref:'../../index-cz.html#home'}
   };
 
   function currentLanguage(){
@@ -36,24 +36,35 @@
     const actions=document.querySelector('.top-actions');
     if(!actions) return;
 
-    let link=actions.querySelector('.aegis-portfolio-link');
-    if(!link){
-      link=document.createElement('a');
-      link.className='aegis-portfolio-link';
+    let projectLink=actions.querySelector('.aegis-project-home-link');
+    if(!projectLink){
+      projectLink=document.createElement('a');
+      projectLink.className='aegis-portfolio-link aegis-project-home-link';
       const switcher=actions.querySelector('.lang-switch');
-      actions.insertBefore(link,switcher||actions.firstChild);
+      actions.insertBefore(projectLink,switcher||actions.firstChild);
     }
+    projectLink.href='#overview';
+    projectLink.textContent=copy.project;
+    projectLink.setAttribute('aria-label',copy.projectAria);
+    projectLink.setAttribute('title',copy.project.replace(/^←\s*/,''));
+    projectLink.onclick=openOverview;
 
-    link.href='#overview';
-    link.textContent=copy.project;
-    link.setAttribute('aria-label',copy.projectAria);
-    link.setAttribute('title',copy.project.replace(/^←\s*/,''));
-    link.onclick=openOverview;
+    let portfolioLink=actions.querySelector('.aegis-main-site-link');
+    if(!portfolioLink){
+      portfolioLink=document.createElement('a');
+      portfolioLink.className='aegis-main-site-link ghost';
+      const switcher=actions.querySelector('.lang-switch');
+      actions.insertBefore(portfolioLink,switcher||actions.firstChild);
+    }
+    portfolioLink.href=copy.portfolioHref;
+    portfolioLink.textContent=copy.portfolio;
+    portfolioLink.setAttribute('aria-label',copy.portfolioAria);
+    portfolioLink.setAttribute('title',copy.portfolio.replace(/\s*↗$/,''));
 
     const brand=document.querySelector('.brand');
     if(brand){brand.href=copy.portfolioHref;brand.setAttribute('aria-label',copy.portfolioAria);}
     const footer=document.querySelector('.sidebar-footer a[data-i18n="portfolio"]');
-    if(footer){footer.href=copy.portfolioHref;footer.textContent=copy.portfolio;footer.setAttribute('aria-label',copy.portfolioAria);}
+    if(footer){footer.href=copy.portfolioHref;footer.textContent=copy.portfolioFooter;footer.setAttribute('aria-label',copy.portfolioAria);}
   }
 
   document.addEventListener('DOMContentLoaded',syncNavigation);
