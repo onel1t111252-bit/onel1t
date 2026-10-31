@@ -1,5 +1,5 @@
 (()=>{
-  const version='site-audit-20261030-1';
+  const version='site-audit-20261031-position1';
   const addIcon=(rel,href,type)=>{
     let link=document.querySelector(`link[rel="${rel}"]`);
     if(!link){link=document.createElement('link');link.rel=rel;document.head.appendChild(link);}
@@ -35,7 +35,9 @@
           loadScript('./home-12.js',()=>{
             loadScript('./home-13.js',()=>{
               loadScript('./home-14.js',()=>{
-                loadScript('./home-15.js');
+                loadScript('./home-15.js',()=>{
+                  loadScript('./home-position-persistence.js');
+                });
               });
             });
           });
