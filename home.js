@@ -24,7 +24,7 @@
   const projectCards=document.querySelectorAll('#projects .pgrid .pc');
   const cyberImg=projectCards[0]?.querySelector('.pi-img img');
   const nexusImg=projectCards[1]?.querySelector('.pi-img img');
-  if(cyberImg) cyberImg.src='assets/optimized/cyber-lab-cover.webp';
+  if(cyberImg) cyberImg.src='assets/optimized/cyber-lab-cover.webp?v=green-20261031-1';
   if(nexusImg) nexusImg.src='assets/optimized/nexus-cover.webp';
 
   const loadScript=(src,onload)=>{const s=document.createElement('script');s.src=`${src}?v=${version}`;s.async=false;if(onload)s.onload=onload;document.head.appendChild(s);};
