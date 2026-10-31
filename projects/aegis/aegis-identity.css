@@ -1,0 +1,200 @@
+/* ONEL1T AEGIS — obsidian / amber defensive identity */
+:root{
+  --bg:#070603;
+  --bg2:#0c0905;
+  --panel:rgba(20,15,8,.86);
+  --panel2:rgba(27,19,10,.92);
+  --line:rgba(244,193,93,.13);
+  --line-strong:rgba(244,193,93,.31);
+  --text:#f7f0df;
+  --muted:#a99b83;
+  --cyan:#f4c15d;
+  --cyan2:#ffad35;
+  --violet:#d9792d;
+  --amber:#ffc766;
+  --green:#65e6b3;
+  --red:#ff6684;
+  --shadow:0 24px 70px rgba(0,0,0,.42);
+}
+
+html{background:#070603}
+body{
+  background:
+    radial-gradient(circle at 82% 3%,rgba(255,173,53,.115),transparent 28%),
+    radial-gradient(circle at 58% 46%,rgba(229,138,45,.055),transparent 31%),
+    radial-gradient(circle at 0 82%,rgba(244,193,93,.045),transparent 25%),
+    linear-gradient(180deg,#070603,#0b0804 47%,#050402);
+}
+body:before{
+  background-image:
+    linear-gradient(rgba(244,193,93,.028) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(244,193,93,.021) 1px,transparent 1px);
+}
+button:focus-visible,a:focus-visible,input:focus-visible{
+  box-shadow:0 0 0 2px #0b0804,0 0 0 4px #f4c15d!important;
+}
+
+.sidebar{
+  border-right-color:rgba(244,193,93,.14);
+  background:linear-gradient(180deg,rgba(13,10,6,.98),rgba(6,5,3,.96));
+  box-shadow:20px 0 64px rgba(0,0,0,.26);
+}
+.sidebar:after{background:linear-gradient(180deg,#f4c15d,transparent);opacity:.78}
+.brand-mark{
+  border-color:rgba(244,193,93,.48);
+  background:linear-gradient(145deg,rgba(244,193,93,.18),rgba(217,121,45,.055));
+  color:#ffe0a1;
+  box-shadow:inset 0 0 30px rgba(244,193,93,.08),0 0 28px rgba(255,173,53,.11);
+}
+.brand-mark:before{border-color:rgba(244,193,93,.13)}
+.brand em{color:#aa9270}
+.side-nav button{color:#91836e}
+.side-nav button span{color:#625541}
+.side-nav button:hover{
+  background:rgba(244,193,93,.045);
+  border-color:rgba(244,193,93,.10);
+  color:#eadfc9;
+}
+.side-nav button.active{
+  background:linear-gradient(90deg,rgba(244,193,93,.12),rgba(217,121,45,.035));
+  border-color:rgba(244,193,93,.21);
+  color:#fff8e9;
+}
+.side-nav button.active:before{
+  background:linear-gradient(#ffd577,#d9792d);
+  box-shadow:0 0 17px rgba(244,193,93,.52);
+}
+.side-nav button.active span{color:#ffd577}
+.sidebar-footer{border-top-color:rgba(244,193,93,.12)}
+.sidebar-footer p{color:#7e725f}
+.sidebar-footer a{color:#cbbba0}
+.sidebar-footer a:hover{color:#ffd577}
+
+.topbar{
+  background:linear-gradient(180deg,rgba(7,6,3,.97),rgba(7,6,3,.84) 72%,rgba(7,6,3,0));
+}
+.eyebrow{color:#9d8a69}
+.lang-switch{
+  border-color:rgba(244,193,93,.15);
+  background:rgba(14,10,5,.84);
+}
+.lang-switch button{color:#94856e}
+.lang-switch button.active{
+  background:linear-gradient(135deg,#ffe6ad,#f3b94f 58%,#e58a2d);
+  color:#1a1005;
+  box-shadow:0 5px 18px rgba(255,173,53,.16);
+}
+.ghost{
+  border-color:rgba(244,193,93,.15);
+  background:rgba(17,12,6,.78);
+  color:#c4b59e;
+}
+.ghost:hover{
+  border-color:rgba(244,193,93,.36);
+  color:#fff4de;
+  background:rgba(244,193,93,.065);
+}
+.primary{
+  border-color:rgba(255,202,102,.48);
+  background:linear-gradient(135deg,#ffe7ad,#f6bd53 52%,#e58a2d);
+  color:#1c1105;
+  box-shadow:0 8px 25px rgba(255,173,53,.13);
+}
+.primary:hover{box-shadow:0 11px 31px rgba(255,173,53,.20)}
+
+.aegis-portfolio-link{
+  min-height:36px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:0 13px;
+  border:1px solid rgba(244,193,93,.30);
+  border-radius:8px;
+  background:linear-gradient(135deg,rgba(244,193,93,.12),rgba(229,138,45,.055));
+  color:#f5d994;
+  text-decoration:none;
+  white-space:nowrap;
+  font:700 8px/1 var(--mono);
+  letter-spacing:.055em;
+  transition:.2s ease;
+  box-shadow:inset 0 1px rgba(255,255,255,.025);
+}
+.aegis-portfolio-link:hover{
+  transform:translateY(-1px);
+  border-color:#f4c15d;
+  color:#fff6df;
+  background:linear-gradient(135deg,rgba(244,193,93,.19),rgba(229,138,45,.08));
+  box-shadow:0 8px 25px rgba(255,173,53,.10);
+}
+
+.hero-panel{
+  border-color:rgba(244,193,93,.17);
+  background:
+    radial-gradient(circle at 81% 43%,rgba(255,173,53,.135),transparent 27%),
+    radial-gradient(circle at 72% 57%,rgba(217,121,45,.07),transparent 31%),
+    linear-gradient(145deg,rgba(25,18,9,.94),rgba(9,7,4,.94));
+}
+.hero-panel:before{
+  background:
+    linear-gradient(90deg,rgba(244,193,93,.045) 1px,transparent 1px),
+    linear-gradient(rgba(244,193,93,.036) 1px,transparent 1px);
+  background-size:34px 34px;
+}
+.hero-panel:after{color:rgba(230,190,121,.30)}
+.hero-kicker{color:#99866a}
+.hero-kicker span{
+  border-color:rgba(244,193,93,.23);
+  color:#ffd577;
+  background:rgba(244,193,93,.055);
+}
+.hero-copy h2{
+  background:linear-gradient(180deg,#fffaf0 15%,#e7d5b7 78%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.hero-copy p{color:#aa9c86}
+.signal-orbit{filter:drop-shadow(0 0 30px rgba(255,173,53,.08))}
+.signal-orbit:before{background:radial-gradient(circle,rgba(244,193,93,.10),rgba(244,193,93,.018) 38%,transparent 70%)}
+.orbit-ring{border-color:rgba(244,193,93,.19)}
+.orbit-ring:after{background:#ffd577;box-shadow:0 0 17px #f4c15d}
+.r2:after{background:#e58a2d;box-shadow:0 0 18px #d9792d}
+.orbit-core{
+  border-color:rgba(244,193,93,.48);
+  background:radial-gradient(circle,rgba(244,193,93,.16),rgba(15,10,5,.97) 70%);
+  color:#ffe7ad;
+  box-shadow:0 0 0 9px rgba(244,193,93,.03),0 0 58px rgba(255,173,53,.18),inset 0 0 26px rgba(244,193,93,.08);
+}
+.node{
+  border-color:rgba(244,193,93,.15);
+  background:rgba(13,9,5,.92);
+  color:#b4a58e;
+}
+
+.metric-grid article,.panel{
+  border-color:rgba(244,193,93,.13);
+  background:linear-gradient(145deg,rgba(23,17,10,.88),rgba(10,8,5,.86));
+}
+.metric-grid article:before{background:linear-gradient(90deg,#f4c15d,transparent)}
+.metric-grid small,.panel-head small{color:#83745d}
+.metric-grid span{color:#8b7d68}
+.text-btn{color:#9d8a69}
+.text-btn:hover{color:#ffd577}
+.incident-row{
+  border-color:rgba(244,193,93,.085);
+  background:rgba(10,7,4,.72);
+}
+.incident-row:hover,.incident-row.active{
+  border-color:rgba(244,193,93,.27);
+  background:linear-gradient(90deg,rgba(244,193,93,.075),rgba(217,121,45,.025));
+}
+
+/* Retain green only for explicit healthy/safe state signals. */
+.system-state,.status-dot{border-color:rgba(101,230,179,.16)}
+
+@media(max-width:1100px){
+  .top-actions{flex-wrap:wrap;justify-content:flex-end}
+  .aegis-portfolio-link{order:-2}
+}
+@media(max-width:760px){
+  .aegis-portfolio-link{min-width:38px;padding:0 10px;font-size:0}
+  .aegis-portfolio-link:before{content:'←';font:800 16px/1 var(--mono)}
+}
