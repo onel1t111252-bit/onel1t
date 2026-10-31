@@ -19,7 +19,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat .aegis-upload/part1.txt .aegis-upload/part2.txt .aegis-upload/part3.txt .aegis-upload/part4.txt | base64 -d > projects/aegis/aegis-ai-core-hero.webp
+          cat .aegis-upload/part1.txt .aegis-upload/part2.txt .aegis-upload/part3.txt .aegis-upload/part4.txt | tr -d '\r\n\t ' | base64 -d > projects/aegis/aegis-ai-core-hero.webp
           test -s projects/aegis/aegis-ai-core-hero.webp
           file projects/aegis/aegis-ai-core-hero.webp | grep -qi webp
 
@@ -36,16 +36,9 @@ jobs:
           body.ai-core-theme .ai-floor{
             display:none !important;
           }
-          body.ai-core-theme .hero-panel{
-            background:#030204 !important;
-          }
-          body.ai-core-theme .ai-side-copy{
-            text-shadow:0 2px 18px rgba(0,0,0,.92),0 0 18px rgba(255,10,138,.32);
-          }
-          body.ai-core-theme .ai-live{
-            backdrop-filter:blur(8px);
-            background:rgba(4,1,5,.66) !important;
-          }
+          body.ai-core-theme .hero-panel{background:#030204 !important;}
+          body.ai-core-theme .ai-side-copy{text-shadow:0 2px 18px rgba(0,0,0,.92),0 0 18px rgba(255,10,138,.32);}
+          body.ai-core-theme .ai-live{backdrop-filter:blur(8px);background:rgba(4,1,5,.66) !important;}
           @media(max-width:760px){
             body.ai-core-theme .hero-panel{min-height:980px!important}
             body.ai-core-theme .aegis-ai-visual{
@@ -57,10 +50,7 @@ jobs:
             body.ai-core-theme .hero-panel:before{
               background:linear-gradient(180deg,transparent 0 47%,rgba(3,2,4,.28) 55%,rgba(3,2,4,.94) 67%,#030204 78%)!important;
             }
-            body.ai-core-theme .hero-copy{
-              padding-top:545px!important;
-              background:transparent!important;
-            }
+            body.ai-core-theme .hero-copy{padding-top:545px!important;background:transparent!important;}
             body.ai-core-theme .hero-kicker{margin-top:0!important}
             body.ai-core-theme .ai-side-copy{top:13%!important;left:6%!important}
             body.ai-core-theme .ai-live{top:3%!important;right:4%!important}
