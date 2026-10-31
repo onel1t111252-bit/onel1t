@@ -35,7 +35,7 @@ const base='https://onel1t111252-bit.github.io/onel1t/';
 const live=project==='cyber-lab'?base+'projects/cyber-lab/index.html':base+'projects/nexus/index.html';
 const src='https://github.com/onel1t111252-bit/onel1t/tree/main/projects/'+project;
 $('#live').href=live;$('#source').href=src;
-const home=lang==='uk'?'../../index-uk.html':lang==='cs'?'../../index-cz.html':'../../index.html';$('#back').href=home;
+const home=lang==='uk'?'../../index-uk.html#home':lang==='cs'?'../../index-cz.html#home':'../../index.html#home';$('#back').href=home;
 document.querySelectorAll('.lang button').forEach(b=>{
  b.classList.toggle('active',b.dataset.lang===lang);
  b.addEventListener('click',()=>{const next=b.dataset.lang;storage.set('onel1t-lang',next==='uk'?'ua':next==='cs'?'cz':'en');const u=new URL(location.href);u.searchParams.set('lang',next);location.href=u.toString()});

@@ -228,7 +228,7 @@ function walk(root,lang){
 }
 function setBackHref(lang){
   const a=document.querySelector('a.back');if(!a)return;
-  a.href=lang==='ua'?'../../index-uk.html#projects':lang==='cz'?'../../index-cz.html#projects':'../../index.html#projects';
+  a.href=lang==='ua'?'../../index-uk.html#home':lang==='cz'?'../../index-cz.html#home':'../../index.html#home';
 }
 function apply(lang){
   lang=normalizeLang(lang);

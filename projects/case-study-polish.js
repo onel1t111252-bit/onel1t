@@ -10,7 +10,7 @@ const C={
 }[lang];
 const liveHref='index.html';
 const sourceHref='https://github.com/onel1t111252-bit/onel1t/tree/main/projects/'+project;
-const homeHref=lang==='uk'?'../../index-uk.html':lang==='cs'?'../../index-cz.html':'../../index.html';
+const homeHref=lang==='uk'?'../../index-uk.html#home':lang==='cs'?'../../index-cz.html#home':'../../index.html#home';
 const brand=document.querySelector('.brand');if(brand)brand.href=homeHref;
 document.querySelectorAll('[data-copy="features"]').forEach(e=>e.textContent=C.features);
 document.querySelectorAll('[data-copy="stack"]').forEach(e=>e.textContent=C.stack);
