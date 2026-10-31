@@ -1,0 +1,23 @@
+/* Real user-selected artwork for the three AEGIS Quick Access cards. */
+body.ai-core-theme .aegis-quick-card::before{display:none!important}
+body.ai-core-theme .aegis-quick-card{padding:132px 16px 16px!important;background:#080408!important}
+body.ai-core-theme .aegis-quick-image{
+  position:absolute;left:0;right:0;top:0;width:100%;height:118px;display:block;
+  object-fit:cover;object-position:center;border:0;border-bottom:1px solid rgba(255,10,138,.28);
+  filter:saturate(1.05) contrast(1.04) brightness(.92);
+  transition:transform .28s ease,filter .28s ease;
+}
+body.ai-core-theme .aegis-quick-card::after{
+  content:"";position:absolute;left:0;right:0;top:0;height:118px;pointer-events:none;
+  background:linear-gradient(180deg,rgba(3,2,4,.02) 35%,rgba(3,2,4,.62) 100%);
+  box-shadow:inset 0 -1px 0 rgba(255,10,138,.18);
+}
+body.ai-core-theme .aegis-quick-card:hover .aegis-quick-image{transform:scale(1.035);filter:saturate(1.12) contrast(1.06) brightness(1)}
+body.ai-core-theme .aegis-quick-card>b,
+body.ai-core-theme .aegis-quick-card>small,
+body.ai-core-theme .aegis-quick-card>i{position:relative;z-index:2}
+@media(max-width:700px){
+  body.ai-core-theme .aegis-quick-card{min-height:184px!important;padding-top:122px!important}
+  body.ai-core-theme .aegis-quick-image,
+  body.ai-core-theme .aegis-quick-card::after{height:108px!important}
+}
