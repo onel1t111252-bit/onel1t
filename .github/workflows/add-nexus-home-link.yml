@@ -1,0 +1,39 @@
+name: Add NEXUS portfolio link
+on:
+  push:
+    paths:
+      - '.github/workflows/add-nexus-home-link.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Patch NEXUS index safely
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('projects/nexus/index.html')
+          s=p.read_text(encoding='utf-8')
+          tag='<script src="nexus-home-link.js?v=20261031-1"></script>'
+          if tag in s:
+              raise SystemExit('tag already present')
+          if s.count('</body>') != 1:
+              raise SystemExit('expected exactly one </body>')
+          s=s.replace('</body>', tag+'\n</body>')
+          p.write_text(s,encoding='utf-8')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add projects/nexus/index.html
+          git commit -m 'Add persistent back-to-portfolio button in NEXUS'
+          git push
+      - name: Remove one-time workflow
+        run: |
+          git pull --rebase
+          git rm .github/workflows/add-nexus-home-link.yml
+          git commit -m 'Remove one-time NEXUS portfolio-link workflow'
+          git push
