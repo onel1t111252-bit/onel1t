@@ -145,3 +145,24 @@ body.ai-core-theme input:focus,body.ai-core-theme button:focus-visible,body.ai-c
   body.ai-core-theme .hero-panel{min-height:610px!important}.ai-core-orb{top:13%;width:74vw;max-width:315px}.ai-side-copy{left:6%;top:18%}.ai-side-copy b{font-size:34px}.ai-side-copy span{font-size:9px}.ai-live{right:4%;top:4%;padding:8px 10px}.hero-copy{padding:0 18px 22px!important}.hero-kicker{margin-top:150px!important}.hero-actions{grid-template-columns:1fr!important}.hero-actions:after{min-height:42px}.metric-grid{grid-template-columns:repeat(2,1fr)!important}.aegis-quick-access{padding:14px}.aegis-quick-grid{grid-template-columns:1fr}.aegis-quick-card{min-height:164px;padding-top:112px}.aegis-quick-card:before{height:100px}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+
+/* AEGIS interaction hotfix 20261031 */
+body.ai-core-theme .view{display:none!important}
+body.ai-core-theme .view.active{display:block!important}
+body.ai-core-theme .aegis-ai-visual,
+body.ai-core-theme .aegis-ai-visual *,
+body.ai-core-theme .aegis-quick-image{pointer-events:none!important}
+body.ai-core-theme .sidebar,
+body.ai-core-theme .side-nav,
+body.ai-core-theme .side-nav button,
+body.ai-core-theme .topbar,
+body.ai-core-theme .top-actions,
+body.ai-core-theme .top-actions button,
+body.ai-core-theme .top-actions a,
+body.ai-core-theme .hero-copy,
+body.ai-core-theme .hero-actions,
+body.ai-core-theme .hero-actions button,
+body.ai-core-theme .aegis-quick-card{pointer-events:auto!important}
+body.ai-core-theme .sidebar{z-index:100!important}
+body.ai-core-theme .topbar{z-index:90!important}
