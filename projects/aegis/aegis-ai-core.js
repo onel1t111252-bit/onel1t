@@ -17,6 +17,14 @@
     document.head.appendChild(quickCss);
   }
 
+  if(!document.querySelector('link[data-aegis-interaction-fix]')){
+    const fixCss=document.createElement('link');
+    fixCss.rel='stylesheet';
+    fixCss.href='aegis-interaction-fix.css?v=20261031-fix1';
+    fixCss.dataset.aegisInteractionFix='1';
+    document.head.appendChild(fixCss);
+  }
+
   const hero=document.querySelector('.hero-panel');
   if(hero && !hero.querySelector('.aegis-ai-visual')){
     const visual=document.createElement('div');
@@ -38,9 +46,9 @@
     quick.innerHTML=`
       <div class="aegis-quick-head"><h3>QUICK ACCESS</h3><span>VIEW ALL →</span></div>
       <div class="aegis-quick-grid">
-        <article class="aegis-quick-card" data-aegis-jump="incidents"><img class="aegis-quick-image" src="aegis-quick-analysis.webp?v=20261031-quick1" alt="AEGIS AI analysis visualization"><b>AI ANALYSIS</b><small>Smart threat detection</small><i>→</i></article>
-        <article class="aegis-quick-card" data-aegis-jump="risk"><img class="aegis-quick-image" src="aegis-quick-security-core.webp?v=20261031-fixed2" alt="AEGIS security core visualization"><b>SECURITY CORE</b><small>Neural risk processing</small><i>→</i></article>
-        <article class="aegis-quick-card" data-aegis-jump="reports"><img class="aegis-quick-image" src="aegis-quick-monitoring.webp?v=20261031-quick1" alt="AEGIS live monitoring visualization"><b>LIVE MONITORING</b><small>Real-time protection</small><i>→</i></article>
+        <article class="aegis-quick-card" data-aegis-jump="incidents"><img class="aegis-quick-image" src="aegis-quick-analysis.webp?v=20261031-quick2" alt="AEGIS AI analysis visualization"><b>AI ANALYSIS</b><small>Smart threat detection</small><i>→</i></article>
+        <article class="aegis-quick-card" data-aegis-jump="risk"><img class="aegis-quick-image" src="aegis-quick-security-core.webp?v=20261031-quick2" alt="AEGIS security core visualization"><b>SECURITY CORE</b><small>Neural risk processing</small><i>→</i></article>
+        <article class="aegis-quick-card" data-aegis-jump="reports"><img class="aegis-quick-image" src="aegis-quick-monitoring.webp?v=20261031-quick2" alt="AEGIS live monitoring visualization"><b>LIVE MONITORING</b><small>Real-time protection</small><i>→</i></article>
       </div>`;
     metric.insertAdjacentElement('afterend',quick);
   }
