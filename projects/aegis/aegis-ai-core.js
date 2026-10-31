@@ -1,6 +1,14 @@
 (()=>{
   document.body.classList.add('ai-core-theme');
 
+  if(!document.querySelector('link[data-aegis-hero-photo]')){
+    const heroPhotoCss=document.createElement('link');
+    heroPhotoCss.rel='stylesheet';
+    heroPhotoCss.href='aegis-hero-photo.css?v=20261031-photo2';
+    heroPhotoCss.dataset.aegisHeroPhoto='1';
+    document.head.appendChild(heroPhotoCss);
+  }
+
   const hero=document.querySelector('.hero-panel');
   if(hero && !hero.querySelector('.aegis-ai-visual')){
     const visual=document.createElement('div');
