@@ -1,0 +1,29 @@
+/* Interaction hotfix for AEGIS AI Core.
+   Restores view switching and ensures decorative artwork never intercepts taps. */
+body.ai-core-theme .view[data-view-panel]{display:none!important}
+body.ai-core-theme .view[data-view-panel].active{display:block!important}
+body.ai-core-theme .aegis-ai-visual,
+body.ai-core-theme .aegis-ai-visual::before,
+body.ai-core-theme .aegis-ai-visual::after,
+body.ai-core-theme .ai-core-orb,
+body.ai-core-theme .ai-core-orb::before,
+body.ai-core-theme .ai-core-orb::after,
+body.ai-core-theme .ai-core-eye,
+body.ai-core-theme .ai-side-copy,
+body.ai-core-theme .ai-live,
+body.ai-core-theme .ai-floor,
+body.ai-core-theme .aegis-quick-image,
+body.ai-core-theme .aegis-quick-card::after{pointer-events:none!important}
+body.ai-core-theme .sidebar,
+body.ai-core-theme .side-nav,
+body.ai-core-theme .side-nav button,
+body.ai-core-theme .topbar,
+body.ai-core-theme .top-actions,
+body.ai-core-theme .top-actions button,
+body.ai-core-theme .lang-switch,
+body.ai-core-theme .lang-switch button,
+body.ai-core-theme .aegis-portfolio-link,
+body.ai-core-theme .hero-copy,
+body.ai-core-theme .hero-actions,
+body.ai-core-theme .hero-actions button,
+body.ai-core-theme .aegis-quick-card{pointer-events:auto!important}
