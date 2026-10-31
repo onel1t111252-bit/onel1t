@@ -1,11 +1,11 @@
-/* ONEL1T AEGIS — localized portfolio navigation */
+/* ONEL1T AEGIS — localized project-home + portfolio navigation */
 (()=>{
   'use strict';
 
   const COPY={
-    en:{label:'← Back to portfolio',aria:'Back to ONEL1T portfolio',href:'../../index.html'},
-    uk:{label:'← Головний сайт',aria:'Повернутися на головний сайт ONEL1T',href:'../../index-uk.html'},
-    cs:{label:'← Hlavní stránka',aria:'Zpět na hlavní stránku ONEL1T',href:'../../index-cz.html'}
+    en:{project:'← AEGIS home',projectAria:'Back to AEGIS overview',portfolio:'← Portfolio',portfolioAria:'Back to ONEL1T portfolio',portfolioHref:'../../index.html'},
+    uk:{project:'← Головна AEGIS',projectAria:'Повернутися на головну AEGIS',portfolio:'← Портфоліо',portfolioAria:'Повернутися до портфоліо ONEL1T',portfolioHref:'../../index-uk.html'},
+    cs:{project:'← Hlavní AEGIS',projectAria:'Zpět na hlavní stránku AEGIS',portfolio:'← Portfolio',portfolioAria:'Zpět na portfolio ONEL1T',portfolioHref:'../../index-cz.html'}
   };
 
   function currentLanguage(){
@@ -21,7 +21,16 @@
     return 'en';
   }
 
-  function syncPortfolioNavigation(){
+  function openOverview(event){
+    if(event) event.preventDefault();
+    const btn=document.querySelector('.side-nav button[data-view="overview"]');
+    if(btn) btn.click();
+    try{localStorage.setItem('onel1t-aegis-last-view','overview')}catch{}
+    const u=new URL(location.href);u.hash='overview';history.replaceState(history.state,'',u);
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  function syncNavigation(){
     const lang=currentLanguage();
     const copy=COPY[lang]||COPY.en;
     const actions=document.querySelector('.top-actions');
@@ -35,20 +44,21 @@
       actions.insertBefore(link,switcher||actions.firstChild);
     }
 
-    link.href=copy.href;
-    link.textContent=copy.label;
-    link.setAttribute('aria-label',copy.aria);
-    link.setAttribute('title',copy.label.replace(/^←\s*/,''));
+    link.href='#overview';
+    link.textContent=copy.project;
+    link.setAttribute('aria-label',copy.projectAria);
+    link.setAttribute('title',copy.project.replace(/^←\s*/,''));
+    link.onclick=openOverview;
 
     const brand=document.querySelector('.brand');
-    if(brand) brand.href=copy.href;
+    if(brand){brand.href=copy.portfolioHref;brand.setAttribute('aria-label',copy.portfolioAria);}
     const footer=document.querySelector('.sidebar-footer a[data-i18n="portfolio"]');
-    if(footer) footer.href=copy.href;
+    if(footer){footer.href=copy.portfolioHref;footer.textContent=copy.portfolio;footer.setAttribute('aria-label',copy.portfolioAria);}
   }
 
-  document.addEventListener('DOMContentLoaded',syncPortfolioNavigation);
+  document.addEventListener('DOMContentLoaded',syncNavigation);
   document.addEventListener('click',event=>{
-    if(event.target.closest('.lang-switch [data-lang]')) setTimeout(syncPortfolioNavigation,0);
+    if(event.target.closest('.lang-switch [data-lang]')) setTimeout(syncNavigation,0);
   });
-  setTimeout(syncPortfolioNavigation,0);
+  setTimeout(syncNavigation,0);
 })();
