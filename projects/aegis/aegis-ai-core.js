@@ -4,7 +4,7 @@
   if(!document.querySelector('link[data-aegis-hero-photo]')){
     const heroPhotoCss=document.createElement('link');
     heroPhotoCss.rel='stylesheet';
-    heroPhotoCss.href='aegis-hero-photo.css?v=20261031-photo2';
+    heroPhotoCss.href='aegis-hero-photo.css?v=20261031-mobilefix1';
     heroPhotoCss.dataset.aegisHeroPhoto='1';
     document.head.appendChild(heroPhotoCss);
   }
