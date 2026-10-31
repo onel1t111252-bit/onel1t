@@ -60,6 +60,10 @@
     portfolioLink.textContent=copy.portfolio;
     portfolioLink.setAttribute('aria-label',copy.portfolioAria);
     portfolioLink.setAttribute('title',copy.portfolio.replace(/\s*↗$/,''));
+    portfolioLink.style.setProperty('display','inline-flex','important');
+    portfolioLink.style.setProperty('align-items','center','important');
+    portfolioLink.style.setProperty('justify-content','center','important');
+    portfolioLink.style.setProperty('text-decoration','none','important');
 
     const brand=document.querySelector('.brand');
     if(brand){brand.href=copy.portfolioHref;brand.setAttribute('aria-label',copy.portfolioAria);}
