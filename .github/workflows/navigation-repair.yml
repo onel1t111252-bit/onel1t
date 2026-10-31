@@ -16,6 +16,7 @@ jobs:
         shell: python
         run: |
           from pathlib import Path
+          import re
 
           def replace(path, old, new, required=True):
               p=Path(path); text=p.read_text(encoding='utf-8')
@@ -24,6 +25,13 @@ jobs:
                   return False
               p.write_text(text.replace(old,new),encoding='utf-8')
               return True
+
+          def cache_bust(path, filename, version):
+              p=Path(path); text=p.read_text(encoding='utf-8')
+              pattern=re.escape(filename)+r'\?v=[^"\']+'
+              updated,n=re.subn(pattern,filename+'?v='+version,text)
+              if not n: raise SystemExit(f'Could not cache-bust {filename} in {path}')
+              p.write_text(updated,encoding='utf-8')
 
           # Force every return-to-portfolio action to the real homepage, overriding saved section state.
           replace('projects/mini-localization.js','#projects','#home')
@@ -58,9 +66,9 @@ jobs:
               t=t.replace('</body>',tag+'\n</body>')
           p.write_text(t,encoding='utf-8')
 
-          # Bust old cached navigation scripts on phones.
-          replace('projects/aegis/index.html','aegis-portfolio-link.js?v=20261031-2','aegis-portfolio-link.js?v=20261031-3')
-          replace('projects/nexus/index.html','nexus-home-link.js?v=20261031-1','nexus-home-link.js?v=20261031-2')
+          # Bust old cached navigation scripts on phones, regardless of the previous version suffix.
+          cache_bust('projects/aegis/index.html','aegis-portfolio-link.js','20261031-3')
+          cache_bust('projects/nexus/index.html','nexus-home-link.js','20261031-2')
 
           # Add regression guards to the existing quality audit.
           q=Path('.github/workflows/site-quality.yml'); s=q.read_text(encoding='utf-8')
