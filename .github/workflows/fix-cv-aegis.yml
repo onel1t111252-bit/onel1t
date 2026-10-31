@@ -1,0 +1,65 @@
+name: Fix CV AEGIS artwork
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Patch AEGIS card and cache versions
+        shell: python
+        run: |
+          from pathlib import Path
+
+          js = Path('cv-12.js')
+          s = js.read_text(encoding='utf-8')
+          old_css = "css.href='cv-13.css?v=cv13-audit-20261030-1'"
+          new_css = "css.href='cv-13.css?v=cv13-aegis-20261031-2'"
+          old_card = '<div class="cv-flagship-media cv-aegis-media" aria-hidden="true"><span>AEGIS</span><small>DEFENSIVE SECURITY OPERATIONS</small></div>'
+          new_card = '<div class="cv-flagship-media cv-aegis-media"><img loading="lazy" decoding="async" src="assets/optimized/aegis-cover.webp?v=magenta-20261031-2" alt="ONEL1T AEGIS"></div>'
+          if old_css not in s:
+              raise SystemExit('Expected cv-13 cache string not found')
+          if old_card not in s:
+              raise SystemExit('Expected AEGIS placeholder markup not found')
+          s = s.replace(old_css, new_css, 1).replace(old_card, new_card, 1)
+          js.write_text(s, encoding='utf-8')
+
+          old_script = 'cv-12.js?v=cv12-audit-20261030-1'
+          new_script = 'cv-12.js?v=cv12-aegis-20261031-2'
+          for name in ('cv.html','cv-uk.html','cv-cz.html'):
+              p = Path(name)
+              t = p.read_text(encoding='utf-8')
+              if old_script not in t:
+                  raise SystemExit(f'Expected script cache string not found in {name}')
+              p.write_text(t.replace(old_script, new_script, 1), encoding='utf-8')
+
+          css = Path('cv-13.css')
+          c = css.read_text(encoding='utf-8')
+          marker = '/* AEGIS flagship artwork */'
+          if marker not in c:
+              c += "\n\n/* AEGIS flagship artwork */\n"
+          if '.cv-aegis-media img{' not in c:
+              c += ".cv-aegis-media img{width:100%;height:100%;object-fit:cover;display:block;}\n"
+          css.write_text(c, encoding='utf-8')
+      - name: Validate, remove temporary workflow, commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q "aegis-cover.webp?v=magenta-20261031-2" cv-12.js
+          grep -q "cv12-aegis-20261031-2" cv.html
+          grep -q "cv12-aegis-20261031-2" cv-uk.html
+          grep -q "cv12-aegis-20261031-2" cv-cz.html
+          test -f assets/optimized/aegis-cover.webp
+          rm .github/workflows/fix-cv-aegis.yml
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Render AEGIS artwork in CV cards'
+          git push origin HEAD:main
