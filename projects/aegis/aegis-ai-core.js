@@ -1,28 +1,14 @@
 (()=>{
   document.body.classList.add('ai-core-theme');
 
-  if(!document.querySelector('link[data-aegis-hero-photo]')){
-    const heroPhotoCss=document.createElement('link');
-    heroPhotoCss.rel='stylesheet';
-    heroPhotoCss.href='aegis-hero-photo.css?v=20261031-mobilefix1';
-    heroPhotoCss.dataset.aegisHeroPhoto='1';
-    document.head.appendChild(heroPhotoCss);
-  }
-
+  /* Only quick-access CSS is added here. Hero/fix styles are already linked in index.html,
+     so loading them again would duplicate requests and cause avoidable style recalculation. */
   if(!document.querySelector('link[data-aegis-quick-images]')){
     const quickCss=document.createElement('link');
     quickCss.rel='stylesheet';
-    quickCss.href='aegis-quick-images.css?v=20261031-quick1';
+    quickCss.href='aegis-quick-images.css?v=20261102-performance1';
     quickCss.dataset.aegisQuickImages='1';
     document.head.appendChild(quickCss);
-  }
-
-  if(!document.querySelector('link[data-aegis-interaction-fix]')){
-    const fixCss=document.createElement('link');
-    fixCss.rel='stylesheet';
-    fixCss.href='aegis-interaction-fix.css?v=20261031-fix1';
-    fixCss.dataset.aegisInteractionFix='1';
-    document.head.appendChild(fixCss);
   }
 
   const hero=document.querySelector('.hero-panel');
@@ -46,9 +32,9 @@
     quick.innerHTML=`
       <div class="aegis-quick-head"><h3>QUICK ACCESS</h3><span>VIEW ALL →</span></div>
       <div class="aegis-quick-grid">
-        <article class="aegis-quick-card" data-aegis-jump="incidents"><img class="aegis-quick-image" src="aegis-quick-analysis.webp?v=20261031-quick2" alt="AEGIS AI analysis visualization"><b>AI ANALYSIS</b><small>Smart threat detection</small><i>→</i></article>
-        <article class="aegis-quick-card" data-aegis-jump="risk"><img class="aegis-quick-image" src="aegis-quick-security-core.webp?v=20261031-quick2" alt="AEGIS security core visualization"><b>SECURITY CORE</b><small>Neural risk processing</small><i>→</i></article>
-        <article class="aegis-quick-card" data-aegis-jump="reports"><img class="aegis-quick-image" src="aegis-quick-monitoring.webp?v=20261031-quick2" alt="AEGIS live monitoring visualization"><b>LIVE MONITORING</b><small>Real-time protection</small><i>→</i></article>
+        <article class="aegis-quick-card" data-aegis-jump="incidents"><img class="aegis-quick-image" loading="lazy" decoding="async" fetchpriority="low" src="aegis-quick-analysis.webp?v=20261031-quick2" alt="AEGIS AI analysis visualization"><b>AI ANALYSIS</b><small>Smart threat detection</small><i>→</i></article>
+        <article class="aegis-quick-card" data-aegis-jump="risk"><img class="aegis-quick-image" loading="lazy" decoding="async" fetchpriority="low" src="aegis-quick-security-core.webp?v=20261031-quick2" alt="AEGIS security core visualization"><b>SECURITY CORE</b><small>Neural risk processing</small><i>→</i></article>
+        <article class="aegis-quick-card" data-aegis-jump="reports"><img class="aegis-quick-image" loading="lazy" decoding="async" fetchpriority="low" src="aegis-quick-monitoring.webp?v=20261031-quick2" alt="AEGIS live monitoring visualization"><b>LIVE MONITORING</b><small>Real-time protection</small><i>→</i></article>
       </div>`;
     metric.insertAdjacentElement('afterend',quick);
   }
