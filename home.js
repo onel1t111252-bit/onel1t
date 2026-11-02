@@ -1,5 +1,5 @@
 (()=>{
-  const version='site-audit-20261102-stability2';
+  const version='site-audit-20261102-stability3';
   const addIcon=(rel,href,type)=>{
     let link=document.querySelector(`link[rel="${rel}"]`);
     if(!link){link=document.createElement('link');link.rel=rel;document.head.appendChild(link);}
@@ -38,9 +38,8 @@
               loadScript('./home-13.js',()=>{
                 loadScript('./home-14.js',()=>{
                   loadScript('./home-15.js',()=>{
-                    loadScript('./home-position-persistence.js',()=>{
-                      loadScript('./home-ui-stability.js');
-                    });
+                    loadScript('./home-position-persistence.js');
+                    loadScript('./home-ui-stability.js');
                   });
                 });
               });
