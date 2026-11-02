@@ -1,5 +1,5 @@
 (()=>{
-  const version='site-audit-20261031-position1';
+  const version='site-audit-20261102-keyfix1';
   const addIcon=(rel,href,type)=>{
     let link=document.querySelector(`link[rel="${rel}"]`);
     if(!link){link=document.createElement('link');link.rel=rel;document.head.appendChild(link);}
@@ -32,11 +32,13 @@
     loadScript('./home-premium.js',()=>{
       loadScript('./home-10.js',()=>{
         loadScript('./home-11.js',()=>{
-          loadScript('./home-12.js',()=>{
-            loadScript('./home-13.js',()=>{
-              loadScript('./home-14.js',()=>{
-                loadScript('./home-15.js',()=>{
-                  loadScript('./home-position-persistence.js');
+          loadScript('./home-11-keyfix.js',()=>{
+            loadScript('./home-12.js',()=>{
+              loadScript('./home-13.js',()=>{
+                loadScript('./home-14.js',()=>{
+                  loadScript('./home-15.js',()=>{
+                    loadScript('./home-position-persistence.js');
+                  });
                 });
               });
             });
