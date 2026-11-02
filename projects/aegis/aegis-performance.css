@@ -1,0 +1,54 @@
+/* AEGIS performance layer — preserves the visual identity while reducing unnecessary paint work. */
+
+body.ai-core-theme .view,
+body.ai-core-theme .panel,
+body.ai-core-theme .metric-grid,
+body.ai-core-theme .aegis-quick-access{
+  content-visibility:auto;
+  contain-intrinsic-size:auto 560px;
+}
+
+body.ai-core-theme .hero-panel,
+body.ai-core-theme .sidebar,
+body.ai-core-theme .topbar{
+  content-visibility:visible;
+}
+
+html.aegis-hidden *,
+html.aegis-hidden *::before,
+html.aegis-hidden *::after{
+  animation-play-state:paused!important;
+}
+
+html.aegis-lite body.ai-core-theme::after{display:none!important}
+html.aegis-lite .aegis-ai-visual:before,
+html.aegis-lite .aegis-ai-visual:after,
+html.aegis-lite .ai-core-orb:before,
+html.aegis-lite .ai-core-orb:after,
+html.aegis-lite .ai-live i{
+  animation:none!important;
+}
+
+html.aegis-lite body.ai-core-theme .sidebar,
+html.aegis-lite body.ai-core-theme .topbar{
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+
+@media(max-width:900px){
+  body.ai-core-theme::after{display:none!important}
+  body.ai-core-theme .sidebar,
+  body.ai-core-theme .topbar{
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.001ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.001ms!important;
+    scroll-behavior:auto!important;
+  }
+}
