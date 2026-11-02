@@ -18,9 +18,9 @@
 /* The hero/navigation must always render immediately. */
 .hero,.topbar,.rail,.feats{content-visibility:visible}
 
-/* Contain expensive cards so hover/paint invalidation stays local. */
-.pc,.feature-card,.vcard,.stats>div,.skill-matrix,.proof-card,.demo-card,.career-build,.career-console,.system-hud{
-  contain:layout paint style;
+/* Keep card layout/style invalidation local without clipping shadows. */
+.pc,.feature-card,.vcard,.stats>div,.skill-matrix,.proof-card,.demo-card,.career-build,.career-console{
+  contain:layout style;
 }
 
 /* Pause decorative work when the tab is hidden. */
@@ -30,7 +30,7 @@ html.perf-hidden *::after{
   animation-play-state:paused!important;
 }
 
-/* On lower-memory/low-core devices keep the same layout, but drop the costly continuous effects. */
+/* On lower-memory/low-core devices keep the same layout, but drop costly continuous effects. */
 html.perf-lite .hero-atmosphere,
 html.perf-lite .site-progress,
 html.perf-lite .signal-pulse,
