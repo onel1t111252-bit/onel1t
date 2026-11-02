@@ -1,0 +1,113 @@
+/* Stable UI overrides: command palette, recruiter view and hero collision fixes. */
+
+/* Keep the hero quote away from the main copy. On narrower desktop widths there
+   simply is not enough horizontal room, so hide it instead of allowing overlap. */
+@media (max-width:1400px){
+  .hero .hq{display:none!important}
+}
+@media (min-width:1401px){
+  .hero .hq{
+    display:block!important;
+    top:auto!important;
+    right:26px!important;
+    bottom:34px!important;
+    max-width:250px!important;
+    font-size:16px!important;
+    line-height:1.35!important;
+    margin:0!important;
+  }
+  .hero .hq i{margin-top:12px!important}
+}
+
+/* Recruiter mode must actually become a clean one-column presentation. */
+body.recruiter-view .shell{
+  grid-template-columns:minmax(0,1fr)!important;
+  width:min(96vw,1280px)!important;
+}
+body.recruiter-view .page{
+  grid-column:1!important;
+  width:100%!important;
+  min-width:0!important;
+  margin:0!important;
+}
+body.recruiter-view .rail,
+body.recruiter-view .hero-atmosphere,
+body.recruiter-view .system-hud,
+body.recruiter-view .soc-section,
+body.recruiter-view .career-console,
+body.recruiter-view .github-signal,
+body.recruiter-view .build-path,
+body.recruiter-view .site-progress,
+body.recruiter-view .feats,
+body.recruiter-view .hero .hq{
+  display:none!important;
+}
+body.recruiter-view .topbar{
+  left:0!important;
+  width:100%!important;
+  grid-template-columns:170px 1fr auto!important;
+}
+body.recruiter-view .hero{
+  min-height:500px!important;
+  height:500px!important;
+  background-position:center!important;
+}
+body.recruiter-view .hero-c{
+  left:clamp(28px,7vw,92px)!important;
+  right:auto!important;
+  top:50%!important;
+  bottom:auto!important;
+  width:min(680px,calc(100% - 56px))!important;
+  transform:translateY(-50%)!important;
+}
+body.recruiter-view .hero-c p{
+  width:100%!important;
+  max-width:640px!important;
+}
+body.recruiter-view .motto{width:min(520px,100%)!important}
+body.recruiter-view .view,
+body.recruiter-view .career-layer,
+body.recruiter-view .project-spotlight,
+body.recruiter-view .proof-section,
+body.recruiter-view .experience-lab,
+body.recruiter-view .opportunity-cta{
+  max-width:1120px!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+}
+body.recruiter-view #projects .pc:nth-child(n+5){display:none!important}
+body.recruiter-view .project-filters,
+body.recruiter-view .flagship-gallery-strip,
+body.recruiter-view .quick-command{display:none!important}
+body.recruiter-view .recruiter-toggle{
+  background:#ededeb!important;
+  color:#080808!important;
+  border-color:#ededeb!important;
+}
+body.recruiter-view .recruiter-toggle i{background:#111!important;box-shadow:none!important}
+
+/* Make the rebuilt command palette deterministic and keyboard friendly. */
+.command-overlay{visibility:hidden}
+.command-overlay.open{visibility:visible}
+.command-overlay[aria-hidden="true"]{visibility:hidden!important}
+.command-overlay[aria-hidden="false"]{visibility:visible!important}
+.command-item:focus-visible,
+.quick-command:focus-visible,
+.recruiter-toggle:focus-visible{
+  outline:2px solid #ff334f!important;
+  outline-offset:2px!important;
+}
+
+@media(max-width:900px){
+  body.recruiter-view .shell{width:100%!important}
+  body.recruiter-view .topbar{grid-template-columns:1fr auto auto!important}
+  body.recruiter-view .hero{height:540px!important;min-height:540px!important}
+  body.recruiter-view .hero-c{
+    left:20px!important;
+    right:20px!important;
+    top:auto!important;
+    bottom:30px!important;
+    width:auto!important;
+    transform:none!important;
+  }
+}
