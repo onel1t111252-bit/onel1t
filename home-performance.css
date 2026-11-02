@@ -1,0 +1,66 @@
+/* Lightweight performance layer: keep the visual design while reducing offscreen work. */
+
+/* Let the browser skip layout/paint for large sections until they approach the viewport. */
+.view,
+.soc-section,
+.career-layer,
+.proof-section,
+.experience-lab,
+.project-spotlight,
+.opportunity-cta,
+.build-path,
+.github-signal,
+.aegis-showcase{
+  content-visibility:auto;
+  contain-intrinsic-size:auto 720px;
+}
+
+/* The hero/navigation must always render immediately. */
+.hero,.topbar,.rail,.feats{content-visibility:visible}
+
+/* Contain expensive cards so hover/paint invalidation stays local. */
+.pc,.feature-card,.vcard,.stats>div,.skill-matrix,.proof-card,.demo-card,.career-build,.career-console,.system-hud{
+  contain:layout paint style;
+}
+
+/* Pause decorative work when the tab is hidden. */
+html.perf-hidden *,
+html.perf-hidden *::before,
+html.perf-hidden *::after{
+  animation-play-state:paused!important;
+}
+
+/* On lower-memory/low-core devices keep the same layout, but drop the costly continuous effects. */
+html.perf-lite .hero-atmosphere,
+html.perf-lite .site-progress,
+html.perf-lite .signal-pulse,
+html.perf-lite .system-hud .hud-head b i{
+  animation:none!important;
+}
+
+html.perf-lite .hero-atmosphere{opacity:.35!important;mix-blend-mode:normal!important}
+html.perf-lite .topbar,
+html.perf-lite .system-hud,
+html.perf-lite .command-overlay,
+html.perf-lite .back-top{
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+
+/* Mobile GPUs benefit from simpler compositing. */
+@media(max-width:900px){
+  .hero-atmosphere{mix-blend-mode:normal!important}
+  .topbar,.system-hud,.command-overlay,.back-top{
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    scroll-behavior:auto!important;
+    animation-duration:.001ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.001ms!important;
+  }
+}
