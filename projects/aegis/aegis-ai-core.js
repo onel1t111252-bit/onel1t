@@ -1,6 +1,24 @@
 (()=>{
   document.body.classList.add('ai-core-theme');
 
+  const root=document.documentElement;
+  const memory=Number(navigator.deviceMemory||8);
+  const cores=Number(navigator.hardwareConcurrency||8);
+  if(memory<=4||cores<=4||matchMedia('(prefers-reduced-motion: reduce)').matches){
+    root.classList.add('aegis-lite');
+  }
+  const syncVisibility=()=>root.classList.toggle('aegis-hidden',document.hidden);
+  document.addEventListener('visibilitychange',syncVisibility,{passive:true});
+  syncVisibility();
+
+  if(!document.querySelector('link[data-aegis-performance]')){
+    const perfCss=document.createElement('link');
+    perfCss.rel='stylesheet';
+    perfCss.href='aegis-performance.css?v=20261102-performance1';
+    perfCss.dataset.aegisPerformance='1';
+    document.head.appendChild(perfCss);
+  }
+
   /* Only quick-access CSS is added here. Hero/fix styles are already linked in index.html,
      so loading them again would duplicate requests and cause avoidable style recalculation. */
   if(!document.querySelector('link[data-aegis-quick-images]')){
