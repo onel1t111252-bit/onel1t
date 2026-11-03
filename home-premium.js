@@ -60,5 +60,5 @@ if(contact&&!document.getElementById('terminal')){
 }
 
 const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-document.querySelectorAll('a[href^="projects/"]').forEach(a=>{a.addEventListener('click',e=>{if(e.defaultPrevented||e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||reduced)return;if(a.target==='_blank')return;e.preventDefault();document.body.classList.add('page-leaving');setTimeout(()=>location.href=a.href,150)})});
+/* Use native link navigation; artificial 150ms delays made project links feel stuck. */
 })();
