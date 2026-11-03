@@ -23,19 +23,13 @@ if(menu&&nav){
   document.addEventListener('click',e=>{if(nav.classList.contains('open')&&!nav.contains(e.target)&&!menu.contains(e.target)){nav.classList.remove('open');menu.setAttribute('aria-expanded','false');}});
 }
 
-/* Readable hand-painted font: keeps the rough style but includes a clear numeral 1. */
-if(!document.getElementById('reference-brush-font')){
-  const fontLink=document.createElement('link');
-  fontLink.id='reference-brush-font';
-  fontLink.rel='stylesheet';
-  fontLink.href='https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap';
-  document.head.appendChild(fontLink);
-}
+/* Hero branding uses Cinzel from the existing primary font stylesheet.
+   Avoid a late-loading, unused external Permanent Marker font. */
 
 const uiStyle=document.createElement('style');
 uiStyle.textContent=`
 :root{
-  --brush:'Permanent Marker','Arial Black',sans-serif;
+  --brush:'Cinzel',serif;
   --ui:'Roboto Condensed','Inter',Arial,sans-serif;
   --mono2:'Roboto Mono','JetBrains Mono',monospace;
 }
@@ -162,20 +156,8 @@ function setActive(id,animate=true){
 function smoothScrollTo(target){
   const header=document.querySelector('.topbar');
   const offset=(header?header.offsetHeight:60)+10;
-  const start=window.scrollY;
-  const end=Math.max(0,target.getBoundingClientRect().top+start-offset);
-  if(prefersReducedMotion){window.scrollTo(0,end);return;}
-  const distance=end-start;
-  const duration=Math.min(1080,Math.max(620,Math.abs(distance)*.48));
-  let t0=null;
-  const ease=t=>1-Math.pow(1-t,4);
-  function step(now){
-    if(t0===null)t0=now;
-    const p=Math.min((now-t0)/duration,1);
-    window.scrollTo(0,start+distance*ease(p));
-    if(p<1)requestAnimationFrame(step);
-  }
-  requestAnimationFrame(step);
+  const end=Math.max(0,target.getBoundingClientRect().top+window.scrollY-offset);
+  window.scrollTo({top:end,behavior:prefersReducedMotion?'auto':'smooth'});
 }
 
 allLinks.forEach(a=>a.addEventListener('click',e=>{
