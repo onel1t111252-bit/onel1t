@@ -15,7 +15,22 @@ const heroText=document.querySelector('.hero-c p');
 if(heroText&&!document.querySelector('.hero-statusline')){const s=document.createElement('div');s.className='hero-statusline';s.innerHTML='<i aria-hidden="true"></i><strong>'+copy.status+'</strong>';heroText.insertAdjacentElement('afterend',s)}
 
 const hero=document.querySelector('.hero');
-if(hero&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches&&matchMedia('(pointer:fine)').matches){hero.addEventListener('pointermove',e=>{const r=hero.getBoundingClientRect();hero.style.setProperty('--hx',((e.clientX-r.left)/r.width*100).toFixed(1)+'%');hero.style.setProperty('--hy',((e.clientY-r.top)/r.height*100).toFixed(1)+'%')},{passive:true})}
+if(hero&&!matchMedia('(prefers-reduced-motion: reduce)').matches&&!document.documentElement.classList.contains('perf-lite')&&matchMedia('(pointer:fine)').matches){
+  let pending=false,last=0,mouseX=0,mouseY=0;
+  hero.addEventListener('pointermove',e=>{
+    mouseX=e.clientX;mouseY=e.clientY;
+    if(pending)return;
+    pending=true;
+    requestAnimationFrame(now=>{
+      pending=false;
+      if(document.hidden||now-last<34)return;
+      last=now;
+      const r=hero.getBoundingClientRect();
+      hero.style.setProperty('--hx',((mouseX-r.left)/r.width*100).toFixed(1)+'%');
+      hero.style.setProperty('--hy',((mouseY-r.top)/r.height*100).toFixed(1)+'%');
+    });
+  },{passive:true});
+}
 
 const projects=document.getElementById('projects');
 const grid=projects?.querySelector('.pgrid');
