@@ -150,9 +150,13 @@ function moveRailIndicator(id,animate=true){
   }
 }
 
+let currentActiveSection='';
 function setActive(id,animate=true){
+  if(id===currentActiveSection)return;
+  currentActiveSection=id;
   allLinks.forEach(a=>a.classList.toggle('active',a.getAttribute('href')===`#${id}`));
   moveRailIndicator(id,animate);
+  document.dispatchEvent(new CustomEvent('onel1t-section-change',{detail:{id}}));
 }
 
 function smoothScrollTo(target){
@@ -184,11 +188,6 @@ allLinks.forEach(a=>a.addEventListener('click',e=>{
   if(menu)menu.setAttribute('aria-expanded','false');
   const id=href.slice(1);
   setActive(id,true);
-  if(rail){
-    rail.classList.remove('rail-pulse');
-    void rail.offsetWidth;
-    rail.classList.add('rail-pulse');
-  }
   smoothScrollTo(target);
   history.replaceState(null,'',href);
 }));
@@ -203,8 +202,7 @@ function updateScrollSpy(){
   const probe=window.scrollY+window.innerHeight*.38;
   let active=trackedSections[0];
   for(const section of trackedSections){
-    const top=section.getBoundingClientRect().top+window.scrollY;
-    if(top<=probe)active=section;else break;
+    if(section.offsetTop<=probe)active=section;else break;
   }
   if(window.innerHeight+window.scrollY>=document.documentElement.scrollHeight-12){
     active=trackedSections[trackedSections.length-1];
@@ -216,8 +214,7 @@ window.addEventListener('scroll',()=>{
 },{passive:true});
 window.addEventListener('resize',()=>{
   updateScrollSpy();
-  const active=document.querySelector('.rail nav a.active');
-  if(active)moveRailIndicator(active.getAttribute('href').slice(1),false);
+  if(currentActiveSection)moveRailIndicator(currentActiveSection,false);
 });
 
 /* Scroll reveal. */
