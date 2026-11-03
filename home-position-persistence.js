@@ -1,84 +1,29 @@
+/* Last-section memory: no duplicate scroll listener and no URL rewrites during scrolling. */
 (()=>{
   'use strict';
   const KEY='onel1t-home-last-section';
-  const links=[...document.querySelectorAll('.nav a[href^="#"],.rail nav a[href^="#"]')];
-  const ids=[...new Set(links.map(a=>a.getAttribute('href')?.slice(1)).filter(Boolean))];
-  const sections=ids.map(id=>document.getElementById(id)).filter(Boolean);
-  const valid=id=>ids.includes(id);
-
+  const ids=new Set(
+    [...document.querySelectorAll('.nav a[href^="#"],.rail nav a[href^="#"]')]
+      .map(a=>a.getAttribute('href').slice(1))
+  );
   let lastSaved='';
-  let writeTimer=0;
-
-  const persist=id=>{
-    if(!valid(id)||id===lastSaved)return;
+  const remember=id=>{
+    if(!ids.has(id)||id===lastSaved)return;
     lastSaved=id;
-    clearTimeout(writeTimer);
-    writeTimer=setTimeout(()=>{
-      try{localStorage.setItem(KEY,id)}catch(_){}
-      const hash=`#${id}`;
-      if(location.hash!==hash){
-        try{history.replaceState(history.state,'',hash)}catch(_){}
-      }
-    },120);
+    try{localStorage.setItem(KEY,id)}catch(_){}
   };
-
-  const saved=()=>{try{return localStorage.getItem(KEY)||''}catch(_){return''}};
-  const requested=()=>{
-    const h=location.hash.replace(/^#/,'');
-    return valid(h)?h:(valid(saved())?saved():'');
-  };
-
-  let ticking=false;
-  let activeId='';
-
-  const sync=()=>{
-    ticking=false;
-    if(!sections.length)return;
-
-    const probe=window.scrollY+window.innerHeight*.38;
-    let active=sections[0];
-    for(const section of sections){
-      const top=section.offsetTop;
-      if(top<=probe)active=section;else break;
-    }
-    if(window.innerHeight+window.scrollY>=document.documentElement.scrollHeight-12){
-      active=sections[sections.length-1];
-    }
-
-    if(active&&active.id!==activeId){
-      activeId=active.id;
-      persist(active.id);
-    }
-  };
-
-  window.addEventListener('scroll',()=>{
-    if(!ticking){
-      ticking=true;
-      requestAnimationFrame(sync);
-    }
-  },{passive:true});
-
-  links.forEach(a=>a.addEventListener('click',()=>{
-    const id=a.getAttribute('href')?.slice(1);
-    if(valid(id)){
-      activeId=id;
-      persist(id);
-    }
-  }));
-
-  const targetId=requested();
-  if(targetId){
-    lastSaved=targetId;
+  document.addEventListener('onel1t-section-change',e=>remember(e.detail?.id));
+  const hash=decodeURIComponent(location.hash.slice(1));
+  let previous='';
+  try{previous=localStorage.getItem(KEY)||''}catch(_){}
+  const target=ids.has(hash)?hash:(ids.has(previous)?previous:'');
+  /* Explicit links already have native browser hash navigation. */
+  if(target&&!ids.has(hash)){
     const restore=()=>{
-      const target=document.getElementById(targetId);
-      if(target){
-        activeId=targetId;
-        target.scrollIntoView({block:'start',behavior:'auto'});
-      }
+      const el=document.getElementById(target);
+      if(el)requestAnimationFrame(()=>el.scrollIntoView({block:'start',behavior:'instant'}));
     };
-    if(document.readyState==='complete')requestAnimationFrame(()=>requestAnimationFrame(restore));
-    else window.addEventListener('load',()=>requestAnimationFrame(()=>requestAnimationFrame(restore)),{once:true});
-  }else{
-    requestAnimationFrame(sync);
+    if(document.readyState==='complete')restore();
+    else window.addEventListener('load',restore,{once:true});
   }
 })();

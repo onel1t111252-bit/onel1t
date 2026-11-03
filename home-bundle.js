@@ -1,4 +1,4 @@
-/* ONEL1T performance bundle: keep the source execution order and avoid late CSS injection. */
+/* ONEL1T performance bundle v2: stable single-pass ordered startup. */
 (()=>{
  'use strict';
  const root=document.documentElement;
@@ -37,19 +37,13 @@ if(menu&&nav){
   document.addEventListener('click',e=>{if(nav.classList.contains('open')&&!nav.contains(e.target)&&!menu.contains(e.target)){nav.classList.remove('open');menu.setAttribute('aria-expanded','false');}});
 }
 
-/* Readable hand-painted font: keeps the rough style but includes a clear numeral 1. */
-if(!document.getElementById('reference-brush-font')){
-  const fontLink=document.createElement('link');
-  fontLink.id='reference-brush-font';
-  fontLink.rel='stylesheet';
-  fontLink.href='https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap';
-  document.head.appendChild(fontLink);
-}
+/* Hero branding uses Cinzel from the existing primary font stylesheet.
+   Avoid a late-loading, unused external Permanent Marker font. */
 
 const uiStyle=document.createElement('style');
 uiStyle.textContent=`
 :root{
-  --brush:'Permanent Marker','Arial Black',sans-serif;
+  --brush:'Cinzel',serif;
   --ui:'Roboto Condensed','Inter',Arial,sans-serif;
   --mono2:'Roboto Mono','JetBrains Mono',monospace;
 }
@@ -164,9 +158,13 @@ function moveRailIndicator(id,animate=true){
   }
 }
 
+let currentActiveSection='';
 function setActive(id,animate=true){
+  if(id===currentActiveSection)return;
+  currentActiveSection=id;
   allLinks.forEach(a=>a.classList.toggle('active',a.getAttribute('href')===`#${id}`));
   moveRailIndicator(id,animate);
+  document.dispatchEvent(new CustomEvent('onel1t-section-change',{detail:{id}}));
 }
 
 function smoothScrollTo(target){
@@ -186,11 +184,6 @@ allLinks.forEach(a=>a.addEventListener('click',e=>{
   if(menu)menu.setAttribute('aria-expanded','false');
   const id=href.slice(1);
   setActive(id,true);
-  if(rail){
-    rail.classList.remove('rail-pulse');
-    void rail.offsetWidth;
-    rail.classList.add('rail-pulse');
-  }
   smoothScrollTo(target);
   history.replaceState(null,'',href);
 }));
@@ -205,8 +198,7 @@ function updateScrollSpy(){
   const probe=window.scrollY+window.innerHeight*.38;
   let active=trackedSections[0];
   for(const section of trackedSections){
-    const top=section.getBoundingClientRect().top+window.scrollY;
-    if(top<=probe)active=section;else break;
+    if(section.offsetTop<=probe)active=section;else break;
   }
   if(window.innerHeight+window.scrollY>=document.documentElement.scrollHeight-12){
     active=trackedSections[trackedSections.length-1];
@@ -218,8 +210,7 @@ window.addEventListener('scroll',()=>{
 },{passive:true});
 window.addEventListener('resize',()=>{
   updateScrollSpy();
-  const active=document.querySelector('.rail nav a.active');
-  if(active)moveRailIndicator(active.getAttribute('href').slice(1),false);
+  if(currentActiveSection)moveRailIndicator(currentActiveSection,false);
 });
 
 /* Scroll reveal. */
@@ -270,15 +261,15 @@ if(heroText&&!document.querySelector('.hero-statusline')){const s=document.creat
 
 const hero=document.querySelector('.hero');
 if(hero&&!matchMedia('(prefers-reduced-motion: reduce)').matches&&!document.documentElement.classList.contains('perf-lite')&&matchMedia('(pointer:fine)').matches){
-  let pending=false;
-  let mouseX=0,mouseY=0;
+  let pending=false,last=0,mouseX=0,mouseY=0;
   hero.addEventListener('pointermove',e=>{
     mouseX=e.clientX;mouseY=e.clientY;
     if(pending)return;
     pending=true;
-    requestAnimationFrame(()=>{
+    requestAnimationFrame(now=>{
       pending=false;
-      if(document.hidden)return;
+      if(document.hidden||now-last<34)return;
+      last=now;
       const r=hero.getBoundingClientRect();
       hero.style.setProperty('--hx',((mouseX-r.left)/r.width*100).toFixed(1)+'%');
       hero.style.setProperty('--hy',((mouseY-r.top)/r.height*100).toFixed(1)+'%');
@@ -329,7 +320,7 @@ if(contact&&!document.getElementById('terminal')){
 }
 
 const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-document.querySelectorAll('a[href^="projects/"]').forEach(a=>{a.addEventListener('click',e=>{if(e.defaultPrevented||e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||reduced)return;if(a.target==='_blank')return;e.preventDefault();document.body.classList.add('page-leaving');setTimeout(()=>location.href=a.href,150)})});
+/* Use native link navigation; artificial 150ms delays made project links feel stuck. */
 })();
 
 
@@ -343,7 +334,10 @@ const T={
   uk:{hudTitle:'СИСТЕМА ONEL1T',online:'ОНЛАЙН',focus:'ФОКУС',focusV:'КІБЕРБЕЗПЕКА',build:'ЗАРАЗ У РОБОТІ',buildV:'NEXUS / CYBER LAB',mode:'РЕЖИМ',modeV:'ВЧУСЯ · СТВОРЮЮ · ЗАХИЩАЮ',uptime:'ПОРТФОЛІО',uptimeV:'АКТИВНЕ 2026',skillsTitle:'МАТРИЦЯ НАВИЧОК',skillsSub:'ІНСТРУМЕНТИ ДЛЯ БЕЗПЕКИ, МЕРЕЖ І РОЗРОБКИ',groups:[['БЕЗПЕКА',['Кібербезпека','Blue Team','Аналіз логів','OSINT','Аналіз фішингу']],['МЕРЕЖІ',['Cisco','IPv4 / CIDR','LAN / WAN','Маршрутизація','Топології мереж']],['РОЗРОБКА',['C++','C#','Python','JavaScript','HTML / CSS']],['СИСТЕМИ',['Windows','Діагностика','Git / GitHub','Адаптивний UI','Local-first інструменти']]],caseLabel:'КОРОТКИЙ CASE STUDY',caseA:[['ПРОБЛЕМА','Перетворити теорію кібербезпеки на інтерактивне навчальне середовище.'],['РІШЕННЯ','SOC-симуляції, візуалізація мережі та локальні вправи у браузері.'],['ТЕХНОЛОГІЇ','JavaScript · UI-системи · defensive workflows'],['РЕЗУЛЬТАТ','Флагманська лабораторія, що демонструє аналіз і практичне security-мислення.']],caseB:[['ПРОБЛЕМА','Розслідування часто розкидане між окремими інструментами.'],['РІШЕННЯ','Єдиний workspace для SOC triage, OSINT-нотаток, мережевого контексту та справ.'],['ТЕХНОЛОГІЇ','JavaScript · data workflows · інтерактивний UI'],['РЕЗУЛЬТАТ','Cyber intelligence workspace рівня портфоліо з експортом звітів.']],liveTitle:'ЖИВИЙ GITHUB СИГНАЛ',liveSub:'АКТИВНІСТЬ ПУБЛІЧНОГО РЕПОЗИТОРІЮ',repo:'РЕПОЗИТОРІЙ',latest:'ОСТАННІЙ КОМІТ',updated:'ОНОВЛЕНО',branch:'ГІЛКА',loading:'СИНХРОНІЗАЦІЯ…',unavailable:'PUBLIC API НЕДОСТУПНИЙ — ВІДКРИЙ GITHUB ДЛЯ АКТУАЛЬНОГО СТАТУСУ',openGit:'ВІДКРИТИ GITHUB ↗',pathTitle:'ШЛЯХ РОЗВИТКУ',pathSub:'ВІД ОСНОВ ДО ВЛАСНИХ SECURITY-ПРОДУКТІВ',path:[['2025','СИСТЕМИ Й ПІДТРИМКА','Системи безпеки, телеком-процеси та практична діагностика.'],['2025–26','МЕРЕЖІ Й КОД','C++, Python, веброзробка та основи комп’ютерних мереж.'],['2026','CYBER LABS','Інтерактивні blue-team, OSINT та мережеві security-проєкти.'],['ДАЛІ','ГЛИБША БЕЗПЕКА','Розвивати defensive analysis, автоматизацію та якість продуктів.']],terminalSystem:'SYSTEM: ONLINE · BUILD: ONEL1T · MODE: LEARN / BUILD / DEFEND',terminalStatus:'Статус портфоліо: флагманські проєкти live, локалізація активна, mobile polish увімкнено.',terminalJourney:'Шлях: системи → мережі → розробка → продукти з кібербезпеки.',terminalStruggle:'Без коротких шляхів. Створюй, ламай, вивчай, покращуй, повторюй.',top:'ВГОРУ',caseToggle:'ПОКАЗАТИ НОТАТКИ',caseClose:'СХОВАТИ НОТАТКИ'},
   cs:{hudTitle:'SYSTÉM ONEL1T',online:'ONLINE',focus:'ZAMĚŘENÍ',focusV:'KYBERBEZPEČNOST',build:'AKTUÁLNÍ BUILD',buildV:'NEXUS / CYBER LAB',mode:'REŽIM',modeV:'UČIT · TVOŘIT · BRÁNIT',uptime:'PORTFOLIO',uptimeV:'AKTIVNÍ 2026',skillsTitle:'MATICE DOVEDNOSTÍ',skillsSub:'NÁSTROJE PRO BEZPEČNOST, SÍTĚ A VÝVOJ',groups:[['BEZPEČNOST',['Kyberbezpečnost','Blue Team','Analýza logů','OSINT','Analýza phishingu']],['SÍTĚ',['Cisco','IPv4 / CIDR','LAN / WAN','Routing','Síťové topologie']],['VÝVOJ',['C++','C#','Python','JavaScript','HTML / CSS']],['SYSTÉMY',['Windows','Troubleshooting','Git / GitHub','Responzivní UI','Local-first nástroje']]],caseLabel:'RYCHLÝ CASE STUDY',caseA:[['PROBLÉM','Převést bezpečnostní koncepty do interaktivního výukového prostředí.'],['ŘEŠENÍ','SOC simulace, síťové pohledy a lokální cvičení v prohlížeči.'],['TECHNOLOGIE','JavaScript · UI systémy · defensive workflows'],['VÝSLEDEK','Vlajková laboratoř demonstrující analýzu a praktické bezpečnostní myšlení.']],caseB:[['PROBLÉM','Vyšetřovací workflow bývá rozdělené mezi více nástrojů.'],['ŘEŠENÍ','Jeden workspace pro SOC triage, OSINT poznámky, síťový kontext a případy.'],['TECHNOLOGIE','JavaScript · data workflows · interaktivní UI'],['VÝSLEDEK','Portfolio cyber intelligence workspace s exportem reportů.']],liveTitle:'ŽIVÝ GITHUB SIGNÁL',liveSub:'AKTIVITA VEŘEJNÉHO REPOZITÁŘE',repo:'REPOZITÁŘ',latest:'POSLEDNÍ COMMIT',updated:'AKTUALIZOVÁNO',branch:'VĚTEV',loading:'SYNCHRONIZACE…',unavailable:'PUBLIC API NENÍ DOSTUPNÉ — OTEVŘI GITHUB PRO AKTUÁLNÍ STAV',openGit:'OTEVŘÍT GITHUB ↗',pathTitle:'CESTA VÝVOJE',pathSub:'OD ZÁKLADŮ K VLASTNÍM SECURITY PRODUKTŮM',path:[['2025','SYSTÉMY & PODPORA','Bezpečnostní systémy, telecom workflow a praktický troubleshooting.'],['2025–26','SÍTĚ & KÓD','C++, Python, webový vývoj a síťové základy.'],['2026','CYBER LABS','Interaktivní blue-team, OSINT a síťové bezpečnostní projekty.'],['DALŠÍ','HLUBŠÍ SECURITY','Rozvoj defensive analýzy, automatizace a produktové kvality.']],terminalSystem:'SYSTEM: ONLINE · BUILD: ONEL1T · MODE: LEARN / BUILD / DEFEND',terminalStatus:'Stav portfolia: flagship projekty live, lokalizace aktivní, mobile polish zapnutý.',terminalJourney:'Cesta: systémy → sítě → vývoj → produkty kyberbezpečnosti.',terminalStruggle:'Žádné zkratky. Tvoř, rozbíjej, uč se, zlepšuj a opakuj.',top:'NAHORU',caseToggle:'ZOBRAZIT POZNÁMKY',caseClose:'SKRÝT POZNÁMKY'}
 }[L];
-if(!document.querySelector('.site-progress')){const p=document.createElement('div');p.className='site-progress';p.setAttribute('aria-hidden','true');document.body.prepend(p);const update=()=>{const d=document.documentElement,max=d.scrollHeight-innerHeight,v=max>0?Math.min(1,scrollY/max):0;p.style.transform=`scaleX(${v})`};addEventListener('scroll',update,{passive:true});addEventListener('resize',update,{passive:true});update();}
+if(!document.querySelector('.site-progress')){const p=document.createElement('div');p.className='site-progress';p.setAttribute('aria-hidden','true');document.body.prepend(p);
+  let pending=false;
+  const update=()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;const d=document.documentElement,max=d.scrollHeight-innerHeight,v=max>0?Math.min(1,scrollY/max):0;p.style.transform=`scaleX(${v})`})};
+  addEventListener('scroll',update,{passive:true});addEventListener('resize',update,{passive:true});update();}
 const hero=document.querySelector('.hero');if(hero&&!hero.querySelector('.hero-atmosphere')){const a=document.createElement('div');a.className='hero-atmosphere';a.setAttribute('aria-hidden','true');a.innerHTML='<i></i><i></i><i></i><i></i><i></i><i></i><span></span>';hero.prepend(a);}if(hero&&!hero.querySelector('.system-hud')){const hud=document.createElement('aside');hud.className='system-hud';hud.innerHTML=`<div class="hud-head"><span>${T.hudTitle}</span><b><i></i>${T.online}</b></div><div class="hud-grid"><div><small>${T.focus}</small><strong>${T.focusV}</strong></div><div><small>${T.build}</small><strong>${T.buildV}</strong></div><div><small>${T.mode}</small><strong>${T.modeV}</strong></div><div><small>${T.uptime}</small><strong>${T.uptimeV}</strong></div></div>`;hero.append(hud);}
 const skills=document.getElementById('skills');if(skills&&!skills.querySelector('.skill-matrix')){const old=skills.querySelector('.chips');if(old)old.classList.add('skill-chips-fallback');const box=document.createElement('div');box.className='skill-matrix';box.innerHTML=`<div class="matrix-head"><b>${T.skillsTitle}</b><span>${T.skillsSub}</span></div><div class="matrix-grid">${T.groups.map((g,i)=>`<article class="matrix-group"><div class="matrix-no">0${i+1}</div><h3>${g[0]}</h3><div class="matrix-items">${g[1].map(x=>`<span>${x}</span>`).join('')}</div></article>`).join('')}</div>`;(old||skills.lastElementChild)?.insertAdjacentElement('afterend',box);}
 const featured=[...document.querySelectorAll('#projects .project-featured')];featured.slice(0,2).forEach((card,i)=>{if(card.querySelector('.case-mini'))return;const data=i===0?T.caseA:T.caseB,actions=card.querySelector('.project-actions');if(!actions)return;const wrap=document.createElement('div');wrap.className='case-mini';wrap.innerHTML=`<button type="button" class="case-toggle" aria-expanded="false"><span>${T.caseLabel}</span><b>${T.caseToggle}</b></button><div class="case-grid" hidden>${data.map(x=>`<div><small>${x[0]}</small><p>${x[1]}</p></div>`).join('')}</div>`;actions.before(wrap);const btn=wrap.querySelector('.case-toggle'),grid=wrap.querySelector('.case-grid');btn.addEventListener('click',()=>{const open=btn.getAttribute('aria-expanded')==='true';btn.setAttribute('aria-expanded',String(!open));grid.hidden=open;btn.querySelector('b').textContent=open?T.caseToggle:T.caseClose;});});
@@ -369,22 +363,8 @@ const T={
  cs:{cmd:'PŘÍKAZY',search:'Hledat v portfoliu…',esc:'ESC',hint:'↑↓ navigace · Enter otevřít · Esc zavřít',noMatches:'NIC NENALEZENO',all:'VŠE',cyber:'KYBERNETICKÁ BEZPEČNOST',net:'SÍTĚ',dev:'VÝVOJ',filterTitle:'FILTR DALŠÍCH PROJEKTŮ',filterSub:'AEGIS zůstává připnutý výše · ostatní projekty lze filtrovat podle zaměření',showing:'ZOBRAZENO',socTitle:'ONEL1T SECURITY CORE',socSub:'INTERAKTIVNÍ DEMO · BEZPEČNĚ SIMULOVANÉ UDÁLOSTI',demo:'DEMO DATA',system:'SYSTÉM',firewall:'ZÁSADY',network:'SÍŤ',events:'UDÁLOSTI',online:'ONLINE',active:'AKTIVNÍ',stable:'STABILNÍ',feed:'PROUD UDÁLOSTÍ',map:'SÍŤOVÝ POHLED',localDemo:'LOKÁLNÍ DEMO',topology:'VÝUKOVÁ TOPOLOGIE',note:'Výuková demonstrace rozhraní. Nezpracovává živý provoz uživatelů ani soukromá data.',case:'PŘÍPADOVÁ STUDIE',open:'OTEVŘÍT',actions:[['DM','Domů','Hlavní obrazovka a přehled portfolia','#home'],['PR','Projekty','Hlavní systémy a nástroje','#projects'],['AE','AEGIS','Otevřít platformu bezpečnostních operací',`projects/aegis/index.html?lang=${L}`],['CL','Cyber Lab','Otevřít interaktivní laboratoř kybernetické bezpečnosti','projects/cyber-lab/index.html'],['NX','NEXUS','Otevřít pracovní prostředí kybernetické analýzy','projects/nexus/index.html'],['CV','CV','Otevřít životopis','cv-cz.html'],['GH','GitHub','Otevřít veřejný zdrojový kód','https://github.com/onel1t111252-bit'],['KT','Kontakt','Přejít na kontakt','#contact']],eventsList:[['AUTH_OK','Lokální relace ověřena','OK'],['MFA_CHECK','Výuková kontrola identity prošla','OK'],['POLICY','Bezpečnostní zásady jsou v pořádku','OK'],['NET_MAP','Laboratorní topologie synchronizována','OK'],['LOG_REVIEW','Ukázková dávka logů indexována','OK'],['BACKUP','Demonstrační snímek prostředí je připraven','OK'],['ALERT_TEST','Výukové upozornění zařazeno','KONTROLA']]}
 }[L];
 
-/* Ctrl/Cmd+K command palette */
-if(!document.querySelector('.command-overlay')){
- const overlay=document.createElement('div');overlay.className='command-overlay';overlay.setAttribute('aria-hidden','true');
- overlay.innerHTML=`<div class="command-box" role="dialog" aria-modal="true" aria-label="${T.cmd}"><div class="command-head"><span>›</span><input type="search" autocomplete="off" spellcheck="false" placeholder="${T.search}" aria-label="${T.search}"><kbd>${T.esc}</kbd></div><div class="command-list"></div><div class="command-foot"><span>${T.hint}</span><span>ONEL1T // QUICK NAV</span></div></div>`;
- document.body.appendChild(overlay);
- const input=overlay.querySelector('input'),list=overlay.querySelector('.command-list');let visible=[...T.actions],active=0;
- const render=()=>{list.innerHTML=visible.length?visible.map((a,i)=>`<button type="button" class="command-item${i===active?' active':''}" data-i="${i}"><span class="command-icon">${a[0]}</span><span class="command-copy"><b>${a[1]}</b><small>${a[2]}</small></span><span class="command-key">↵</span></button>`).join(''):`<div class="command-empty">${T.noMatches}</div>`;};
- const close=()=>{overlay.classList.remove('open');overlay.setAttribute('aria-hidden','true');};
- const open=()=>{overlay.classList.add('open');overlay.setAttribute('aria-hidden','false');input.value='';visible=[...T.actions];active=0;render();setTimeout(()=>input.focus(),0);};
- const go=a=>{if(!a)return;close();if(a[3].startsWith('http'))window.open(a[3],'_blank','noopener');else location.href=a[3];};
- input.addEventListener('input',()=>{const q=input.value.trim().toLowerCase();visible=T.actions.filter(a=>(a[1]+' '+a[2]).toLowerCase().includes(q));active=0;render();});
- input.addEventListener('keydown',e=>{if(e.key==='ArrowDown'){e.preventDefault();active=Math.min(active+1,visible.length-1);render()}else if(e.key==='ArrowUp'){e.preventDefault();active=Math.max(active-1,0);render()}else if(e.key==='Enter'){e.preventDefault();go(visible[active])}else if(e.key==='Escape')close();});
- list.addEventListener('click',e=>{const b=e.target.closest('.command-item');if(b)go(visible[Number(b.dataset.i)]);});overlay.addEventListener('click',e=>{if(e.target===overlay)close();});
- addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();overlay.classList.contains('open')?close():open()}else if(e.key==='Escape'&&overlay.classList.contains('open'))close();});
- const tools=document.querySelector('.topbar .tools');if(tools){const b=document.createElement('button');b.type='button';b.className='quick-command';b.innerHTML=`${T.cmd}<kbd>Ctrl K</kbd>`;b.addEventListener('click',open);tools.insertBefore(b,tools.querySelector('.gh'));}
-}
+/* Command palette is managed exclusively by home-ui-stability.js.
+   The previous instance registered a stale global keyboard listener. */
 
 /* Interactive SOC-style dashboard using clearly labelled demo data. */
 const feats=document.querySelector('.feats');if(feats&&!document.querySelector('.soc-section')){
@@ -392,7 +372,15 @@ const feats=document.querySelector('.feats');if(feats&&!document.querySelector('
  const feed=sec.querySelector('.soc-feed-list');let idx=0;
  const stamp=()=>new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
  const addEvent=(fresh=false)=>{const ev=T.eventsList[idx%T.eventsList.length];idx++;const row=document.createElement('div');row.className='soc-event'+(ev[2]==='REVIEW'?' warn':'')+(fresh?' new':'');row.innerHTML=`<time>${stamp()}</time><b>${ev[0]}</b><span>${ev[1]}</span><em>${ev[2]}</em>`;feed.prepend(row);while(feed.children.length>5)feed.lastElementChild.remove();if(fresh)setTimeout(()=>row.classList.remove('new'),700)};
- for(let i=0;i<5;i++)addEvent(false);if(!reduced)setInterval(()=>{if(!document.hidden&&!document.documentElement.classList.contains('perf-lite'))addEvent(true)},4200);
+ for(let i=0;i<5;i++)addEvent(false);
+  let feedVisible=false;
+  if('IntersectionObserver' in window){
+    const watcher=new IntersectionObserver(entries=>{feedVisible=entries.some(e=>e.isIntersecting)},{rootMargin:'250px'});
+    watcher.observe(sec);
+  }else feedVisible=true;
+  if(!reduced)setInterval(()=>{
+    if(feedVisible&&!document.hidden&&!document.documentElement.classList.contains('perf-lite'))addEvent(true);
+  },4200);
 }
 
 /* Filters cover the eight static project cards; AEGIS remains pinned above as the primary flagship. */
@@ -467,12 +455,8 @@ const T={
  cs:{recruit:'REŽIM PRO RECRUITERY',visual:'VIZUÁLNÍ REŽIM',proof:'DŮKAZY PRAXE',proofTitle:'Dovednosti podložené reálnými projekty',proofSub:'Rychlý pohled na to, kde se jednotlivé dovednosti v portfoliu skutečně používají.',evidence:'DŮKAZY',experienceLabel:'PRAXE',proofs:[['BEZPEČNOST','ONEL1T AEGIS · Cyber Lab · Analýza logů','Defenzivní analýza, zpracování incidentů, bezpečnostní signály a bezpečná cvičení v prohlížeči.',['AEGIS|projects/aegis/index.html?lang=cs','Cyber Lab|projects/cyber-lab/index.html','Analýza logů|projects/security-log-triage/index.html']],['SÍTĚ','NEXUS · IPv4 Calculator · Packet Tracer','Topologie, IPv4/CIDR a síťový kontext v praktických nástrojích.',['NEXUS|projects/nexus/index.html','IPv4 Tool|projects/ipv4-subnet-calculator/index.html']],['VÝVOJ','Portfolio · C++ Toolkit · Python Utilities','C++, Python, JavaScript a responzivní rozhraní v reálných projektech.',['C++ Toolkit|projects/cpp-console-toolkit/index.html','Python Utilities|projects/python-security-utilities/index.html']],['PODPORA','IT praxe · Kyivstar','Systematická diagnostika, procesní disciplína a technická komunikace.',[`CV|${cvHref}#experience`]]],xp:'INTERAKTIVNÍ PRAXE',xpTitle:'Časová osa zkušeností',xpSub:'Vyber roli a zobraz praktický kontext a přínos pro technický profil.',xps:[['01','MagneticOne — IT praxe','07.07.2026 – 30.07.2026 · Ternopil','Úkoly kolem bezpečnostních systémů, interních postupů a omezeného přístupu praktikanta.','BEZPEČNOSTNÍ SYSTÉMY|PROCESY|PODPORA'],['02','Forte Group — IT praxe','07.07.2025 – 30.07.2025 · Ternopil','Podpora úkolů spojených s bezpečnostními systémy pod dohledem a v rámci přidělených oprávnění.','BEZPEČNOSTNÍ PROCESY|PODPORA|DISCIPLÍNA'],['03','Yaware — IT praxe','01.03.2025 – 01.04.2025 · Ternopil','Seznámení s profesionálními procesy a pomoc s úlohami kolem bezpečnostních systémů při omezeném přístupu.','BEZPEČNOSTNÍ SYSTÉMY|PRACOVNÍ POSTUPY|UČENÍ'],['04','Kyivstar','Ukončeno 05.09.2026 · Telekomunikace','Komunikace se zákazníky, servisní procesy, telekomunikační produkty a technické dotazy.','ZÁKAZNICKÁ PODPORA|TELEKOM|KOMUNIKACE']],demo:'DEMO PROJEKTŮ',demoTitle:'Bezpečné simulované náhledy',demoSub:'Tyto mini náhledy jsou pouze ilustrační — nezpracovávají živý provoz ani soukromá data.',sim:'SIMULACE',lab:'Tok událostí Cyber Lab',nexus:'Síťový kontext NEXUS',labRows:[['KONTROLA PŘIHLÁŠENÍ','OK'],['ZÁSADY MFA','OK'],['KONTROLA LOGŮ','PŘIPRAVENO']],nodes:['KLIENT','JÁDRO','SOC','PŘÍPAD']}
 }[L];
 
-const tools=document.querySelector('.topbar .tools');
-if(tools&&!tools.querySelector('.recruiter-toggle')){
- const b=document.createElement('button');b.type='button';b.className='recruiter-toggle';b.setAttribute('aria-pressed','false');b.innerHTML=`<i></i><span>${T.recruit}</span>`;
- const apply=on=>{document.body.classList.toggle('recruiter-view',on);b.setAttribute('aria-pressed',String(on));b.querySelector('span').textContent=on?T.visual:T.recruit;safeSession.set('onel1t-recruiter-view',on?'1':'0')};
- b.addEventListener('click',()=>apply(!document.body.classList.contains('recruiter-view')));tools.prepend(b);apply(safeSession.get('onel1t-recruiter-view')==='1');
-}
+/* Recruiter control is installed once by home-ui-stability.js,
+   avoiding duplicate setup and removal during initial rendering. */
 
 const projects=document.getElementById('projects');
 if(projects&&!document.querySelector('.proof-section')){
@@ -540,88 +524,33 @@ if(about){const stats=about.querySelectorAll('.stats>div');stats.forEach((el,i)=
 })();
 
 /* SOURCE 9: home-position-persistence.js */
+/* Last-section memory: no duplicate scroll listener and no URL rewrites during scrolling. */
 (()=>{
   'use strict';
   const KEY='onel1t-home-last-section';
-  const links=[...document.querySelectorAll('.nav a[href^="#"],.rail nav a[href^="#"]')];
-  const ids=[...new Set(links.map(a=>a.getAttribute('href')?.slice(1)).filter(Boolean))];
-  const sections=ids.map(id=>document.getElementById(id)).filter(Boolean);
-  const valid=id=>ids.includes(id);
-
+  const ids=new Set(
+    [...document.querySelectorAll('.nav a[href^="#"],.rail nav a[href^="#"]')]
+      .map(a=>a.getAttribute('href').slice(1))
+  );
   let lastSaved='';
-  let writeTimer=0;
-
-  const persist=id=>{
-    if(!valid(id)||id===lastSaved)return;
+  const remember=id=>{
+    if(!ids.has(id)||id===lastSaved)return;
     lastSaved=id;
-    clearTimeout(writeTimer);
-    writeTimer=setTimeout(()=>{
-      try{localStorage.setItem(KEY,id)}catch(_){}
-      const hash=`#${id}`;
-      if(location.hash!==hash){
-        try{history.replaceState(history.state,'',hash)}catch(_){}
-      }
-    },120);
+    try{localStorage.setItem(KEY,id)}catch(_){}
   };
-
-  const saved=()=>{try{return localStorage.getItem(KEY)||''}catch(_){return''}};
-  const requested=()=>{
-    const h=location.hash.replace(/^#/,'');
-    return valid(h)?h:(valid(saved())?saved():'');
-  };
-
-  let ticking=false;
-  let activeId='';
-
-  const sync=()=>{
-    ticking=false;
-    if(!sections.length)return;
-
-    const probe=window.scrollY+window.innerHeight*.38;
-    let active=sections[0];
-    for(const section of sections){
-      const top=section.offsetTop;
-      if(top<=probe)active=section;else break;
-    }
-    if(window.innerHeight+window.scrollY>=document.documentElement.scrollHeight-12){
-      active=sections[sections.length-1];
-    }
-
-    if(active&&active.id!==activeId){
-      activeId=active.id;
-      persist(active.id);
-    }
-  };
-
-  window.addEventListener('scroll',()=>{
-    if(!ticking){
-      ticking=true;
-      requestAnimationFrame(sync);
-    }
-  },{passive:true});
-
-  links.forEach(a=>a.addEventListener('click',()=>{
-    const id=a.getAttribute('href')?.slice(1);
-    if(valid(id)){
-      activeId=id;
-      persist(id);
-    }
-  }));
-
-  const targetId=requested();
-  if(targetId){
-    lastSaved=targetId;
+  document.addEventListener('onel1t-section-change',e=>remember(e.detail?.id));
+  const hash=decodeURIComponent(location.hash.slice(1));
+  let previous='';
+  try{previous=localStorage.getItem(KEY)||''}catch(_){}
+  const target=ids.has(hash)?hash:(ids.has(previous)?previous:'');
+  /* Explicit links already have native browser hash navigation. */
+  if(target&&!ids.has(hash)){
     const restore=()=>{
-      const target=document.getElementById(targetId);
-      if(target){
-        activeId=targetId;
-        target.scrollIntoView({block:'start',behavior:'auto'});
-      }
+      const el=document.getElementById(target);
+      if(el)requestAnimationFrame(()=>el.scrollIntoView({block:'start',behavior:'instant'}));
     };
-    if(document.readyState==='complete')requestAnimationFrame(()=>requestAnimationFrame(restore));
-    else window.addEventListener('load',()=>requestAnimationFrame(()=>requestAnimationFrame(restore)),{once:true});
-  }else{
-    requestAnimationFrame(sync);
+    if(document.readyState==='complete')restore();
+    else window.addEventListener('load',restore,{once:true});
   }
 })();
 

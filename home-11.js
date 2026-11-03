@@ -9,22 +9,8 @@ const T={
  cs:{cmd:'PŘÍKAZY',search:'Hledat v portfoliu…',esc:'ESC',hint:'↑↓ navigace · Enter otevřít · Esc zavřít',noMatches:'NIC NENALEZENO',all:'VŠE',cyber:'KYBERNETICKÁ BEZPEČNOST',net:'SÍTĚ',dev:'VÝVOJ',filterTitle:'FILTR DALŠÍCH PROJEKTŮ',filterSub:'AEGIS zůstává připnutý výše · ostatní projekty lze filtrovat podle zaměření',showing:'ZOBRAZENO',socTitle:'ONEL1T SECURITY CORE',socSub:'INTERAKTIVNÍ DEMO · BEZPEČNĚ SIMULOVANÉ UDÁLOSTI',demo:'DEMO DATA',system:'SYSTÉM',firewall:'ZÁSADY',network:'SÍŤ',events:'UDÁLOSTI',online:'ONLINE',active:'AKTIVNÍ',stable:'STABILNÍ',feed:'PROUD UDÁLOSTÍ',map:'SÍŤOVÝ POHLED',localDemo:'LOKÁLNÍ DEMO',topology:'VÝUKOVÁ TOPOLOGIE',note:'Výuková demonstrace rozhraní. Nezpracovává živý provoz uživatelů ani soukromá data.',case:'PŘÍPADOVÁ STUDIE',open:'OTEVŘÍT',actions:[['DM','Domů','Hlavní obrazovka a přehled portfolia','#home'],['PR','Projekty','Hlavní systémy a nástroje','#projects'],['AE','AEGIS','Otevřít platformu bezpečnostních operací',`projects/aegis/index.html?lang=${L}`],['CL','Cyber Lab','Otevřít interaktivní laboratoř kybernetické bezpečnosti','projects/cyber-lab/index.html'],['NX','NEXUS','Otevřít pracovní prostředí kybernetické analýzy','projects/nexus/index.html'],['CV','CV','Otevřít životopis','cv-cz.html'],['GH','GitHub','Otevřít veřejný zdrojový kód','https://github.com/onel1t111252-bit'],['KT','Kontakt','Přejít na kontakt','#contact']],eventsList:[['AUTH_OK','Lokální relace ověřena','OK'],['MFA_CHECK','Výuková kontrola identity prošla','OK'],['POLICY','Bezpečnostní zásady jsou v pořádku','OK'],['NET_MAP','Laboratorní topologie synchronizována','OK'],['LOG_REVIEW','Ukázková dávka logů indexována','OK'],['BACKUP','Demonstrační snímek prostředí je připraven','OK'],['ALERT_TEST','Výukové upozornění zařazeno','KONTROLA']]}
 }[L];
 
-/* Ctrl/Cmd+K command palette */
-if(!document.querySelector('.command-overlay')){
- const overlay=document.createElement('div');overlay.className='command-overlay';overlay.setAttribute('aria-hidden','true');
- overlay.innerHTML=`<div class="command-box" role="dialog" aria-modal="true" aria-label="${T.cmd}"><div class="command-head"><span>›</span><input type="search" autocomplete="off" spellcheck="false" placeholder="${T.search}" aria-label="${T.search}"><kbd>${T.esc}</kbd></div><div class="command-list"></div><div class="command-foot"><span>${T.hint}</span><span>ONEL1T // QUICK NAV</span></div></div>`;
- document.body.appendChild(overlay);
- const input=overlay.querySelector('input'),list=overlay.querySelector('.command-list');let visible=[...T.actions],active=0;
- const render=()=>{list.innerHTML=visible.length?visible.map((a,i)=>`<button type="button" class="command-item${i===active?' active':''}" data-i="${i}"><span class="command-icon">${a[0]}</span><span class="command-copy"><b>${a[1]}</b><small>${a[2]}</small></span><span class="command-key">↵</span></button>`).join(''):`<div class="command-empty">${T.noMatches}</div>`;};
- const close=()=>{overlay.classList.remove('open');overlay.setAttribute('aria-hidden','true');};
- const open=()=>{overlay.classList.add('open');overlay.setAttribute('aria-hidden','false');input.value='';visible=[...T.actions];active=0;render();setTimeout(()=>input.focus(),0);};
- const go=a=>{if(!a)return;close();if(a[3].startsWith('http'))window.open(a[3],'_blank','noopener');else location.href=a[3];};
- input.addEventListener('input',()=>{const q=input.value.trim().toLowerCase();visible=T.actions.filter(a=>(a[1]+' '+a[2]).toLowerCase().includes(q));active=0;render();});
- input.addEventListener('keydown',e=>{if(e.key==='ArrowDown'){e.preventDefault();active=Math.min(active+1,visible.length-1);render()}else if(e.key==='ArrowUp'){e.preventDefault();active=Math.max(active-1,0);render()}else if(e.key==='Enter'){e.preventDefault();go(visible[active])}else if(e.key==='Escape')close();});
- list.addEventListener('click',e=>{const b=e.target.closest('.command-item');if(b)go(visible[Number(b.dataset.i)]);});overlay.addEventListener('click',e=>{if(e.target===overlay)close();});
- addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();overlay.classList.contains('open')?close():open()}else if(e.key==='Escape'&&overlay.classList.contains('open'))close();});
- const tools=document.querySelector('.topbar .tools');if(tools){const b=document.createElement('button');b.type='button';b.className='quick-command';b.innerHTML=`${T.cmd}<kbd>Ctrl K</kbd>`;b.addEventListener('click',open);tools.insertBefore(b,tools.querySelector('.gh'));}
-}
+/* Command palette is managed exclusively by home-ui-stability.js.
+   The previous instance registered a stale global keyboard listener. */
 
 /* Interactive SOC-style dashboard using clearly labelled demo data. */
 const feats=document.querySelector('.feats');if(feats&&!document.querySelector('.soc-section')){
@@ -32,7 +18,15 @@ const feats=document.querySelector('.feats');if(feats&&!document.querySelector('
  const feed=sec.querySelector('.soc-feed-list');let idx=0;
  const stamp=()=>new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
  const addEvent=(fresh=false)=>{const ev=T.eventsList[idx%T.eventsList.length];idx++;const row=document.createElement('div');row.className='soc-event'+(ev[2]==='REVIEW'?' warn':'')+(fresh?' new':'');row.innerHTML=`<time>${stamp()}</time><b>${ev[0]}</b><span>${ev[1]}</span><em>${ev[2]}</em>`;feed.prepend(row);while(feed.children.length>5)feed.lastElementChild.remove();if(fresh)setTimeout(()=>row.classList.remove('new'),700)};
- for(let i=0;i<5;i++)addEvent(false);if(!reduced)setInterval(()=>addEvent(true),4200);
+ for(let i=0;i<5;i++)addEvent(false);
+  let feedVisible=false;
+  if('IntersectionObserver' in window){
+    const watcher=new IntersectionObserver(entries=>{feedVisible=entries.some(e=>e.isIntersecting)},{rootMargin:'250px'});
+    watcher.observe(sec);
+  }else feedVisible=true;
+  if(!reduced)setInterval(()=>{
+    if(feedVisible&&!document.hidden&&!document.documentElement.classList.contains('perf-lite'))addEvent(true);
+  },4200);
 }
 
 /* Filters cover the eight static project cards; AEGIS remains pinned above as the primary flagship. */

@@ -1,5 +1,4 @@
-/* ONEL1T bundled homepage styles, 2026-11-03.
-   Preserve original cascade/order. Keep component sources for maintenance. */
+/* ONEL1T bundled homepage styles v2, preserving source order and visual theme. */
 
 /* SOURCE 1: home.css */
 :root{--red:#e51c2a;--paper:#ece8e3;--muted:#918a85;--mono:'JetBrains Mono',monospace;--serif:'Cinzel',serif;--sans:'Inter',sans-serif;--display:'Bebas Neue',sans-serif}
@@ -486,4 +485,27 @@ html.perf-lite .back-top{
     animation-iteration-count:1!important;
     transition-duration:.001ms!important;
   }
+}
+
+/* Reduced repaints on the homepage without changing its images or layout. */
+.scroll-reveal{filter:none!important;transition-property:opacity,transform!important}
+.scroll-reveal.is-visible{filter:none!important}
+.rail.rail-pulse{animation:none!important}
+.rail nav a{will-change:auto!important}
+
+/* Mobile devices don't benefit from continuously composited dust and blur. */
+@media(max-width:900px),(pointer:coarse){
+  .hero-atmosphere{mix-blend-mode:normal!important}
+  .hero-atmosphere i,.hero-atmosphere span,.hero-atmosphere::after{
+    animation:none!important;filter:none!important
+  }
+  .hero-atmosphere i{display:none!important}
+  .hero::before{transition:none!important}
+}
+
+/* Stable anchors: don't replace 560px-visible sections with 720px placeholders.
+   The previous estimates could move the page as sections entered the viewport. */
+.view,.soc-section{
+  content-visibility:visible!important;
+  contain-intrinsic-size:none!important;
 }
