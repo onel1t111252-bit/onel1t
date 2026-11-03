@@ -64,3 +64,19 @@ html.perf-lite .back-top{
     transition-duration:.001ms!important;
   }
 }
+
+/* Reduced repaints on the homepage without changing its images or layout. */
+.scroll-reveal{filter:none!important;transition-property:opacity,transform!important}
+.scroll-reveal.is-visible{filter:none!important}
+.rail.rail-pulse{animation:none!important}
+.rail nav a{will-change:auto!important}
+
+/* Mobile devices don't benefit from continuously composited dust and blur. */
+@media(max-width:900px),(pointer:coarse){
+  .hero-atmosphere{mix-blend-mode:normal!important}
+  .hero-atmosphere i,.hero-atmosphere span,.hero-atmosphere::after{
+    animation:none!important;filter:none!important
+  }
+  .hero-atmosphere i{display:none!important}
+  .hero::before{transition:none!important}
+}
