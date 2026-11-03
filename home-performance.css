@@ -80,3 +80,10 @@ html.perf-lite .back-top{
   .hero-atmosphere i{display:none!important}
   .hero::before{transition:none!important}
 }
+
+/* Stable anchors: don't replace 560px-visible sections with 720px placeholders.
+   The previous estimates could move the page as sections entered the viewport. */
+.view,.soc-section{
+  content-visibility:visible!important;
+  contain-intrinsic-size:none!important;
+}
