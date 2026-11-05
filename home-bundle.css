@@ -509,3 +509,75 @@ html.perf-lite .back-top{
   content-visibility:visible!important;
   contain-intrinsic-size:none!important;
 }
+
+
+/* Connected and responsive NEXUS preview (fictional topology; no live network data). */
+.demo-node-map--diagram{
+  display:grid;
+  place-items:center;
+  min-height:204px;
+  padding:8px 12px;
+  overflow:hidden;
+  border:1px solid rgba(104,222,207,.23);
+  background:radial-gradient(ellipse at 48% 52%,rgba(42,153,149,.11),transparent 59%),
+    linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px),#05090b;
+  background-size:auto,24px 24px,24px 24px,auto;
+}
+.demo-node-map--diagram .demo-topology{
+  display:block;
+  width:100%;
+  height:188px;
+  max-width:760px;
+}
+.demo-topology .demo-route-base{stroke:rgba(126,178,195,.46);stroke-width:2}
+.demo-topology .demo-route-active{stroke:#69dacb;stroke-width:2;stroke-dasharray:5 9;opacity:.75}
+.demo-topology .demo-route-junction{fill:#7ae9d9;stroke:#122e32;stroke-width:2}
+.demo-topology .demo-topology-node rect{fill:#10171c;stroke:#3d606c;stroke-width:1.5}
+.demo-topology .demo-topology-node circle{fill:#1b343c;stroke:#568f9b;stroke-width:1}
+.demo-topology .demo-topology-node.core rect{fill:#12312f;stroke:#79ead8;stroke-width:2}
+.demo-topology .demo-topology-node.core circle{fill:#23534b;stroke:#79ead8}
+.demo-topology .demo-topology-node.soc rect{stroke:#527f9b}
+.demo-topology .demo-topology-node.case rect{stroke:#8c725a}
+.demo-topology .demo-node-index{fill:#86cabc;font:700 9px 'JetBrains Mono',monospace}
+.demo-topology .demo-node-label{fill:#ecf5f6;font:700 13px 'JetBrains Mono',monospace;letter-spacing:.03em}
+.demo-topology .demo-topology-node.core .demo-node-label{fill:#91f4dd}
+.demo-topology .demo-topology-node.case .demo-node-label{fill:#f4cca4}
+.demo-node-map--diagram .demo-topology-mobile{display:none}
+@media(hover:hover) and (prefers-reduced-motion:no-preference){
+  .demo-node-map--diagram:hover .demo-route-active{animation:nexusPreviewRoute 2.1s linear infinite}
+}
+@keyframes nexusPreviewRoute{to{stroke-dashoffset:-56}}
+@media(max-width:520px){
+  .demo-node-map--diagram{min-height:194px;padding:12px 8px}
+  .demo-node-map--diagram .demo-topology{display:none}
+  .demo-node-map--diagram .demo-topology-mobile{
+    display:grid;
+    justify-items:center;
+    align-content:center;
+    gap:7px;
+    width:100%;
+    min-height:166px;
+  }
+  .demo-node-map--diagram .topology-mobile-node{
+    display:grid;
+    place-items:center;
+    min-width:116px;
+    min-height:31px;
+    padding:6px 11px;
+    border:1px solid #416975;
+    border-radius:6px;
+    background:#0b1a20;
+    color:#e1f3f3;
+    font:700 11px/1.25 'JetBrains Mono',monospace;
+    letter-spacing:.025em;
+    text-align:center;
+  }
+  .demo-node-map--diagram .topology-mobile-node.core{border-color:#7ae9d9;background:#12312f;color:#a2f4e4}
+  .demo-node-map--diagram .topology-mobile-arrow{color:#67d4c5;font:700 16px/1 'JetBrains Mono',monospace}
+  .demo-node-map--diagram .topology-mobile-branches{display:flex;justify-content:center;gap:12px;width:100%}
+  .demo-node-map--diagram .topology-mobile-branches .topology-mobile-node{min-width:0;width:min(43%,150px)}
+}
+@media(prefers-reduced-motion:reduce){
+  .demo-node-map--diagram .demo-route-active{animation:none!important}
+}
