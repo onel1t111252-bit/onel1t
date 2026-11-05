@@ -583,67 +583,105 @@ html.perf-lite .back-top{
 }
 
 
-/* SOC network view: semantic connected topology, no diagonal crossings. */
-.node-map.node-map--soc{
+
+/* SOC workflow: separate functional visualization from the NEXUS network map. */
+.node-map.node-map--pipeline{
+  container-type:inline-size;
+  display:flex;
+  align-items:stretch;
+  height:auto;
+  min-height:204px;
+  padding:22px 20px;
+  overflow:visible;
+  isolation:isolate;
+  border:1px solid rgba(255,255,255,.09);
+  background:
+    radial-gradient(ellipse at 55% 50%,rgba(255,59,82,.05),transparent 65%),
+    linear-gradient(rgba(255,255,255,.019) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.019) 1px,transparent 1px),#060809;
+  background-size:auto,24px 24px,24px 24px,auto;
+}
+.node-map--pipeline::before,.node-map--pipeline::after{content:none!important;display:none!important}
+.node-map--pipeline .soc-flow{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:14px;
+  width:100%;
+  margin:0;
+  padding:0;
+  list-style:none;
+}
+.node-map--pipeline .soc-flow-stage{
+  --stage-accent:#74d8c0;
+  position:relative;
+  min-width:0;
+  min-height:142px;
+  padding:15px 10px 12px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  background:linear-gradient(150deg,rgba(17,34,39,.85),rgba(9,12,16,.92));
+  border:1px solid rgba(121,185,187,.22);
+  box-shadow:inset 0 2px var(--stage-accent),0 6px 22px rgba(0,0,0,.16);
+}
+.node-map--pipeline .soc-flow-stage.is-detection{--stage-accent:#f6b96f;border-color:rgba(246,185,111,.25)}
+.node-map--pipeline .soc-flow-stage.is-triage{--stage-accent:#7daeff;border-color:rgba(125,174,255,.25)}
+.node-map--pipeline .soc-flow-stage.is-response{--stage-accent:#8be6ab;border-color:rgba(139,230,171,.25)}
+.node-map--pipeline .soc-flow-index{
   display:grid;
   place-items:center;
-  height:auto;
-  min-height:220px;
-  padding:8px 12px;
-  isolation:isolate;
-  overflow:hidden;
-  background:
-    radial-gradient(circle at 43% 50%,rgba(85,230,165,.055),transparent 43%),
-    linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px),#050709;
-  background-size:auto,28px 28px,28px 28px,auto;
+  width:29px;
+  height:25px;
+  flex:none;
+  border:1px solid color-mix(in srgb,var(--stage-accent) 45%,transparent);
+  background:color-mix(in srgb,var(--stage-accent) 9%,transparent);
+  color:var(--stage-accent);
+  font:700 11px/1 'JetBrains Mono',monospace;
 }
-.node-map--soc::before,.node-map--soc::after{content:none!important;display:none!important}
-.node-map--soc .soc-topology{
+.node-map--pipeline .soc-flow-stage strong{
   display:block;
-  width:100%;
-  max-width:700px;
-  height:auto;
-  overflow:visible;
+  color:#ecf2f2;
+  font:700 clamp(9px,1.1vw,12px)/1.35 'JetBrains Mono',monospace;
+  overflow-wrap:anywhere;
 }
-.node-map--soc .soc-topology--mobile{display:none}
-.soc-topology .soc-topology-connections path{
-  stroke:rgba(100,224,192,.56);
-  stroke-width:2;
-  vector-effect:non-scaling-stroke;
+.node-map--pipeline .soc-flow-stage small{
+  display:block;
+  margin-top:auto;
+  color:#9ba7a9;
+  font:500 10px/1.5 'Inter',system-ui,sans-serif;
+  overflow-wrap:anywhere;
 }
-.soc-topology .soc-topology-junction circle{
-  fill:#6fe8bb;
-  stroke:#0a1d1b;
-  stroke-width:2;
+.node-map--pipeline .soc-flow-stage:not(:last-child)::after{
+  content:'→';
+  position:absolute;
+  z-index:1;
+  right:-15px;
+  top:50%;
+  transform:translateY(-50%);
+  color:#c9d8d5;
+  font:700 17px/1 'JetBrains Mono',monospace;
+  text-shadow:0 0 4px #050809;
+  pointer-events:none;
 }
-.soc-topology .soc-topology-halo{
-  fill:rgba(78,224,176,.025);
-  stroke:rgba(74,217,184,.09);
-  stroke-width:1;
+@container (max-width:570px){
+  .node-map--pipeline .soc-flow{grid-template-columns:1fr;gap:17px}
+  .node-map--pipeline .soc-flow-stage{
+    min-height:76px;
+    padding:10px 14px;
+    display:grid;
+    grid-template-columns:32px minmax(0,1fr);
+    grid-template-rows:auto auto;
+    align-items:center;
+    column-gap:13px;
+    row-gap:3px;
+  }
+  .node-map--pipeline .soc-flow-index{grid-row:1/3;grid-column:1}
+  .node-map--pipeline .soc-flow-stage strong{grid-row:1;grid-column:2;font-size:12px;align-self:end}
+  .node-map--pipeline .soc-flow-stage small{grid-row:2;grid-column:2;margin:0;align-self:start;font-size:11px}
+  .node-map--pipeline .soc-flow-stage:not(:last-child)::after{
+    content:'↓';top:auto;bottom:-17px;right:50%;transform:translateX(50%);
+  }
 }
-.soc-topology .soc-topology-disc{
-  fill:#0a1013;
-  stroke:rgba(157,210,217,.36);
-  stroke-width:1.5;
-}
-.soc-topology .is-core .soc-topology-disc{fill:#0c211f;stroke:#79e4c4;stroke-width:2}
-.soc-topology .soc-topology-status{fill:#70edbb;stroke:#08251b;stroke-width:1.5}
-.soc-topology .soc-topology-label{
-  fill:#edf7f6;
-  text-anchor:middle;
-  font:700 12px/1 'JetBrains Mono',monospace;
-  letter-spacing:.025em;
-}
-.soc-topology .soc-topology-role{
-  fill:#7b9292;
-  text-anchor:middle;
-  font:700 7px/1 'JetBrains Mono',monospace;
-  letter-spacing:.055em;
-}
-.soc-topology .is-core .soc-topology-label{fill:#a5f7dd}
-@media(max-width:520px){
-  .node-map.node-map--soc{min-height:290px;padding:4px 8px}
-  .node-map--soc .soc-topology--desktop{display:none}
-  .node-map--soc .soc-topology--mobile{display:block;max-width:320px;max-height:300px}
+@media(max-width:620px){
+  .node-map.node-map--pipeline{min-height:0;padding:14px 12px}
 }
