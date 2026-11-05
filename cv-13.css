@@ -20,7 +20,7 @@
 
 
 /* AEGIS flagship artwork */
-.cv-aegis-media{background:url('assets/optimized/aegis-cover.webp?v=magenta-20261031-1') center center/cover no-repeat!important;}
+.cv-aegis-media{background:url('assets/optimized/aegis-selected-work.webp?v=20261105-1') center center/cover no-repeat!important;}
 .cv-aegis-media>span,.cv-aegis-media>small{display:none!important;}
 .cv-aegis-media:before{content:none!important;}
 @media(max-width:520px){.cv-aegis-media{background-position:center 48%!important;}}
