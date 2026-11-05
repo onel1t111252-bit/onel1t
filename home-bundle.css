@@ -581,3 +581,69 @@ html.perf-lite .back-top{
 @media(prefers-reduced-motion:reduce){
   .demo-node-map--diagram .demo-route-active{animation:none!important}
 }
+
+
+/* SOC network view: semantic connected topology, no diagonal crossings. */
+.node-map.node-map--soc{
+  display:grid;
+  place-items:center;
+  height:auto;
+  min-height:220px;
+  padding:8px 12px;
+  isolation:isolate;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 43% 50%,rgba(85,230,165,.055),transparent 43%),
+    linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px),#050709;
+  background-size:auto,28px 28px,28px 28px,auto;
+}
+.node-map--soc::before,.node-map--soc::after{content:none!important;display:none!important}
+.node-map--soc .soc-topology{
+  display:block;
+  width:100%;
+  max-width:700px;
+  height:auto;
+  overflow:visible;
+}
+.node-map--soc .soc-topology--mobile{display:none}
+.soc-topology .soc-topology-connections path{
+  stroke:rgba(100,224,192,.56);
+  stroke-width:2;
+  vector-effect:non-scaling-stroke;
+}
+.soc-topology .soc-topology-junction circle{
+  fill:#6fe8bb;
+  stroke:#0a1d1b;
+  stroke-width:2;
+}
+.soc-topology .soc-topology-halo{
+  fill:rgba(78,224,176,.025);
+  stroke:rgba(74,217,184,.09);
+  stroke-width:1;
+}
+.soc-topology .soc-topology-disc{
+  fill:#0a1013;
+  stroke:rgba(157,210,217,.36);
+  stroke-width:1.5;
+}
+.soc-topology .is-core .soc-topology-disc{fill:#0c211f;stroke:#79e4c4;stroke-width:2}
+.soc-topology .soc-topology-status{fill:#70edbb;stroke:#08251b;stroke-width:1.5}
+.soc-topology .soc-topology-label{
+  fill:#edf7f6;
+  text-anchor:middle;
+  font:700 12px/1 'JetBrains Mono',monospace;
+  letter-spacing:.025em;
+}
+.soc-topology .soc-topology-role{
+  fill:#7b9292;
+  text-anchor:middle;
+  font:700 7px/1 'JetBrains Mono',monospace;
+  letter-spacing:.055em;
+}
+.soc-topology .is-core .soc-topology-label{fill:#a5f7dd}
+@media(max-width:520px){
+  .node-map.node-map--soc{min-height:290px;padding:4px 8px}
+  .node-map--soc .soc-topology--desktop{display:none}
+  .node-map--soc .soc-topology--mobile{display:block;max-width:320px;max-height:300px}
+}
