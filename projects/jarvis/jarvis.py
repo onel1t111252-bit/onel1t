@@ -1,4 +1,4 @@
-"""ONEL1T JARVIS 3.0 - local desktop assistant for Windows 11.
+"""ONEL1T JARVIS 3.1 - local desktop assistant for Windows 11.
 
 Ollama handles chat locally. SpeechRecognition's Google recognizer needs internet
 and sends recorded speech to Google (including during optional wake mode).
@@ -55,7 +55,7 @@ def check_model() -> tuple[bool, str]:
 
 def extract_wake_command(text: str) -> str | None:
     """Return the command after wake word, empty string for wake-only, or None."""
-    found = re.search(r"(?:джарвіс|джарвис|jarvis)\b[\s,!:;.-]*(.*)", text, re.I)
+    found = re.search(r"(?:джарвісе|джарвіс|джарвисе|джарвис|jarvis)\b[\s,!:;.-]*(.*)", text, re.I)
     return found.group(1).strip() if found else None
 
 
