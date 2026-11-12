@@ -15,6 +15,11 @@ Responsive personal cybersecurity portfolio built with HTML, CSS and vanilla Jav
 - **Cyber Lab** — interactive security learning and analysis tools.
   - Project: [projects/cyber-lab/](projects/cyber-lab/)
 
+
+- **JARVIS 3.0** — Ukrainian-language Windows 11 desktop assistant powered by local Ollama, with voice commands, speech output and allowlisted system actions.
+  - Project page: https://onel1t111252-bit.github.io/onel1t/projects/jarvis/
+  - Source and setup: [projects/jarvis/](projects/jarvis/)
+
 ## Run locally
 
 Open `index.html` in a modern browser. The site is static and has no build step.
