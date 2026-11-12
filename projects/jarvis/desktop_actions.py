@@ -1,4 +1,4 @@
-"""Restricted, user-visible desktop commands for JARVIS 4.1.
+"""Restricted, user-visible desktop commands for JARVIS 4.2.
 
 Never executes model-generated code, shell strings or remote commands.
 System-changing actions require an explicit on-screen approval.
@@ -149,8 +149,17 @@ def find_installed_app(query: str) -> tuple[str, str] | None:
 
 def plan_action(raw_text: str) -> ActionPlan | None:
     q = normalize(raw_text)
+    # Spoken commands can include acknowledgments before the actual request.
+    q = re.sub(r"^(?:(?:гаразд|окей|добре|ну|слухай)[,\\s]+)+(?:а\\s+)?", "", q)
     if not q:
         return None
+    # A Steam launch URI starts Steam automatically before opening Dota 2.
+    steam = r"(?:стім|стим|steam)"
+    dota = r"(?:доту(?: 2)?|дота(?: 2)?|dota(?: 2)?)"
+    verb = r"(?:відкрий|відкрити|запусти|запустити|включи|увімкни|open|launch)"
+    if (re.fullmatch(fr"{verb} {steam}\\s+(?:і|та|а потім|потім)\\s+{verb} {dota}", q)
+            or re.fullmatch(fr"{verb} {dota}(?: через {steam})?", q)):
+        return ActionPlan("known_uri", "steam://run/570", "Запустити Dota 2 через Steam")
     if q in {"допомога", "команди", "help", "що ти вмієш"}:
         return ActionPlan("say", HELP_TEXT, "Список можливостей")
     if q in {"привіт", "вітаю", "hello", "hi"}:
@@ -202,6 +211,10 @@ def plan_action(raw_text: str) -> ActionPlan | None:
         return ActionPlan("website", "https://www.google.com/search?q=" + quote_plus(m.group(1)), "Пошук у Google")
     if re.match(r"^(?:видали|видалити|очисти|очистити|вимкни комп|перезавантаж|запусти команду|виконай код|відправ|надішли файл)", q):
         return ActionPlan("say", "Цю дію не виконую автоматично заради безпеки комп'ютера.", "Обмежена дія")
+    # An unknown desktop instruction is not a normal chat request; the AI
+    # cannot run it, so offer a precise example instead of a misleading refusal.
+    if re.search(r"\\b(?:відкрий|відкрити|запусти|запустити|включи|увімкни|open|launch)\\b", q):
+        return ActionPlan("say", "Не розпізнав усієї команди. Скажи, наприклад: «Джарвіс, відкрий Steam і запусти Доту» або «відкрий блокнот».", "Уточнення команди")
     return None
 
 
@@ -221,10 +234,14 @@ def run_action(action: ActionPlan) -> str:
     if os.name != "nt":
         return "Керування системою доступне лише у Windows."
     if action.kind == "known_uri":
-        if action.target != "steam://open/main":
+        allowed_steam_uris = {
+            "steam://open/main": "Надсилаю Steam команду відкриття.",
+            "steam://run/570": "Надсилаю Steam команду запуску Dota 2. Якщо гру не встановлено, Steam може запропонувати встановлення.",
+        }
+        if action.target not in allowed_steam_uris:
             raise ValueError("Unknown URI protocol")
         os.startfile(action.target)
-        return "Відкриваю Steam."
+        return allowed_steam_uris[action.target]
     if action.kind == "installed_app":
         matches = [(name, appid) for name, appid in installed_start_apps()
                    if appid == action.target]
