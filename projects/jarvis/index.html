@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JARVIS 3.0 | ONEL1T</title><meta name="description" content="JARVIS 3.0: Windows 11 voice assistant built with Python and local Ollama.">
+<style>
+:root{color-scheme:dark;--cyan:#23d3fc;--muted:#92afc2}*{box-sizing:border-box}
+body{margin:0;background:#050b13;color:#e9f6ff;font:16px/1.6 Inter,Segoe UI,Arial,sans-serif}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle at 75% 20%,#10304766,transparent 50%)}
+a{color:inherit;text-decoration:none}.wrap{max-width:1080px;margin:auto;padding:20px 24px 80px;position:relative}
+nav{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid #224253}
+nav strong{letter-spacing:.16em;color:var(--cyan)}nav a{color:#d1e8f4}
+.hero{display:grid;grid-template-columns:1fr 1.1fr;gap:36px;align-items:center;padding:62px 0}
+.kicker{color:var(--cyan);font-size:12px;letter-spacing:.22em;font-weight:700}
+h1{font-size:clamp(54px,9vw,105px);line-height:1;margin:18px 0;font-weight:900;letter-spacing:.035em}
+h1 span{color:var(--cyan)}h2{font-size:25px}p{color:#b5cbd7}
+.hero img{width:100%;border:1px solid #24526c;border-radius:18px;box-shadow:0 15px 70px #03121f}
+.buttons{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}.btn{background:var(--cyan);color:#031321;padding:13px 18px;border-radius:9px;font-weight:800}.btn.alt{background:#132838;color:#e4f7ff;border:1px solid #37617a}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.tile{background:#102030;border:1px solid #244358;border-radius:14px;padding:22px}
+.tile h3{margin:0;color:#daf7ff}.tile p{margin:7px 0 0;font-size:14px}
+pre{white-space:pre-wrap;background:#0e1d2c;padding:20px;border-radius:12px;border:1px solid #24506a;color:#7cebc0;overflow:auto}
+.note{border-left:3px solid var(--cyan);margin-top:26px;padding:10px 18px;background:#0f1d2b}
+footer{border-top:1px solid #1a3649;margin-top:62px;padding-top:18px;color:var(--muted);font-size:14px}
+@media(max-width:780px){.hero{grid-template-columns:1fr;padding:38px 0}.grid{grid-template-columns:1fr}}
+</style></head><body><main class="wrap">
+<nav><strong>ONEL1T / PROJECTS</strong><a href="../../index.html#projects">← Back to portfolio</a></nav>
+<section class="hero"><div><div class="kicker">PYTHON • OLLAMA • WINDOWS 11</div>
+<h1>JAR<span>V</span>IS</h1><div class="kicker">PERSONAL AI ASSISTANT / 3.0</div>
+<p>An experimental Ukrainian-language desktop assistant with local AI, microphone input, voice responses and carefully restricted Windows commands.</p>
+<div class="buttons"><a class="btn" href="https://github.com/onel1t111252-bit/onel1t/tree/main/projects/jarvis" target="_blank" rel="noopener">VIEW SOURCE ↗</a>
+<a class="btn alt" href="README.md">SETUP GUIDE</a></div></div>
+<img src="cover.svg" alt="Concept illustration of the JARVIS 3.0 interface; not an actual app screenshot">
+</section>
+<h2>Features</h2><section class="grid">
+<article class="tile"><h3>🧠 Local AI</h3><p>Ollama and a customized Qwen-based model called jarvis. Chat context stays in memory during a session.</p></article>
+<article class="tile"><h3>🎙 Voice control</h3><p>Ukrainian push-to-talk, optional wake phrase, and Windows speech output.</p></article>
+<article class="tile"><h3>🛡 Allowlisted actions</h3><p>Launch selected Windows programs, open trusted websites and search the web. No arbitrary commands.</p></article>
+</section>
+<h2>Run it on Windows</h2><pre>1. Install Python 3.12 and Ollama
+2. Confirm: ollama list
+3. Download the project files from GitHub
+4. Run INSTALL_VOICE.bat
+5. Run START_JARVIS.bat</pre>
+<div class="note"><strong>Prototype note:</strong> AI chat runs locally. Voice recognition uses Google's online service, and optional wake mode sends voice input while enabled. The illustration above is a concept, not a verified app screenshot.</div>
+<footer>© 2026 ONEL1T · JARVIS 3.0 · Open-source educational project</footer>
+</main></body></html>
