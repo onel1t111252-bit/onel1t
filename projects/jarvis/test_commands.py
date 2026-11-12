@@ -1,6 +1,6 @@
 """Basic command routing checks (do not open applications)."""
 import unittest
-from jarvis import resolve_command
+from jarvis import resolve_command, extract_wake_command
 
 
 class CommandTests(unittest.TestCase):
@@ -16,6 +16,15 @@ class CommandTests(unittest.TestCase):
         result = resolve_command("знайди Python tutorials")
         self.assertEqual(result[0], "url")
         self.assertIn("Python+tutorials", result[1])
+
+    def test_wake_phrase_with_command(self):
+        self.assertEqual(extract_wake_command("Джарвіс, відкрий блокнот"), "відкрий блокнот")
+
+    def test_wake_phrase_alone(self):
+        self.assertEqual(extract_wake_command("Джарвіс"), "")
+
+    def test_no_wake_phrase(self):
+        self.assertIsNone(extract_wake_command("Сьогодні гарний день"))
 
     def test_non_command_is_for_ai(self):
         self.assertIsNone(resolve_command("Поясни, що таке SQL-ін'єкція"))
