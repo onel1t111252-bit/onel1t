@@ -1,52 +1,51 @@
-# ONEL1T / JARVIS 3.1 — Hands-Free Voice Assistant
+# ONEL1T / JARVIS 4.0
 
-**[⬇ Download JARVIS 3.1 for Windows 11 (ZIP)](https://github.com/onel1t111252-bit/onel1t/raw/refs/heads/main/projects/jarvis/JARVIS_3_1_Windows11.zip)**
-
-Standalone archive (only JARVIS, not the complete ONEL1T repository).
+A voice-powered Windows 11 desktop assistant with a neon command-center UI, local Ollama AI, Ukrainian speech recognition and explicit approval for sensitive computer actions.
 
 ## Features
 
-- Local Ollama AI model `jarvis` answers in Ukrainian.
-- **HANDS-FREE** wake word "Джарвіс", with follow-up utterance support.
-  - "Джарвіс, відкрий блокнот" in one utterance.
-  - "Джарвіс" then "Відкрий блокнот" in the next utterance.
-- Speaks every assistant reply by default: natural Ukrainian voice **Ostap** through edge-tts.
-- A voice button cycles through **Ostap / Polina / Windows SAPI fallback**.
-- A **TEST VOICE** button helps verify speech output before voice commands.
-- Mic pauses while the assistant speaks, to prevent feedback/self-triggering.
-- Preferences saved in local `settings.json`: voice enabled, selected voice and opt-in hands-free mode.
-- Allowlisted Windows actions only (Notepad, Calculator, Explorer, Paint, Settings, selected sites, web searches).
-- Short chat context kept in memory during the current session.
+- Modern dark blue/cyan tkinter desktop interface and animated reactor core.
+- Locally-run model named `jarvis` through Ollama (default `http://127.0.0.1:11434`).
+- Optional hands-free mode: “Джарвіс, відкрий блокнот”, or “Джарвіс” followed by a command.
+- Replies spoken aloud by default with Ostap/Polina neural Ukrainian voice (online Microsoft service), with optional Windows SAPI fallback.
+- Opens allowlisted applications (Notepad, Calculator, Paint, File Explorer, Task Manager) and known websites (YouTube, Google, GitHub, Wikipedia).
+- Opens known Windows folders and settings; adjusts system volume; searches the web.
+- With visible approval: creates local notes, saves screenshots, or opens an unfamiliar HTTPS website.
+- Local session chat memory; no administrative privileges, remote access, credential retrieval or arbitrary shell execution.
 
-## Install — Windows 11
+## Start on Windows 11
 
-1. Python 3.12 installed; Ollama running.
-2. Check model: `ollama list` — you should see `jarvis`. If not, create your own custom model or change `JARVIS_MODEL` in `START_JARVIS.bat`.
-3. Extract this ZIP. Run `INSTALL_VOICE.bat` once. Internet required.
-4. Run `START_JARVIS.bat`.
-5. Click **CHECK AI**, then **TEST VOICE**. Adjust system volume if you can't hear speech.
-6. Click **HANDS-FREE: OFF** **once** to activate it. Say:
-   - "Джарвіс, котра година"
-   - "Джарвіс" (pause) "Відкрий YouTube"
-7. Hands-free is saved for next launch. Switch it OFF at any time; this stops listening after the active microphone request ends.
-8. Click **VOICE: OSTAP** to cycle to Polina or Windows built-in speech; click **VOICE: ON** to disable or re-enable sound.
+1. Install Python 3.12 and Ollama. Start Ollama.
+2. Confirm your local model with `ollama list`. It should contain `jarvis`. If you have another model, change `JARVIS_MODEL` in `START_JARVIS.bat`.
+3. Extract `JARVIS_4_Windows11.zip` to its own folder.
+4. Run `INSTALL_VOICE.bat` once (needs internet for downloading packages).
+5. Double-click `START_JARVIS.bat`.
+6. Press **CHECK AI**. Test **▶ TEST** to hear a voice, then activate **HANDS-FREE** once. It remains OFF by default on each start.
+7. Say “Джарвіс, відкрий блокнот”, “Джарвіс, зроби голосніше”, or “Джарвіс, котра година”.
+8. Try “Джарвіс, створити нотатку...” or “Джарвіс, зроби скріншот”; an on-screen confirmation is required.
 
-## Privacy / limitations
+The AI can discuss general tasks, but computer operations must match an explicit allowlist. There is **no unrestricted access to your machine**, even when the model suggests a command.
 
-- Ollama chat requests use local `http://127.0.0.1:11434`.
-- **Speech recognition is NOT local.** Google receives speech recordings for transcription, including background spoken audio while hands-free mode is enabled. It is **off by default** until you turn it on once.
-- **Neural voice is NOT local.** Microsoft's online speech service receives text of replies when Ostap or Polina is selected. Choose Windows SAPI for offline voice output, but quality of Ukrainian speech depends on Windows voice packs.
-- This is a prototype. Wake activation is cloud-recognized and not a separate low-power offline detector; latency is dependent on network and hardware. No automatic file access, shell command execution or system administration.
-- Error messages are written to `jarvis.log` (local, gitignored). No audio recordings are saved by the app.
+## Privacy and consent
 
-## Tests
+- Ollama chat prompts go only to the local host by default.
+- **Google online speech recognition** receives audio sampled while you use push-to-talk or enable hands-free mode. Hands-free listens in the foreground while active, and does not silently start after reboot/reopening the app.
+- **Microsoft online neural voice** receives the assistant's reply text when Ostap/Polina is selected. Select **VOICE: WINDOWS** for the local SAPI fallback; suitable Ukrainian voices may need Windows language packs.
+- Screenshots and notes, when explicitly confirmed, are saved locally inside the user's Pictures/Documents folders, not sent to the assistant developer.
+- Voice replies pause recognition while playing to reduce self-triggering. Recognition and TTS depend on network conditions and may be imperfect.
+- Application settings are stored in `settings.json` in the same folder. Errors are stored in local `jarvis.log`. Neither is committed by `.gitignore`.
 
-`python -m unittest test_commands.py`
+## For developers
 
-## Source
+```powershell
+python -m unittest discover -p "test_*.py"
+python jarvis.py
+```
 
-https://github.com/onel1t111252-bit/onel1t/tree/main/projects/jarvis
+Design: `desktop_actions.py` holds the restricted action router; `voice_engine.py` handles optional speech; `jarvis.py` owns the GUI, mic, local AI calls, and approval UI.
 
-## Attribution
+**Roadmap:** offline Ukrainian ASR, configurable explicitly approved app shortcuts, packaging into a signed installer, richer automation with consent-bound permissions, Windows UI automation with preview mode.
 
-Educational JARVIS-inspired UI concept. Not affiliated with any movie studio.
+## License
+
+See `LICENSE`. JARVIS-inspired fan project; not affiliated with Marvel or any movie studio. The UI/branding are original.
