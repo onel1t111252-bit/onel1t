@@ -1,5 +1,8 @@
 # ONEL1T / JARVIS 4.0
 
+**[⬇ Download only JARVIS 4.0 for Windows 11 (ZIP)](https://github.com/onel1t111252-bit/onel1t/raw/refs/heads/main/projects/jarvis/JARVIS_4_Windows11.zip)**
+
+
 A voice-powered Windows 11 desktop assistant with a neon command-center UI, local Ollama AI, Ukrainian speech recognition and explicit approval for sensitive computer actions.
 
 ## Features
