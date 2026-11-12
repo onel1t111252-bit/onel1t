@@ -6,3 +6,5 @@ __pycache__/
 venv/
 *.wav
 *.mp3
+
+settings.json
