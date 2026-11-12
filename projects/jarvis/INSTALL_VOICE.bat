@@ -1,12 +1,17 @@
 @echo off
 chcp 65001 >nul
 cd /d "%~dp0"
-echo Installing microphone packages for JARVIS...
+echo Installing JARVIS hands-free voice and Ukrainian neural voice...
+echo Google handles microphone recognition online. Microsoft handles neural voice text online.
 where py >nul 2>nul
 if %errorlevel% equ 0 (
-  py -3.12 -m pip install "SpeechRecognition[audio]>=3.10,<4"
+  py -3.12 -m pip install -r requirements.txt
 ) else (
-  python -m pip install "SpeechRecognition[audio]>=3.10,<4"
+  python -m pip install -r requirements.txt
 )
-echo Microphone speech recognition sends recordings to Google.
+if errorlevel 1 (
+  echo Installation failed. Check Python 3.12 and your internet connection.
+) else (
+  echo Installation finished! Start START_JARVIS.bat.
+)
 pause
