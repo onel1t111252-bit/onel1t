@@ -22,7 +22,10 @@ import urllib.parse
 import urllib.request
 import webbrowser
 
+from voice_engine import speak, VOICE_PROFILES, LABELS
+
 APP_DIR = Path(__file__).resolve().parent
+SETTINGS_PATH = APP_DIR / "settings.json"
 MODEL = os.getenv("JARVIS_MODEL", "jarvis")
 API = "http://127.0.0.1:11434"
 BG, PANEL, FIELD = "#070d18", "#111d2e", "#1b2b3b"
@@ -48,6 +51,19 @@ def check_model() -> tuple[bool, str]:
         return False, "MODEL MISSING · " + MODEL
     except (OSError, ValueError):
         return False, "OLLAMA OFFLINE"
+
+
+def extract_wake_command(text: str) -> str | None:
+    """Return the command after wake word, empty string for wake-only, or None."""
+    found = re.search(r"(?:джарвіс|джарвис|jarvis)\b[\s,!:;.-]*(.*)", text, re.I)
+    return found.group(1).strip() if found else None
+
+
+def load_settings() -> dict:
+    try:
+        return json.loads(SETTINGS_PATH.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
 
 
 def resolve_command(raw: str) -> tuple[str, str] | None:
@@ -141,11 +157,17 @@ class JarvisApp:
         self.speech_queue: queue.Queue[str] = queue.Queue()
         self.mic_lock = threading.Lock()
         self.wake_enabled = threading.Event()
+        self.speaking = threading.Event()
+        self.awaiting_command = False
+        self.settings = load_settings()
         self.running = True
         self.busy = False
-        self.voice_on = True
+        self.voice_on = bool(self.settings.get("voice_on", True))
+        self.voice_profile = self.settings.get("voice_profile", VOICE_PROFILES[0])
+        if self.voice_profile not in VOICE_PROFILES:
+            self.voice_profile = VOICE_PROFILES[0]
         self.history: list[dict[str, str]] = []
-        root.title("ONEL1T | JARVIS 3.0")
+        root.title("ONEL1T | JARVIS 3.1")
         root.geometry("980x730")
         root.minsize(740, 590)
         root.configure(bg=BG)
@@ -153,7 +175,7 @@ class JarvisApp:
 
         frame = tk.Frame(root, bg=BG)
         frame.pack(fill="x", padx=30, pady=(23, 7))
-        tk.Label(frame, text="◈  ONEL1T  /  JARVIS 3.0", bg=BG, fg=CYAN,
+        tk.Label(frame, text="◈  ONEL1T  /  JARVIS 3.1", bg=BG, fg=CYAN,
                  font=("Segoe UI", 22, "bold")).pack(anchor="w")
         tk.Label(frame, text="PERSONAL AI SYSTEM  •  WINDOWS 11  •  УКРАЇНСЬКА",
                  bg=BG, fg=MUTED, font=("Consolas", 10)).pack(anchor="w", pady=(5, 0))
@@ -198,23 +220,55 @@ class JarvisApp:
 
         controls = tk.Frame(root, bg=BG)
         controls.pack(fill="x", padx=30, pady=(11, 4))
-        self.wake_button = self.button(controls, "WAKE WORD: OFF", self.toggle_wake,
+        self.wake_button = self.button(controls, "🎙 HANDS-FREE: OFF", self.toggle_wake,
                                        FIELD, TEXT, side="left")
-        self.tts_button = self.button(controls, "🔊  VOICE: ON", self.toggle_tts,
-                                      FIELD, TEXT, side="left")
+        self.tts_button = self.button(controls, "🔊 VOICE: ON" if self.voice_on else "🔇 VOICE: OFF",
+                                      self.toggle_tts, FIELD, TEXT, side="left")
+        self.profile_button = self.button(
+            controls, "VOICE: " + LABELS[self.voice_profile],
+            self.cycle_voice, FIELD, TEXT, side="left")
+        self.button(controls, "TEST VOICE", self.test_voice, FIELD, TEXT, side="left")
         self.status = tk.Label(controls, text="● READY", bg=BG, fg=GREEN,
                                font=("Consolas", 10))
         self.status.pack(side="right")
-        tk.Label(root, text=("PRIVACY  •  Voice recognition uses Google online. "
-                            "Wake mode listens continuously only when you enable it."),
+        tk.Label(root, text=("PRIVACY • Google handles voice recognition online, including wake mode. "
+                            "Microsoft handles neural speech text online. Turn HANDS-FREE OFF to stop listening."),
                  fg=MUTED, bg=BG, font=("Segoe UI", 9),
-                 wraplength=900).pack(pady=(5, 16), padx=24)
+                 wraplength=920).pack(pady=(5, 16), padx=24)
 
-        self.append("JARVIS", "Готовий до роботи. Скажи «допомога» або постав запитання.", "ai")
+        self.append("JARVIS", "Готовий до роботи. Натисни HANDS-FREE один раз, "
+                    "а далі кажи «Джарвіс, відкрий блокнот» без кнопки.", "ai")
         self.input.focus_set()
         root.after(80, self.pump)
         root.after(150, self.check_ai)
         threading.Thread(target=self.speech_worker, daemon=True).start()
+        if self.settings.get("wake_on", False):
+            root.after(700, self.toggle_wake)
+
+    def save_settings(self) -> None:
+        payload = {
+            "voice_on": self.voice_on,
+            "voice_profile": self.voice_profile,
+            "wake_on": self.wake_enabled.is_set(),
+        }
+        try:
+            SETTINGS_PATH.write_text(json.dumps(payload, ensure_ascii=False, indent=2),
+                                     encoding="utf-8")
+        except OSError:
+            logging.warning("Could not save local preferences")
+
+    def cycle_voice(self) -> None:
+        idx = VOICE_PROFILES.index(self.voice_profile)
+        self.voice_profile = VOICE_PROFILES[(idx + 1) % len(VOICE_PROFILES)]
+        self.profile_button.configure(text="VOICE: " + LABELS[self.voice_profile])
+        self.save_settings()
+
+    def test_voice(self) -> None:
+        if self.voice_on:
+            self.speaking.set()
+            self.speech_queue.put("Вітаю! Я Джарвіс. Голосові системи активовано.")
+        else:
+            self.append("ПІДКАЗКА", "Увімкни VOICE: ON для тестування.", "hint")
 
     def button(self, parent, title, action, bg, fg, side="left"):
         widget = tk.Button(parent, text=title, command=action, bg=bg, fg=fg,
@@ -264,10 +318,11 @@ class JarvisApp:
 
     def toggle_tts(self) -> None:
         self.voice_on = not self.voice_on
-        self.tts_button.configure(text="🔊  VOICE: ON" if self.voice_on else "🔇  VOICE: OFF")
+        self.tts_button.configure(text="🔊 VOICE: ON" if self.voice_on else "🔇 VOICE: OFF")
+        self.save_settings()
 
     def push_to_talk(self) -> None:
-        if self.busy or self.mic_lock.locked():
+        if self.busy or self.speaking.is_set() or self.mic_lock.locked():
             return
         if self.wake_enabled.is_set():
             self.toggle_wake()
@@ -284,23 +339,31 @@ class JarvisApp:
                 recognizer.adjust_for_ambient_noise(mic, duration=0.4)
                 audio = recognizer.listen(mic, timeout=4 if wake else 7,
                                           phrase_time_limit=8 if wake else 12)
-            # Explicit disclosure: recognize_google uploads the audio to Google.
+            # recognize_google sends a speech sample to Google's online service.
             text = recognizer.recognize_google(audio, language="uk-UA").strip()
             if wake:
-                match = re.search(r"(?:джарвіс|джарвис|jarvis)[,:! ]*(.*)", text, re.I)
-                if match and match.group(1).strip():
-                    self.events.put(("heard", match.group(1).strip()))
+                command = extract_wake_command(text)
+                if command is None:
+                    return
+                if command:
+                    self.events.put(("heard", command))
+                else:
+                    self.awaiting_command = True
+                    self.events.put(("hint", "Слухаю наступну команду…"))
             else:
                 self.events.put(("heard", text))
         except ImportError:
             self.events.put(("hint", "Встанови голосові бібліотеки через INSTALL_VOICE.bat."))
             self.wake_enabled.clear()
+            self.save_settings()
         except Exception as exc:
             name = type(exc).__name__
             if name not in {"WaitTimeoutError", "UnknownValueError"}:
                 logging.warning("Voice input issue: %s", name)
-                if not wake:
-                    self.events.put(("hint", "Помилка мікрофона/мережі: " + name))
+                self.events.put(("hint", "Помилка мікрофона/мережі: " + name))
+                if wake and name in {"OSError", "RequestError"}:
+                    self.wake_enabled.clear()
+                    self.save_settings()
             elif not wake:
                 self.events.put(("hint", "Не почув або не розібрав голос. Спробуй ще раз."))
         finally:
@@ -310,44 +373,45 @@ class JarvisApp:
     def toggle_wake(self) -> None:
         if self.wake_enabled.is_set():
             self.wake_enabled.clear()
-            self.wake_button.configure(text="WAKE WORD: OFF", bg=FIELD)
-            self.append("СИСТЕМА", "Режим постійного прослуховування вимкнено.", "hint")
+            self.awaiting_command = False
+            self.wake_button.configure(text="🎙 HANDS-FREE: OFF", bg=FIELD)
+            self.append("СИСТЕМА", "Прослуховування мікрофона вимкнено.", "hint")
         else:
             self.wake_enabled.set()
-            self.wake_button.configure(text="WAKE WORD: ON", bg="#174b64")
+            self.wake_button.configure(text="🎙 HANDS-FREE: ON", bg="#174b64")
             self.append("СИСТЕМА",
-                        "Режим активації увімкнено. Мікрофон слухає фразу «Джарвіс». "
-                        "Зверни увагу: Google обробляє аудіо онлайн.", "hint")
+                        "Голосова активація працює: скажи «Джарвіс, котра година» "
+                        "або «Джарвіс», а потім окремо команду. "
+                        "Аудіо розпізнає онлайн-сервіс Google.", "hint")
             threading.Thread(target=self.wake_worker, daemon=True).start()
+        self.save_settings()
 
     def wake_worker(self) -> None:
         while self.running and self.wake_enabled.is_set():
-            if self.busy or self.mic_lock.locked():
-                threading.Event().wait(0.3)
+            if self.busy or self.speaking.is_set() or self.mic_lock.locked():
+                threading.Event().wait(0.2)
                 continue
-            self.listen_once(True)
+            followed_up = self.awaiting_command
+            self.awaiting_command = False
+            self.listen_once(not followed_up)
         self.events.put(("wake_off", ""))
 
     def speech_worker(self) -> None:
-        if os.name != "nt":
-            return
-        script = (
-            "Add-Type -AssemblyName System.Speech; "
-            "$s=New-Object System.Speech.Synthesis.SpeechSynthesizer; "
-            "$s.Volume=80; $s.Speak([Console]::In.ReadToEnd()); $s.Dispose()"
-        )
         while self.running:
             phrase = self.speech_queue.get()
-            if not phrase:
+            if not phrase or not self.running:
                 continue
-            try:
-                subprocess.run(
-                    ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", script],
-                    input=phrase[:650], encoding="utf-8", text=True,
-                    capture_output=True, timeout=70, check=False,
-                    creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-            except Exception:
-                logging.warning("Speech synthesis failed")
+            self.speaking.set()
+            self.events.put(("status", "● SPEAKING"))
+            worked = speak(phrase, self.voice_profile)
+            if not worked:
+                self.events.put(("hint", "Не вдалося відтворити голос. "
+                                 "Запусти INSTALL_VOICE.bat або вибери WINDOWS."))
+            # Delay avoids microphone hearing speaker echo at the end of the reply.
+            threading.Event().wait(0.5)
+            if self.speech_queue.empty():
+                self.speaking.clear()
+            self.events.put(("status", "● READY"))
 
     def pump(self) -> None:
         try:
@@ -356,6 +420,7 @@ class JarvisApp:
                 if kind == "answer":
                     self.append("JARVIS", value, "ai")
                     if self.voice_on:
+                        self.speaking.set()
                         self.speech_queue.put(value)
                 elif kind == "ready":
                     self.busy = False
@@ -370,7 +435,7 @@ class JarvisApp:
                 elif kind == "model":
                     self.model_label.configure(text=value[1:], fg=GREEN if value[0] == "1" else MUTED)
                 elif kind == "wake_off" and not self.wake_enabled.is_set():
-                    self.wake_button.configure(text="WAKE WORD: OFF", bg=FIELD)
+                    self.wake_button.configure(text="🎙 HANDS-FREE: OFF", bg=FIELD)
         except queue.Empty:
             pass
         if self.running:
