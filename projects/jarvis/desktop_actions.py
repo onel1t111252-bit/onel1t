@@ -150,14 +150,14 @@ def find_installed_app(query: str) -> tuple[str, str] | None:
 def plan_action(raw_text: str) -> ActionPlan | None:
     q = normalize(raw_text)
     # Spoken commands can include acknowledgments before the actual request.
-    q = re.sub(r"^(?:(?:гаразд|окей|добре|ну|слухай)[,\\s]+)+(?:а\\s+)?", "", q)
+    q = re.sub(r"^(?:(?:гаразд|окей|добре|ну|слухай)[,\s]+)+(?:а\s+)?", "", q)
     if not q:
         return None
     # A Steam launch URI starts Steam automatically before opening Dota 2.
     steam = r"(?:стім|стим|steam)"
     dota = r"(?:доту(?: 2)?|дота(?: 2)?|dota(?: 2)?)"
     verb = r"(?:відкрий|відкрити|запусти|запустити|включи|увімкни|open|launch)"
-    if (re.fullmatch(fr"{verb} {steam}\\s+(?:і|та|а потім|потім)\\s+{verb} {dota}", q)
+    if (re.fullmatch(fr"{verb} {steam}\s+(?:і|та|а потім|потім)\s+{verb} {dota}", q)
             or re.fullmatch(fr"{verb} {dota}(?: через {steam})?", q)):
         return ActionPlan("known_uri", "steam://run/570", "Запустити Dota 2 через Steam")
     if q in {"допомога", "команди", "help", "що ти вмієш"}:
@@ -213,7 +213,7 @@ def plan_action(raw_text: str) -> ActionPlan | None:
         return ActionPlan("say", "Цю дію не виконую автоматично заради безпеки комп'ютера.", "Обмежена дія")
     # An unknown desktop instruction is not a normal chat request; the AI
     # cannot run it, so offer a precise example instead of a misleading refusal.
-    if re.search(r"\\b(?:відкрий|відкрити|запусти|запустити|включи|увімкни|open|launch)\\b", q):
+    if re.search(r"\b(?:відкрий|відкрити|запусти|запустити|включи|увімкни|open|launch)\b", q):
         return ActionPlan("say", "Не розпізнав усієї команди. Скажи, наприклад: «Джарвіс, відкрий Steam і запусти Доту» або «відкрий блокнот».", "Уточнення команди")
     return None
 
