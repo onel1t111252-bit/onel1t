@@ -1,6 +1,6 @@
 # ONEL1T / JARVIS 3.1 — Hands-Free Voice Assistant
 
-**[⬇ Download JARVIS 3.1 for Windows 11 (ZIP)](https://github.com/onel1t111252-bit/onel1t/raw/refs/heads/main/projects/jarvis/JARVIS_3_Windows11.zip)**
+**[⬇ Download JARVIS 3.1 for Windows 11 (ZIP)](https://github.com/onel1t111252-bit/onel1t/raw/refs/heads/main/projects/jarvis/JARVIS_3_1_Windows11.zip)**
 
 Standalone archive (only JARVIS, not the complete ONEL1T repository).
 
