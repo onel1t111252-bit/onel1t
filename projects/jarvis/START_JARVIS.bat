@@ -9,6 +9,6 @@ if %errorlevel% equ 0 (
   python jarvis.py
 )
 if errorlevel 1 (
-  echo JARVIS failed to start. Check jarvis.log.
+  echo JARVIS failed to start. Read jarvis.log or contact project maintainer.
   pause
 )

@@ -1,4 +1,4 @@
-"""Restricted, user-visible desktop commands for JARVIS 4.0.
+"""Restricted, user-visible desktop commands for JARVIS 4.1.
 
 Never executes model-generated code, shell strings or remote commands.
 System-changing actions require an explicit on-screen approval.
@@ -6,6 +6,8 @@ System-changing actions require an explicit on-screen approval.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
+import json
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import quote_plus, urlsplit
@@ -25,14 +27,15 @@ class ActionPlan:
     needs_approval: bool = False
 
 
-APPROVAL_REQUIRED = {"note", "screenshot", "external_url"}
+APPROVAL_REQUIRED = {"note", "screenshot", "external_url", "installed_app", "user_file"}
 
 HELP_TEXT = (
     "Я можу відкрити блокнот, калькулятор, Paint, провідник, диспетчер задач, "
     "налаштування, папки Документи або Завантаження, YouTube, Google й GitHub; "
     "знайти інформацію в браузері, сказати час, змінити гучність, створити "
     "нотатку або зберегти скріншот після підтвердження. "
-    "Дії за межами дозволеного списку не виконую."
+    "Можу знайти встановлену програму за назвою та запустити її після підтвердження. "
+    "Також можу відкрити файл через діалог вибору. Системні та небезпечні дії не виконую без дозволу."
 )
 
 APPS = {
@@ -56,6 +59,7 @@ WEBSITES = {
     "google": "https://www.google.com", "гугл": "https://www.google.com",
     "браузер": "https://www.google.com", "github": "https://github.com",
     "гітхаб": "https://github.com", "вікіпедію": "https://uk.wikipedia.org",
+    "gmail": "https://mail.google.com", "пошту": "https://mail.google.com",
 }
 
 
@@ -85,6 +89,64 @@ def safe_external_url(value: str) -> str | None:
     return value
 
 
+BLOCKED_APP_TERMS = (
+    "powershell", "command prompt", "cmd", "terminal", "windows terminal",
+    "registry editor", "regedit", "remote desktop", "ssh", "administrator",
+    "task scheduler", "windows security", "windows defender", "services",
+)
+
+@lru_cache(maxsize=1)
+def installed_start_apps() -> tuple[tuple[str, str], ...]:
+    """Read user-visible Windows Start apps (no shell interpolation)."""
+    if os.name != "nt":
+        return ()
+    cmd = ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command",
+           "[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; Get-StartApps | Select-Object Name,AppID | ConvertTo-Json -Compress"]
+    try:
+        result = subprocess.run(cmd, text=True, encoding="utf-8", errors="replace", capture_output=True, timeout=12,
+                                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+                                check=False)
+        if result.returncode:
+            return ()
+        data = json.loads(result.stdout.strip().lstrip("\ufeff") or "[]")
+        if isinstance(data, dict):
+            data = [data]
+        output = []
+        for item in data:
+            name = str(item.get("Name", "")).strip()
+            appid = str(item.get("AppID", "")).strip()
+            if (name and appid and len(name) <= 140 and len(appid) <= 250
+                    and "\n" not in appid and not any(x in name.casefold() for x in BLOCKED_APP_TERMS)):
+                output.append((name, appid))
+        return tuple(output)
+    except (OSError, subprocess.TimeoutExpired, ValueError, TypeError):
+        return ()
+
+
+APP_NAME_ALIASES = {
+    "дискорд": "discord", "телеграм": "telegram", "спотіфай": "spotify",
+    "спотифай": "spotify", "ворд": "word", "ексель": "excel",
+    "пауерпоінт": "powerpoint", "хром": "chrome", "хром браузер": "chrome",
+    "файрфокс": "firefox", "оперу": "opera", "опера": "opera",
+    "тіс": "teams", "тімс": "teams", "вс код": "visual studio code",
+    "віжуал студіо код": "visual studio code",
+}
+
+
+def find_installed_app(query: str) -> tuple[str, str] | None:
+    """Choose only one unambiguous exact Start-menu app match."""
+    term = query.casefold().strip()
+    term = APP_NAME_ALIASES.get(term, term)
+    if not term or len(term) > 100 or any(x in term for x in BLOCKED_APP_TERMS):
+        return None
+    apps = installed_start_apps()
+    exact = [(name, appid) for name, appid in apps if name.casefold() == term]
+    if len(exact) == 1:
+        return exact[0]
+    matches = [(name, appid) for name, appid in apps if term in name.casefold()]
+    return matches[0] if len(matches) == 1 else None
+
+
 def plan_action(raw_text: str) -> ActionPlan | None:
     q = normalize(raw_text)
     if not q:
@@ -105,6 +167,8 @@ def plan_action(raw_text: str) -> ActionPlan | None:
         return ActionPlan("volume", "down", "Зменшити гучність")
     if q in {"вимкни звук", "вимкнути звук", "увімкни звук"}:
         return ActionPlan("volume", "mute", "Перемкнути звук")
+    if q in {"відкрий файл", "обери файл", "покажи файл", "відкрити файл"}:
+        return ActionPlan("file_picker", "", "Вибрати файл на цьому комп’ютері")
     if q in {"зроби скріншот", "скріншот", "знімок екрана"}:
         return ActionPlan("screenshot", "", "Зберегти знімок екрана локально", True)
     m = re.fullmatch(r"(?:запиши|створи|збережи|зроби) (?:нотатк[уа]|замітку)[:\s]+(.+)", q, flags=re.S)
@@ -114,6 +178,8 @@ def plan_action(raw_text: str) -> ActionPlan | None:
     m = re.fullmatch(r"(?:відкрий|відкрити|запусти|запустити|покажи|open) (.+)", q)
     if m:
         name = m.group(1).strip()
+        if name in {"стім", "стим", "steam"}:
+            return ActionPlan("known_uri", "steam://open/main", "Відкрити Steam")
         if name in APPS:
             return ActionPlan("app", APPS[name], "Відкрити: " + name)
         if name in FOLDERS:
@@ -126,7 +192,11 @@ def plan_action(raw_text: str) -> ActionPlan | None:
             url = safe_external_url(name.split(" ", 1)[1])
             if url:
                 return ActionPlan("external_url", url, "Відкрити зовнішній сайт: " + url, True)
-        return ActionPlan("say", "Цю програму я поки не вмію відкривати. Скажи «допомога».", "Невідома команда")
+        found = find_installed_app(name)
+        if found:
+            display, appid = found
+            return ActionPlan("installed_app", appid, "Запустити встановлену програму: " + display, True)
+        return ActionPlan("say", "Не знайшов такої програми в меню Пуск. Скажи точну назву з меню Пуск або «відкрий файл».", "Програму не знайдено")
     m = re.fullmatch(r"(?:знайди|пошукай|загугли|search) (.+)", q)
     if m:
         return ActionPlan("website", "https://www.google.com/search?q=" + quote_plus(m.group(1)), "Пошук у Google")
@@ -141,6 +211,8 @@ def run_action(action: ActionPlan) -> str:
         raise ValueError("Approval metadata required")
     if action.kind == "say":
         return action.target
+    if action.kind == "file_picker":
+        return "Обери файл у вікні вибору."
     if action.kind in {"website", "external_url"}:
         if action.kind == "external_url" and not safe_external_url(action.target):
             raise ValueError("Refused external URL")
@@ -148,6 +220,26 @@ def run_action(action: ActionPlan) -> str:
         return "Відкриваю сторінку у браузері."
     if os.name != "nt":
         return "Керування системою доступне лише у Windows."
+    if action.kind == "known_uri":
+        if action.target != "steam://open/main":
+            raise ValueError("Unknown URI protocol")
+        os.startfile(action.target)
+        return "Відкриваю Steam."
+    if action.kind == "installed_app":
+        matches = [(name, appid) for name, appid in installed_start_apps()
+                   if appid == action.target]
+        if len(matches) != 1:
+            raise ValueError("Start-menu app not found or ambiguous")
+        subprocess.Popen(["explorer.exe", "shell:AppsFolder\\" + action.target], shell=False)
+        return "Запускаю: " + matches[0][0]
+    if action.kind == "user_file":
+        chosen = Path(action.target)
+        denied = {".exe", ".msi", ".bat", ".cmd", ".ps1", ".vbs", ".js", ".reg",
+                  ".scr", ".pif", ".hta", ".lnk", ".py", ".jar", ".wsf", ".url"}
+        if not chosen.is_file() or chosen.suffix.lower() in denied:
+            raise ValueError("File is not available or executable/script files are blocked")
+        os.startfile(str(chosen))
+        return "Відкриваю вибраний файл."
     if action.kind == "app":
         if action.target not in APPS.values():
             raise ValueError("App is not allowlisted")

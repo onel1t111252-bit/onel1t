@@ -1,8 +1,10 @@
 __pycache__/
 *.pyc
 .venv/
+venv/
 settings.json
 jarvis.log
 *.wav
 *.mp3
 .env
+*.db

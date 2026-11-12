@@ -1,4 +1,4 @@
-"""ONEL1T JARVIS 4.0 — consent-first Windows desktop assistant.
+"""ONEL1T JARVIS 4.1 — consent-first Windows desktop assistant.
 
 Local Ollama chat; online microphone recognition and optional online voice.
 No arbitrary OS command execution. No remote control. No admin privileges.
@@ -15,7 +15,7 @@ import re
 import threading
 import time
 import tkinter as tk
-from tkinter import scrolledtext, messagebox
+from tkinter import scrolledtext, messagebox, filedialog
 from urllib import request, error
 
 from desktop_actions import ActionPlan, plan_action, run_action
@@ -26,17 +26,17 @@ SETTINGS_PATH = ROOT_DIR / "settings.json"
 API_URL = "http://127.0.0.1:11434"
 MODEL = os.getenv("JARVIS_MODEL", "jarvis")
 
-BG = "#050b14"
-SIDEBAR = "#091522"
-PANEL = "#0d1c2d"
-PANEL_2 = "#112439"
-INPUT = "#162c42"
-CYAN = "#28ddfc"
-BLUE = "#3c85e9"
-WHITE = "#e5f6ff"
-MUTED = "#8ca8bb"
-GREEN = "#5cf4bc"
-AMBER = "#ffc66d"
+BG = "#050811"
+SIDEBAR = "#0a1422"
+PANEL = "#0b1928"
+PANEL_2 = "#142c42"
+INPUT = "#14263c"
+CYAN = "#27ecfc"
+BLUE = "#4b86f2"
+WHITE = "#effaff"
+MUTED = "#8ba8bb"
+GREEN = "#62edb7"
+AMBER = "#ffce79"
 FONT = "Segoe UI"
 MONO = "Consolas"
 
@@ -123,17 +123,19 @@ class JarvisApp:
         self.reactor_tick = 0
         self._setup_window()
         self._build_ui()
-        self.post("JARVIS", "Системи готові. Скажи «Джарвіс, відкрий блокнот» або запитай мене про щось.", "ai")
+        self.post("JARVIS", "Системи готові. Скажи «Джарвіс, відкрий Steam», "
+                  "«Джарвіс, відкрий Spotify» або запитай мене про щось. "
+                  "Встановлені програми запускаються після підтвердження.", "ai")
         self.root.after(80, self.pump)
         self.root.after(150, self.check_ai)
         self.root.after(100, self.animate_reactor)
         threading.Thread(target=self.audio_worker, daemon=True).start()
 
     def _setup_window(self):
-        self.root.title("ONEL1T | JARVIS 4.0")
+        self.root.title("ONEL1T | JARVIS 4.1")
         self.root.configure(bg=BG)
-        self.root.geometry("1160x790")
-        self.root.minsize(940, 650)
+        self.root.geometry("1260x830")
+        self.root.minsize(980, 690)
         self.root.protocol("WM_DELETE_WINDOW", self.close)
 
     def _label(self, parent, text, size=11, color=WHITE, weight="normal", mono=False, **kwargs):
@@ -142,57 +144,76 @@ class JarvisApp:
                         font=(font, size, weight), **kwargs)
 
     def _button(self, parent, text, command, bg=PANEL_2, fg=WHITE, pad=(12, 8)):
-        return tk.Button(parent, text=text, command=command, bg=bg, fg=fg,
-                         activebackground="#205171", activeforeground=WHITE,
-                         relief="flat", bd=0, cursor="hand2",
-                         font=(FONT, 10, "bold"), padx=pad[0], pady=pad[1])
+        button = tk.Button(parent, text=text, command=command, bg=bg, fg=fg,
+                           activebackground="#205171", activeforeground=WHITE,
+                           relief="flat", bd=0, cursor="hand2",
+                           font=(FONT, 10, "bold"), padx=pad[0], pady=pad[1])
+        button.bind("<Enter>", lambda _e: button.configure(bg="#1d4866") if button.winfo_exists() else None)
+        button.bind("<Leave>", lambda _e: button.configure(bg=bg) if button.winfo_exists() else None)
+        return button
 
     def _build_ui(self):
         header = tk.Frame(self.root, bg=BG, height=72)
         header.pack(fill="x", padx=26, pady=(18, 10))
         self._label(header, "◆  ONEL1T", size=17, color=CYAN, weight="bold").pack(side="left")
-        self._label(header, "    /    JARVIS 4.0    /    COMMAND CENTER", size=10, color=MUTED, mono=True).pack(side="left")
+        self._label(header, "    /    JARVIS 4.1    /    PERSONAL COMMAND CENTER", size=10, color=MUTED, mono=True).pack(side="left")
         self.header_status = self._label(header, "●  STARTING", size=10, color=GREEN, mono=True)
         self.header_status.pack(side="right")
 
         full = tk.Frame(self.root, bg=BG)
         full.pack(fill="both", expand=True, padx=24, pady=(0, 16))
-        side = tk.Frame(full, bg=SIDEBAR, width=272)
+        side = tk.Frame(full, bg=SIDEBAR, width=284)
         side.pack(side="left", fill="y", padx=(0, 14))
         side.pack_propagate(False)
         panel = tk.Frame(full, bg=PANEL)
         panel.pack(side="left", fill="both", expand=True)
 
-        self._label(side, "VOICE-OPERATED SYSTEM", size=9, color=CYAN, mono=True).pack(pady=(20, 4))
+        tk.Frame(side, bg=CYAN, height=3).pack(fill="x")
+        self._label(side, "◈  VOICE-OPERATED SYSTEM", size=9, color=CYAN, mono=True).pack(pady=(19, 1))
         self.orb = tk.Canvas(side, height=204, width=254, bg=SIDEBAR, highlightthickness=0)
         self.orb.pack(pady=(0, 4))
         self.orb.create_text(127, 104, text="J", font=(FONT, 54, "bold"), fill=CYAN, tags="center")
-        self._label(side, "JARVIS  //  CORE", size=13, weight="bold").pack(pady=(0, 4))
+        self._label(side, "J A R V I S   //   CORE", size=13, weight="bold").pack(pady=(0, 4))
         self.ai_state = self._label(side, "CHECKING OLLAMA...", size=9, color=MUTED, mono=True)
-        self.ai_state.pack(pady=(0, 22))
+        self.ai_state.pack(pady=(0, 12))
+        self._label(side, "VOICE CONTROL • LOCAL AI", color=GREEN, size=8, mono=True).pack(pady=(0, 13))
 
         self._label(side, "QUICK COMMANDS", size=10, color=MUTED, mono=True).pack(anchor="w", padx=19, pady=(0, 7))
         for title, cmd in [
-            ("▣  OPEN NOTEPAD", "відкрий блокнот"),
-            ("⌕  OPEN YOUTUBE", "відкрий ютуб"),
-            ("◷  CURRENT TIME", "котра година"),
-            ("▤  OPEN DOCUMENTS", "відкрий документи"),
-            ("◫  WINDOWS SETTINGS", "відкрий налаштування"),
-            ("?  HELP / COMMANDS", "допомога"),
+            ("▣  NOTEPAD", "відкрий блокнот"),
+            ("◉  STEAM", "відкрий стім"),
+            ("⌕  YOUTUBE", "відкрий ютуб"),
+            ("◷  TIME", "котра година"),
+            ("▤  DOCUMENTS", "відкрий документи"),
+            ("▧  CHOOSE FILE", "відкрий файл"),
+            ("◫  SETTINGS", "відкрий налаштування"),
+            ("?  COMMANDS", "допомога"),
         ]:
-            self._button(side, title, lambda cmd=cmd: self.submit(cmd), bg=PANEL, pad=(12, 7)).pack(
-                fill="x", padx=16, pady=4)
+            self._button(side, title, lambda cmd=cmd: self.submit(cmd), bg=PANEL, pad=(11, 6)).pack(
+                fill="x", padx=16, pady=3)
 
         self._label(side, "SAFE ACTIONS  /  CONSENT FIRST", size=8, color=MUTED, mono=True,
                     wraplength=232, justify="left").pack(side="bottom", padx=18, pady=17)
 
         top = tk.Frame(panel, bg=PANEL)
         top.pack(fill="x", padx=22, pady=(24, 8))
-        self._label(top, "NEURAL INTERFACE", size=17, weight="bold").pack(side="left")
+        self._label(top, "NEURAL COMMAND INTERFACE", size=18, weight="bold").pack(side="left")
         self._button(top, "↻  CHECK AI", self.check_ai, bg=PANEL_2).pack(side="right")
 
-        self._label(panel, "Ukrainian AI  ·  Local Ollama  ·  Windows voice assistant", size=10,
-                    color=MUTED).pack(anchor="w", padx=22, pady=(0, 13))
+        self._label(panel, "AI ASSISTANT  /  UKRAINIAN VOICE  /  LOCAL WINDOWS CONTROL", size=9,
+                    color=MUTED, mono=True).pack(anchor="w", padx=22, pady=(0, 11))
+
+        telemetry = tk.Frame(panel, bg=PANEL)
+        telemetry.pack(fill="x", padx=22, pady=(0, 14))
+        for title, value, color in [
+            ("INTELLIGENCE", "OLLAMA LOCAL", CYAN),
+            ("CONTROL", "OWNER APPROVAL", GREEN),
+            ("VOICE LINK", "UKRAINIAN TTS", BLUE),
+        ]:
+            card = tk.Frame(telemetry, bg="#12283b", highlightbackground="#255168", highlightthickness=1)
+            card.pack(side="left", fill="x", expand=True, padx=(0, 8))
+            self._label(card, title, size=8, mono=True, color=MUTED).pack(anchor="w", padx=13, pady=(10, 1))
+            self._label(card, value, size=10, weight="bold", mono=True, color=color).pack(anchor="w", padx=13, pady=(0, 10))
         bar = tk.Frame(panel, bg=PANEL)
         bar.pack(fill="x", padx=22, pady=(0, 11))
         self.handsfree_btn = self._button(bar, "🎙  HANDS-FREE: OFF", self.toggle_handsfree, bg=PANEL_2)
@@ -201,7 +222,7 @@ class JarvisApp:
         self.voice_btn.pack(side="left", padx=(0, 7))
         self.voice_select = self._button(bar, "VOICE: OSTAP", self.cycle_voice, bg=PANEL_2)
         self.voice_select.pack(side="left", padx=(0, 7))
-        self._button(bar, "▶  TEST", self.test_voice, bg=PANEL_2).pack(side="left")
+        self._button(bar, "▶  TEST VOICE", self.test_voice, bg=PANEL_2).pack(side="left")
         self.refresh_voice_buttons()
 
         conversation = tk.Frame(panel, bg=PANEL)
@@ -238,7 +259,7 @@ class JarvisApp:
         bottom.pack(fill="x", padx=22, pady=(0, 16))
         self.status = self._label(bottom, "●  READY", size=9, color=GREEN, mono=True)
         self.status.pack(side="left")
-        self._label(bottom, "MIC OFF BY DEFAULT  •  GOOGLE ASR ONLINE  •  EDGE VOICE ONLINE", size=8,
+        self._label(bottom, "LOCAL ACTIONS  /  EXPLICIT APPROVAL  /  MIC OFF BY DEFAULT", size=8,
                     color=MUTED, mono=True).pack(side="right")
         self.input.focus_set()
 
@@ -322,6 +343,14 @@ class JarvisApp:
             return
         self.post("YOU 🎤" if via_voice else "YOU", text, "user")
         route = plan_action(text)
+        if route and route.kind == "file_picker":
+            selected = filedialog.askopenfilename(
+                parent=self.root, title="Вибери файл, який JARVIS може відкрити")
+            if not selected:
+                self.finish("Вибір файлу скасовано.")
+                return
+            route = ActionPlan("user_file", selected,
+                               "Відкрити вибраний файл: " + Path(selected).name, True)
         if route and route.needs_approval:
             self.pending = route
             self.confirm_description.configure(text="APPROVAL REQUIRED   /   " + route.summary)
@@ -455,8 +484,9 @@ class JarvisApp:
             self.speaking.set()
             self.queue.put(("mic_status", "●  SPEAKING"))
             try:
-                if not speak(phrase, self.voice_profile):
-                    self.queue.put(("hint", "Немає звуку. Запусти INSTALL_VOICE.bat або вибери WINDOWS voice."))
+                result = speak(phrase, self.voice_profile)
+                if not result.ok:
+                    self.queue.put(("hint", "ГОЛОС: " + result.detail))
             finally:
                 threading.Event().wait(.65)
                 if self.audio_queue.empty():
