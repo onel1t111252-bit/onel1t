@@ -1,5 +1,12 @@
 # ONEL1T / JARVIS 3.0
 
+## Download just JARVIS
+
+**[⬇ Download JARVIS 3.0 for Windows 11 (ZIP)](https://github.com/onel1t111252-bit/onel1t/raw/refs/heads/main/projects/jarvis/JARVIS_3_Windows11.zip)**
+
+This is a standalone source archive (only JARVIS, not the whole ONEL1T repository). Extract it, run `INSTALL_VOICE.bat` if needed, and open `START_JARVIS.bat`. Python 3.12, Ollama and the local model `jarvis` must be installed separately.
+
+
 A personal Windows 11 desktop assistant built with Python and local Ollama. The GUI and commands are in Ukrainian.
 
 ## What works
