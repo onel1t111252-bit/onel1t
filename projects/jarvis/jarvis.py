@@ -258,7 +258,7 @@ class JarvisApp:
 
         self._button(side, "♫  FIND SONG", self.search_spotify, bg=PANEL).pack(
             fill="x", padx=16, pady=3)
-        self._label(side, "SAFE ACTIONS  /  CONSENT FIRST", size=8, color=MUTED, mono=True,
+        self._label(side, "DIRECT COMMANDS  /  PROTECTED CHANGES", size=8, color=MUTED, mono=True,
                     wraplength=232, justify="left").pack(side="bottom", padx=18, pady=17)
 
         top = tk.Frame(panel, bg=PANEL)
@@ -276,7 +276,7 @@ class JarvisApp:
         telemetry.pack(fill="x", padx=22, pady=(0, 14))
         for title, value, color in [
             ("INTELLIGENCE", "OLLAMA LOCAL", CYAN),
-            ("CONTROL", "OWNER APPROVAL", GREEN),
+            ("CONTROL", "DIRECT COMMANDS", GREEN),
             ("VOICE LINK", "UKRAINIAN TTS", BLUE),
         ]:
             card = tk.Frame(telemetry, bg="#12283b", highlightbackground="#255168", highlightthickness=1)
