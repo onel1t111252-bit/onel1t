@@ -1,0 +1,74 @@
+name: Build JARVIS 3.0 ZIP
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/jarvis-release.yml"
+      - "projects/jarvis/*.py"
+      - "projects/jarvis/*.bat"
+      - "projects/jarvis/README.md"
+      - "projects/jarvis/Modelfile"
+      - "projects/jarvis/requirements.txt"
+      - "projects/jarvis/cover.svg"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Package the current Windows sources (excluding credentials and logs)
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import zipfile
+
+          root = Path("projects/jarvis")
+          names = [
+              "README.md", "LICENSE", "Modelfile", "cover.svg",
+              "jarvis.py", "desktop_actions.py", "window_control.py",
+              "command_sequences.py", "assistant_persona.py", "voice_engine.py",
+              "spotify_control.py", "steam_control.py", "requirements.txt",
+              "START_JARVIS.bat", "INSTALL_VOICE.bat", "INSTALL_AI.bat",
+              "test_commands.py", "test_window_control.py", "test_voice_engine.py",
+              "test_ui_v43.py", "test_persona.py", "test_spotify_control.py",
+              "test_steam_control.py",
+          ]
+          missing = [name for name in names if not (root / name).is_file()]
+          if missing:
+              raise SystemExit("Missing JARVIS files: " + ", ".join(missing))
+          target = root / "JARVIS_3_0_Windows11.zip"
+          with zipfile.ZipFile(target, "w", compression=zipfile.ZIP_DEFLATED,
+                               compresslevel=9) as archive:
+              for name in names:
+                  archive.write(root / name, arcname=name)
+          with zipfile.ZipFile(target) as archive:
+              assert archive.testzip() is None
+              assert sorted(archive.namelist()) == sorted(names)
+          print(f"Verified {target}: {len(names)} files; {target.stat().st_size} bytes")
+          PY
+      - name: Upload release artifact as a fallback download
+        uses: actions/upload-artifact@v4
+        with:
+          name: JARVIS_3_0_Windows11
+          path: projects/jarvis/JARVIS_3_0_Windows11.zip
+          if-no-files-found: error
+      - name: Update standalone ZIP in repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add projects/jarvis/JARVIS_3_0_Windows11.zip
+          if ! git diff --cached --quiet; then
+            git commit -m "Update JARVIS 3.0 Windows ZIP for Steam library controls"
+            git push origin HEAD:main
+          else
+            echo "JARVIS ZIP already current."
+          fi
