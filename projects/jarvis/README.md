@@ -140,6 +140,39 @@ JARVIS supports owner-approved Steam account selection and game launching withou
 
 **Why approval is required:** Selecting an account changes local sign-in preferences; starting an app/game is a visible local action. Every `steam_open_first` and `steam_game` action shows its purpose in JARVIS and needs an explicit **CONFIRM**. There is no automated password entry, credentials storage, Steam Guard workaround or game-file execution.
 
+## Spotify fix for "Jan" / "Jane!" showing a paused Play button
+
+**What the user's screenshot proved:** JARVIS transcribed an intended English
+song title as **"Jan"**, while Spotify showed **"Jane!" by The Long Faces**,
+with the bottom player showing a **Play ▶ icon** (paused). Voice recognition
+and actually pressing Play are two distinct problems.
+
+**Song selection:** The installed-app route now uses **Spotify Quick Search
+(Ctrl+K), Down to select an actual suggestion, then Shift+Enter**. Spotify
+community documentation describes Shift+Enter as playing a selected Quick
+Search song directly. Spotify desktop versions can change; it is not an
+official guaranteed playback API.
+
+**Paused-player recovery:** If Windows media reports that the requested song
+is selected but paused, JARVIS tries an idempotent WinRT Play action (not the
+Space toggle) and verifies again. When Windows does not expose media data,
+JARVIS optionally checks the **actual Spotify.exe player's Play/Pause
+button through Windows UI Automation (pywinauto)**. It can click the **bottom
+transport Play button**, but ONLY when the current visible song/artist resembles
+the requested title, and ONLY while the verified Spotify window has focus.
+It does not click a generic search card or arbitrary screen coordinates.
+If the Spotify build does not expose accessible controls, it reports
+uncertainty rather than blindly resuming an unrelated old song or claiming
+success. This UIA dependency is installed by \`INSTALL_VOICE.bat\`.
+
+**English song names:** Google recognition with language \`uk-UA\` may hear
+"Jane!" as "Jan". JARVIS uses the words *actually recognized*, not the words
+the user meant, so the best verification is to first type
+\`увімкни пісню Jane! The Long Faces у Spotify\` into JARVIS (or use the
+**PLAY IN SPOTIFY** shortcut). If that works but speaking the same name
+doesn't, the remaining problem is microphone transcription, not Spotify
+automation. JARVIS cannot infer every ambiguous English name correctly.
+
 ## Spotify fix: missing Windows playback data ≠ song failed
 
 **Do not treat an absent Windows Media Session as a Spotify playback failure.**
@@ -212,7 +245,7 @@ For example:
 - \`Джарвіс, увімкни Linkin Park Numb\`
 - Click **♫ PLAY IN SPOTIFY** and enter the song/artist.
 
-JARVIS first tries an already authorized, **active desktop Computer** through the optional Spotify Web API. If the API is not connected, is unavailable or refuses playback, it uses the **installed Spotify.exe Windows app** directly. It identifies the real Spotify process/window (not a web browser), brings it to the foreground, opens Spotify's native Quick Search with **Ctrl+K**, types the title (Ukrainian/Unicode supported, no clipboard), waits for suggestions, explicitly presses **Down** to select one, then **Enter**. It verifies the reported track/status through Windows media sessions when available. This is a best-effort playback request: Spotify's interface, account state, network and result order may change. JARVIS now checks the Windows media session and refuses to report verified success when the track cannot be confirmed. JARVIS reports the attempt rather than claiming it definitely played.
+JARVIS first tries an already authorized, **active desktop Computer** through the optional Spotify Web API. If the API is not connected, is unavailable or refuses playback, it uses the **installed Spotify.exe Windows app** directly. It identifies the real Spotify process/window (not a web browser), brings it to the foreground, opens Spotify's native Quick Search with **Ctrl+K**, types the title (Ukrainian/Unicode supported, no clipboard), waits for suggestions, explicitly presses **Down** to select one, then **Shift+Enter** to request single-song playback. It verifies the reported track/status through Windows media sessions when available. This is a best-effort playback request: Spotify's interface, account state, network and result order may change. JARVIS now checks the Windows media session and refuses to report verified success when the track cannot be confirmed. JARVIS reports the attempt rather than claiming it definitely played.
 
 **This desktop route requires no Spotify Developer app, Client ID, Premium API access or Ollama.** It requires Windows, the installed Spotify app and a signed-in Spotify account whose playback is available. It may work with Spotify Free subject to Spotify's own playback restrictions. If the app is not open, JARVIS tries the registered \`spotify:\` Windows protocol, then verifies a genuine Spotify.exe window before sending **any keys**. If Windows refuses to bring Spotify to the foreground or the app isn't installed, JARVIS explains the issue; it **does not open Google or browser search as a hidden fallback**.
 

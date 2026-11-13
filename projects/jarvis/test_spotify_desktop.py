@@ -34,13 +34,12 @@ class NativeSpotifyTests(unittest.TestCase):
              patch("spotify_desktop.time.sleep"), \
              patch.dict(sys.modules, {"pyautogui": keys}):
             reply = play_in_desktop("  Океан Ельзи  ")
-        self.assertEqual(keys.hotkey.call_count, 2)
+        self.assertEqual(keys.hotkey.call_count, 3)
         self.assertEqual(keys.hotkey.call_args_list[0].args, ("ctrl", "k"))
         self.assertEqual(keys.hotkey.call_args_list[1].args, ("ctrl", "a"))
+        self.assertEqual(keys.hotkey.call_args_list[2].args, ("shift", "enter"))
         entered.assert_called_once_with("Океан Ельзи")
-        self.assertEqual(keys.press.call_count, 2)
-        self.assertEqual(keys.press.call_args_list[0].args, ("down",))
-        self.assertEqual(keys.press.call_args_list[1].args, ("enter",))
+        keys.press.assert_called_once_with("down")
         self.assertIn("Підтверджено у Windows", reply)
 
     def test_selected_song_must_match_user_request(self):
@@ -80,7 +79,7 @@ class NativeSpotifyTests(unittest.TestCase):
             with self.assertRaisesRegex(SpotifyDesktopError, "не відповідає"):
                 play_in_desktop("Numb")
         keys.press.assert_any_call("down")
-        keys.press.assert_any_call("enter")
+        keys.hotkey.assert_any_call("shift", "enter")
 
     def test_not_playing_is_not_reported_as_success(self):
         keys = types.SimpleNamespace(hotkey=Mock(), press=Mock())
@@ -90,10 +89,130 @@ class NativeSpotifyTests(unittest.TestCase):
              patch("spotify_desktop._type_unicode"), \
              patch("spotify_desktop._read_spotify_playback",
                    return_value=SpotifyPlayback("Numb", "Linkin Park", False)), \
+             patch("spotify_desktop._try_media_session_play", return_value=False), \
+             patch("spotify_desktop._ui_player_state", return_value="paused"), \
              patch("spotify_desktop.time.sleep"), \
              patch.dict(sys.modules, {"pyautogui": keys}):
             with self.assertRaisesRegex(SpotifyDesktopError, "НЕ активне"):
                 play_in_desktop("Numb")
+
+    def test_selected_spotify_song_paused_then_resume(self):
+        keys = types.SimpleNamespace(hotkey=Mock(), press=Mock())
+        states = [
+            SpotifyPlayback("Jane!", "The Long Faces", False),
+            SpotifyPlayback("Jane!", "The Long Faces", True),
+        ]
+        with patch("spotify_desktop.os.name", "nt"), \
+             patch("spotify_desktop._open_and_focus_spotify", return_value=42), \
+             patch("spotify_desktop._still_focused", return_value=True), \
+             patch("spotify_desktop._type_unicode"), \
+             patch("spotify_desktop._read_spotify_playback",
+                   side_effect=states), \
+             patch("spotify_desktop._try_media_session_play", return_value=True) as play, \
+             patch("spotify_desktop.time.sleep"), \
+             patch.dict(sys.modules, {"pyautogui": keys}):
+            outcome = play_in_desktop("Jane! The Long Faces")
+        play.assert_called_once()
+        self.assertIn("Підтверджено", outcome)
+
+    def test_unknown_windows_session_checks_accessible_spotify_play_button(self):
+        keys = types.SimpleNamespace(hotkey=Mock(), press=Mock())
+        with patch("spotify_desktop.os.name", "nt"), \
+             patch("spotify_desktop._open_and_focus_spotify", return_value=42), \
+             patch("spotify_desktop._still_focused", return_value=True), \
+             patch("spotify_desktop._type_unicode"), \
+             patch("spotify_desktop._read_spotify_playback", return_value=None), \
+             patch("spotify_desktop._ui_player_state",
+                   return_value="played") as accessible_play, \
+             patch("spotify_desktop.time.sleep"), \
+             patch.dict(sys.modules, {"pyautogui": keys}):
+            feedback = play_in_desktop("Jane!")
+        accessible_play.assert_called_once_with(42, "Jane!", try_play=True)
+        self.assertIn("натиснув Play", feedback)
+        keys.hotkey.assert_any_call("shift", "enter")
+
+    def test_unknown_windows_session_avoids_unrelated_song_play(self):
+        keys = types.SimpleNamespace(hotkey=Mock(), press=Mock())
+        with patch("spotify_desktop.os.name", "nt"), \
+             patch("spotify_desktop._open_and_focus_spotify", return_value=42), \
+             patch("spotify_desktop._still_focused", return_value=True), \
+             patch("spotify_desktop._type_unicode"), \
+             patch("spotify_desktop._read_spotify_playback", return_value=None), \
+             patch("spotify_desktop._ui_player_state", return_value="paused"), \
+             patch("spotify_desktop.time.sleep"), \
+             patch.dict(sys.modules, {"pyautogui": keys}):
+            feedback = play_in_desktop("Numb")
+        self.assertIn("НЕ ПІДТВЕРДЖЕНО", feedback)
+
+    def test_spotify_app_ui_button_is_not_a_random_search_result(self):
+        from spotify_desktop import _ui_player_state
+        from types import SimpleNamespace as NS
+
+        class Ctrl:
+            def __init__(self, title, rect):
+                self.title, self.box = title, rect
+                self.element_info = NS(name=title)
+                self.invoke = Mock()
+            def window_text(self):
+                return self.title
+            def rectangle(self):
+                return self.box
+
+        # The search result has a Play button, but it must never be clicked;
+        # only the global player control near the bottom can be activated.
+        search_play = Ctrl("Play", NS(left=620, right=660, top=350, bottom=390))
+        bottom_play = Ctrl("Play", NS(left=690, right=730, top=920, bottom=960))
+        song_title = Ctrl("Jane!", NS(left=220, right=330, top=919, bottom=952))
+        artist = Ctrl("The Long Faces", NS(left=220, right=350, top=950, bottom=970))
+
+        class Window:
+            def rectangle(self):
+                return NS(left=150, top=0, right=1400, bottom=1000)
+            def descendants(self, control_type):
+                return [search_play, bottom_play] if control_type == "Button" else [song_title, artist]
+
+        module = types.ModuleType("pywinauto")
+        module.Desktop = lambda backend: NS(window=lambda handle: Window())
+        with patch("spotify_desktop.os.name", "nt"), \
+             patch("spotify_desktop._still_focused", return_value=True), \
+             patch("spotify_desktop.time.sleep"), \
+             patch.dict(sys.modules, {"pywinauto": module}):
+            result = _ui_player_state(42, "Jan", try_play=True)
+        self.assertEqual(result, "played")
+        search_play.invoke.assert_not_called()
+        bottom_play.invoke.assert_called_once()
+
+    def test_spotify_app_ui_mismatched_existing_track_never_played(self):
+        from spotify_desktop import _ui_player_state
+        from types import SimpleNamespace as NS
+
+        class Ctrl:
+            element_info = NS(name="Play")
+            invoke = Mock()
+            def window_text(self):
+                return "Play"
+            def rectangle(self):
+                return NS(left=690, right=730, top=920, bottom=960)
+
+        class Title:
+            element_info = NS(name="Jane!")
+            def window_text(self):
+                return "Jane!"
+            def rectangle(self):
+                return NS(left=220, right=330, top=919, bottom=952)
+
+        class Window:
+            def rectangle(self):
+                return NS(left=150, top=0, right=1400, bottom=1000)
+            def descendants(self, control_type):
+                return [Ctrl()] if control_type == "Button" else [Title()]
+
+        ui = types.ModuleType("pywinauto")
+        ui.Desktop = lambda backend: NS(window=lambda handle: Window())
+        with patch("spotify_desktop.os.name", "nt"), \
+             patch("spotify_desktop._still_focused", return_value=True), \
+             patch.dict(sys.modules, {"pywinauto": ui}):
+            self.assertEqual(_ui_player_state(42, "Numb", try_play=True), "paused")
 
     def test_unverifiable_song_reports_uncertainty_not_false_failure(self):
         keys = types.SimpleNamespace(hotkey=Mock(), press=Mock())
