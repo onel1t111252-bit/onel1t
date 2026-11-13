@@ -12,6 +12,7 @@ from steam_control import (
     SteamError, SteamGame, choose_first_account, find_installed_game,
     first_saved_account, installed_games, parse_vdf, open_steam_first,
     launch_installed_game, _open_steam_client, update_first_account_preference,
+    verified_active_saved_account,
 )
 
 USERS = r'''"users"
@@ -151,6 +152,68 @@ class SteamAccountTests(unittest.TestCase):
                    side_effect=SteamError("Steam відсутній")):
             with self.assertRaisesRegex(SteamError, "Не вдалося відкрити Steam"):
                 _open_steam_client()
+
+    def test_uses_the_account_actually_signed_in_not_first_file_entry(self):
+        # First file entry has ID 1, active user's ID is 2. Previously the
+        # game would be blocked even though the user was already logged in.
+        with tempfile.TemporaryDirectory() as td:
+            cfg = Path(td) / "config"
+            cfg.mkdir()
+            (cfg / "loginusers.vdf").write_text(USERS, encoding="utf-8")
+            with patch("steam_control.os.name", "nt"), \
+                 patch("steam_control.steam_running", return_value=True), \
+                 patch("steam_control.active_steam_user", return_value=2):
+                self.assertEqual(verified_active_saved_account(Path(td)), "another_user")
+
+    def test_active_account_without_login_remains_unverified(self):
+        with tempfile.TemporaryDirectory() as td:
+            cfg = Path(td) / "config"
+            cfg.mkdir()
+            (cfg / "loginusers.vdf").write_text(USERS, encoding="utf-8")
+            with patch("steam_control.os.name", "nt"), \
+                 patch("steam_control.steam_running", return_value=True), \
+                 patch("steam_control.active_steam_user", return_value=None):
+                with self.assertRaisesRegex(SteamError, "активний вхід не підтверджений"):
+                    verified_active_saved_account(Path(td))
+
+    def test_game_launches_using_verified_current_account(self):
+        game = SteamGame("570", "Dota 2", "local")
+        with patch("steam_control.os.name", "nt"), \
+             patch("steam_control.find_installed_game", return_value=game), \
+             patch("steam_control.steam_running", return_value=True), \
+             patch("steam_control.verified_active_saved_account", return_value="other_user"), \
+             patch("steam_control.choose_first_account") as choose, \
+             patch("steam_control.os.startfile", create=True) as game_start:
+            response = launch_installed_game("Dota 2")
+        choose.assert_not_called()
+        game_start.assert_called_once_with("steam://run/570")
+        self.assertIn("other_user", response)
+        self.assertIn("не перемикав", response)
+
+    def test_does_not_launch_game_while_steam_login_picker_visible(self):
+        game = SteamGame("570", "Dota 2", "local")
+        with patch("steam_control.os.name", "nt"), \
+             patch("steam_control.find_installed_game", return_value=game), \
+             patch("steam_control.steam_running", return_value=True), \
+             patch("steam_control.verified_active_saved_account",
+                   side_effect=SteamError("Не підтверджено вхід у Steam")), \
+             patch("steam_control._open_steam_client") as open_client, \
+             patch("steam_control.os.startfile", create=True) as game_start:
+            result = launch_installed_game("Dota 2")
+        open_client.assert_called_once_with()
+        game_start.assert_not_called()
+        self.assertIn("поки не запускав", result)
+
+    def test_steam_closed_still_selects_first_saved_account(self):
+        game = SteamGame("570", "Dota 2", "local")
+        with patch("steam_control.os.name", "nt"), \
+             patch("steam_control.find_installed_game", return_value=game), \
+             patch("steam_control.steam_running", return_value=False), \
+             patch("steam_control.choose_first_account", return_value="Перший вибраний"), \
+             patch("steam_control.os.startfile", create=True) as game_start:
+            result = launch_installed_game("Dota 2")
+        game_start.assert_called_once_with("steam://run/570")
+        self.assertIn("Перший вибраний", result)
 
     def test_game_does_not_launch_under_unverified_account(self):
         sample = SteamGame("620", "Portal 2", "local")
