@@ -1,4 +1,4 @@
-"""ONEL1T JARVIS 4.2 — consent-first Windows desktop assistant.
+"""ONEL1T JARVIS 3.0 — consent-first Windows desktop assistant.
 
 Local Ollama chat; online microphone recognition and optional online voice.
 No arbitrary OS command execution. No remote control. No admin privileges.
@@ -20,7 +20,8 @@ from urllib import request, error
 
 from desktop_actions import ActionPlan, plan_action, run_action
 from command_sequences import split_sequence
-from voice_engine import speak, VOICE_PROFILES, VOICE_LABELS
+from voice_engine import speak, clamp_volume, VOICE_PROFILES, VOICE_LABELS
+from assistant_persona import style_action_reply
 
 ROOT_DIR = Path(__file__).resolve().parent
 SETTINGS_PATH = ROOT_DIR / "settings.json"
@@ -44,6 +45,9 @@ MONO = "Consolas"
 SYSTEM_PROMPT = (
     "Ти JARVIS — україномовний ШІ-помічник на комп'ютері Windows. "
     "Відповідай українською природно, чітко й лаконічно. "
+    "Говори в стилі стриманого, тактовного помічника: звертайся «сер», "
+    "на короткі доручення відповідай «Так, сер» або «Є, сер», "
+    "але не повторюй це механічно в кожному реченні. Без зайвого пафосу. "
     "Не стверджуй, що відкрив програму, змінив файл або виконав команду, "
     "якщо це не зробив модуль команд. Не видавай інструкцій для доступу "
     "до чужих комп'ютерів без дозволу. Якщо функція недоступна, скажи про це. "
@@ -122,13 +126,17 @@ class JarvisApp:
         self.history: list[dict[str, str]] = []
         self.settings = get_settings()
         self.voice_on = bool(self.settings.get("voice_on", True))
+        self.voice_volume = clamp_volume(self.settings.get("voice_volume", 80))
+        self.window_mode = self.settings.get("window_mode", "compact")
+        if self.window_mode not in {"compact", "wide"}:
+            self.window_mode = "compact"
         self.voice_profile = self.settings.get("voice_profile", VOICE_PROFILES[0])
         if self.voice_profile not in VOICE_PROFILES:
             self.voice_profile = VOICE_PROFILES[0]
         self.reactor_tick = 0
         self._setup_window()
         self._build_ui()
-        self.post("JARVIS", "Системи готові. Скажи «Джарвіс, відкрий Steam і запусти Доту», "
+        self.post("JARVIS", "Так, сер. Системи готові. Скажи «Джарвіс, відкрий Steam і запусти Доту», "
                   "«Джарвіс, відкрий Spotify» або запитай мене про щось. "
                   "Встановлені програми запускаються після підтвердження.", "ai")
         self.root.after(80, self.pump)
@@ -137,11 +145,32 @@ class JarvisApp:
         threading.Thread(target=self.audio_worker, daemon=True).start()
 
     def _setup_window(self):
-        self.root.title("ONEL1T | JARVIS 4.3")
+        self.root.title("ONEL1T | JARVIS 3.0")
         self.root.configure(bg=BG)
-        self.root.geometry("1260x830")
-        self.root.minsize(980, 690)
+        self.root.resizable(True, True)
+        self.root.attributes("-fullscreen", False)
+        self._apply_window_size()
         self.root.protocol("WM_DELETE_WINDOW", self.close)
+
+    def _apply_window_size(self):
+        """Launch in an ordinary resizable window, never forced fullscreen."""
+        self.root.state("normal")
+        screen_w = self.root.winfo_screenwidth()
+        screen_h = self.root.winfo_screenheight()
+        desired_w, desired_h = (1120, 800) if self.window_mode == "wide" else (960, 700)
+        width = min(desired_w, max(720, screen_w - 80))
+        height = min(desired_h, max(550, screen_h - 110))
+        self.root.minsize(min(width, 810), min(height, 560))
+        x = max(0, (screen_w - width) // 2)
+        y = max(0, (screen_h - height) // 3)
+        self.root.geometry(f"{width}x{height}+{x}+{y}")
+
+    def toggle_window_mode(self):
+        self.window_mode = "wide" if self.window_mode == "compact" else "compact"
+        self._apply_window_size()
+        self.window_btn.configure(text=("◫  WINDOW: LARGE" if self.window_mode == "wide"
+                                        else "◫  WINDOW: COMPACT"))
+        self.save_settings()
 
     def _label(self, parent, text, size=11, color=WHITE, weight="normal", mono=False, **kwargs):
         font = MONO if mono else FONT
@@ -161,7 +190,7 @@ class JarvisApp:
         header = tk.Frame(self.root, bg=BG, height=72)
         header.pack(fill="x", padx=26, pady=(18, 10))
         self._label(header, "◆  ONEL1T", size=17, color=CYAN, weight="bold").pack(side="left")
-        self._label(header, "    /    JARVIS 4.3    /    PERSONAL COMMAND CENTER", size=10, color=MUTED, mono=True).pack(side="left")
+        self._label(header, "    /    JARVIS 3.0    /    PERSONAL COMMAND CENTER", size=10, color=MUTED, mono=True).pack(side="left")
         self.header_status = self._label(header, "●  STARTING", size=10, color=GREEN, mono=True)
         self.header_status.pack(side="right")
 
@@ -206,6 +235,9 @@ class JarvisApp:
         top.pack(fill="x", padx=22, pady=(24, 8))
         self._label(top, "NEURAL COMMAND INTERFACE", size=18, weight="bold").pack(side="left")
         self._button(top, "↻  CHECK AI", self.check_ai, bg=PANEL_2).pack(side="right")
+        self.window_btn = self._button(top, "◫  WINDOW: " + ("LARGE" if self.window_mode == "wide" else "COMPACT"),
+                                      self.toggle_window_mode, bg=PANEL_2)
+        self.window_btn.pack(side="right", padx=(0, 8))
 
         self._label(panel, "AI ASSISTANT  /  UKRAINIAN VOICE  /  LOCAL WINDOWS CONTROL", size=9,
                     color=MUTED, mono=True).pack(anchor="w", padx=22, pady=(0, 11))
@@ -232,6 +264,20 @@ class JarvisApp:
         self._button(bar, "▶  TEST VOICE", self.test_voice, bg=PANEL_2).pack(side="left")
         self._button(bar, "■  STOP PLAN", self.stop_plan, bg="#4e3046").pack(side="right")
         self.refresh_voice_buttons()
+
+        volume_bar = tk.Frame(panel, bg=PANEL)
+        volume_bar.pack(fill="x", padx=22, pady=(0, 10))
+        self.volume_label = self._label(volume_bar, f"VOICE VOLUME  /  {self.voice_volume}%",
+                                        size=9, color=CYAN, mono=True)
+        self.volume_label.pack(side="left")
+        self.volume_slider = tk.Scale(
+            volume_bar, from_=0, to=100, resolution=5,
+            orient="horizontal", length=250, showvalue=False,
+            bg=PANEL, fg=CYAN, troughcolor=INPUT, activebackground=CYAN,
+            highlightthickness=0, bd=0,
+            variable=tk.IntVar(value=self.voice_volume), command=self.set_voice_volume)
+        self.volume_slider.pack(side="left", fill="x", expand=True, padx=(14, 12))
+        self._label(volume_bar, "VOICE ONLY", size=8, color=MUTED, mono=True).pack(side="right")
 
         flow = tk.Frame(panel, bg="#12283b", highlightbackground="#255168", highlightthickness=1)
         flow.pack(fill="x", padx=22, pady=(0, 10))
@@ -308,10 +354,17 @@ class JarvisApp:
     def save_settings(self):
         try:
             SETTINGS_PATH.write_text(json.dumps({"voice_on": self.voice_on,
-                                                "voice_profile": self.voice_profile},
+                                                "voice_profile": self.voice_profile,
+                                                "voice_volume": self.voice_volume,
+                                                "window_mode": self.window_mode},
                                                ensure_ascii=False, indent=2), encoding="utf-8")
         except OSError:
             logging.warning("Could not save preferences")
+
+    def set_voice_volume(self, value):
+        self.voice_volume = clamp_volume(value)
+        self.volume_label.configure(text=f"VOICE VOLUME  /  {self.voice_volume}%")
+        self.save_settings()
 
     def refresh_voice_buttons(self):
         self.voice_btn.configure(text="🔊  VOICE: ON" if self.voice_on else "🔇  VOICE: OFF")
@@ -338,7 +391,10 @@ class JarvisApp:
         if not self.voice_on:
             self.post("SYSTEM", "Увімкни VOICE: ON для перевірки озвучення.", "sys")
             return
-        self.enqueue_speech("Вітаю. Я Джарвіс. Голосові системи активовано.")
+        if self.voice_volume == 0:
+            self.post("SYSTEM", "Гучність голосу 0%. Пересунь повзунок праворуч.", "sys")
+            return
+        self.enqueue_speech("Так, сер. Я Джарвіс. Голосові системи активовано.")
 
     def check_ai(self):
         self.ai_state.configure(text="CHECKING AI ...", fg=MUTED)
@@ -458,6 +514,7 @@ class JarvisApp:
         self.queue.put(("answer", (reply, success, action.kind if action else "")))
 
     def finish(self, text, success=True, action_kind=""):
+        text = style_action_reply(text, action_kind, success)
         self.post("JARVIS", text, "ai")
         # Do not send window titles or dictated text acknowledgments to online TTS.
         if action_kind not in {"ui_windows", "ui_type", "ui_focus"}:
@@ -566,7 +623,7 @@ class JarvisApp:
             self.speaking.set()
             self.queue.put(("mic_status", "●  SPEAKING"))
             try:
-                result = speak(phrase, self.voice_profile)
+                result = speak(phrase, self.voice_profile, self.voice_volume)
                 if not result.ok:
                     self.queue.put(("hint", "ГОЛОС: " + result.detail))
             finally:
