@@ -551,7 +551,7 @@ class JarvisApp:
         route = plan_action(text)
         segments = split_sequence(text)
         # Preserve a single fixed Steam URI for the established Steam+Dota phrase.
-        if segments is not None and not (route and route.kind in {"known_uri", "steam_game"}):
+        if segments is not None and not (route and route.kind in {"known_uri", "steam_game", "youtube_search"}):
             if not segments:
                 self.finish("Сценарій відхилено: не більше 4 кроків; введення тексту має бути останнім кроком.")
                 return
@@ -784,6 +784,11 @@ class JarvisApp:
             recognizer = sr.Recognizer()
             recognizer.dynamic_energy_threshold = True
             recognizer.energy_threshold = self.mic_energy_threshold
+            # A short thinking pause must not split "знайди відео на
+            # YouTube ... по програмуванню" into only the first clause.
+            recognizer.pause_threshold = 1.4
+            recognizer.non_speaking_duration = 0.5
+            recognizer.phrase_threshold = 0.25
             self.mic_listening.set()
             self.queue.put(("mic_status", "●  LISTENING"))
             with sr.Microphone(device_index=self.mic_index) as microphone:
@@ -797,7 +802,7 @@ class JarvisApp:
                 try:
                     audio = recognizer.listen(
                         microphone, timeout=6 if with_wake_word else 7,
-                        phrase_time_limit=9 if with_wake_word else 12)
+                        phrase_time_limit=16 if with_wake_word else 18)
                 finally:
                     # Even on silence/timeout, preserve the updated automatic
                     # threshold across recognition attempts.
