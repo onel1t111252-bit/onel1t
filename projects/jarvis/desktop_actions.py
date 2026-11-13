@@ -177,6 +177,14 @@ def plan_action(raw_text: str) -> ActionPlan | None:
             or re.fullmatch(fr"{verb} {dota}(?: через {steam})?", q)):
         return ActionPlan("steam_game", "Dota 2",
                           "Вибрати перший збережений акаунт Steam і запустити Dota 2", True)
+    combo_game = re.fullmatch(
+        fr"{verb}\s+{steam}\s+(?:і|та|потім|а потім)\s+"
+        r"(?:запусти|запустити|відкрий|увімкни|включи)\s+(?:гру\s+)?(.+)", q)
+    if combo_game:
+        title = combo_game.group(1).strip()
+        if 1 <= len(title) <= 170:
+            return ActionPlan("steam_game", title,
+                              "Вибрати перший збережений акаунт і запустити Steam-гру: " + title, True)
     if q in {"покажи ігри steam", "покажи ігри стім", "список ігор steam",
              "мої ігри steam", "мої ігри стім", "бібліотека steam",
              "бібліотека стім", "покажи встановлені ігри", "покажи бібліотеку steam"}:
