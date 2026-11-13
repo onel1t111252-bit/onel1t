@@ -16,7 +16,7 @@ from desktop_actions import ActionPlan
 # never trigger an extra model call before conversational chat.
 _ACTION_WORDS = re.compile(
     r"\b(?:увімкни|включи|запусти|програй|відтвори|постав|пошукай|"
-    r"знайди|покажи|відкрий|хочу|можеш|допоможи|послухати|"
+    r"знайди|покажи|відкрий|хочу|можеш|допоможи|пошукати|послухати|"
     r"передивитися|подивитися|play|find|search|open|put|"
     r"listen|watch)\b", re.I)
 _SPOTIFY_WORD = re.compile(r"\b(?:spotify|спотіфай|спотифай|спотефай)\b", re.I)
@@ -25,7 +25,7 @@ _MUSIC_WORD = re.compile(r"\b(?:пісню|пісня|трек|композиц�
 _VIDEO_WORD = re.compile(r"\b(?:відео|урок|уроки|відеоурок|відеоуроки|video|videos)\b", re.I)
 _PLAY_WORD = re.compile(r"\b(?:увімкни|включи|запусти|програй|відтвори|постав|"
                         r"послухати|слухати|play|listen)\b", re.I)
-_SEARCH_WORD = re.compile(r"\b(?:знайди|пошукай|покажи|пошук|search|find|"
+_SEARCH_WORD = re.compile(r"\b(?:знайди|пошукай|пошукати|покажи|пошук|search|find|"
                           r"подивитися|watch|хочу)\b", re.I)
 _UNSAFE_COMMAND = re.compile(
     r"\b(?:пароль|password|секрет|api.?key|token|токен|видали|"
@@ -75,6 +75,8 @@ def validate_suggestion(user_text: str, answer: object) -> ActionPlan | None:
     if target.casefold() not in source:
         return None
     if _UNSAFE_COMMAND.search(user_text):
+        return None
+    if target.casefold() in {"spotify", "youtube", "пісню", "трек", "відео", "song", "music", "video"}:
         return None
     if kind == "spotify_play":
         if not _PLAY_WORD.search(user_text) or not (
