@@ -15,13 +15,14 @@ import re
 import threading
 import time
 import tkinter as tk
-from tkinter import scrolledtext, messagebox, filedialog
+from tkinter import scrolledtext, messagebox, filedialog, simpledialog
 from urllib import request, error
 
 from desktop_actions import ActionPlan, plan_action, run_action
 from command_sequences import split_sequence
 from voice_engine import speak, clamp_volume, VOICE_PROFILES, VOICE_LABELS
 from assistant_persona import style_action_reply, concise_speech, cinematic_quick_reply, normalize_spoken
+from spotify_control import spotify_connection, valid_client_id
 
 ROOT_DIR = Path(__file__).resolve().parent
 SETTINGS_PATH = ROOT_DIR / "settings.json"
@@ -138,6 +139,9 @@ class JarvisApp:
         self.history: list[dict[str, str]] = []
         self.settings = get_settings()
         self.voice_on = bool(self.settings.get("voice_on", True))
+        self.spotify_client_id = str(self.settings.get("spotify_client_id", "")).strip()
+        if self.spotify_client_id and not valid_client_id(self.spotify_client_id):
+            self.spotify_client_id = ""
         self.cinematic_mode = bool(self.settings.get("cinematic_mode", True))
         self.voice_volume = clamp_volume(self.settings.get("voice_volume", 80))
         self.window_mode = self.settings.get("window_mode", "compact")
@@ -278,6 +282,8 @@ class JarvisApp:
         controls.pack(fill="x", padx=22, pady=(0, 8))
         self._button(controls, "▶  TEST VOICE", self.test_voice, bg=PANEL_2).pack(side="left")
         self._button(controls, "■  STOP PLAN", self.stop_plan, bg="#4e3046").pack(side="left", padx=(8, 0))
+        self.spotify_btn = self._button(controls, "♫  CONNECT SPOTIFY", self.connect_spotify, bg=PANEL_2)
+        self.spotify_btn.pack(side="left", padx=(8, 0))
         self.persona_btn = self._button(controls, "◈  JARVIS MODE: " + ("ON" if self.cinematic_mode else "OFF"),
                                         self.toggle_persona, bg="#15566c")
         self.persona_btn.pack(side="right")
@@ -393,7 +399,8 @@ class JarvisApp:
                                                 "voice_profile": self.voice_profile,
                                                 "voice_volume": self.voice_volume,
                                                 "window_mode": self.window_mode,
-                                                "cinematic_mode": self.cinematic_mode},
+                                                "cinematic_mode": self.cinematic_mode,
+                                                "spotify_client_id": self.spotify_client_id},
                                                ensure_ascii=False, indent=2), encoding="utf-8")
         except OSError:
             logging.warning("Could not save preferences")
@@ -442,6 +449,42 @@ class JarvisApp:
             self.post("SYSTEM", "Гучність голосу 0%. Пересунь повзунок праворуч.", "sys")
             return
         self.enqueue_speech("Так, сер. Я Джарвіс. Голосові системи активовано.")
+
+    def connect_spotify(self):
+        """Owner-initiated OAuth: client ID is public, tokens are never saved."""
+        if self.busy or self.pending:
+            return
+        current = self.spotify_client_id if valid_client_id(self.spotify_client_id) else ""
+        client_id = simpledialog.askstring(
+            "JARVIS • Підключення Spotify",
+            "Укажи Spotify Client ID з власного Spotify Developer Dashboard "
+            "(32 символи, НЕ Client Secret).\n\n"
+            "У налаштуваннях Spotify app додай Redirect URI:\n"
+            "http://127.0.0.1:8765/callback\n\n"
+            "Для керування відтворенням потрібні Spotify Premium та дозвіл у браузері.",
+            initialvalue=current, parent=self.root)
+        if client_id is None:
+            return
+        client_id = client_id.strip()
+        if not valid_client_id(client_id):
+            messagebox.showerror("Spotify", "Некоректний Client ID. Не вставляй Client Secret.",
+                                 parent=self.root)
+            return
+        self.spotify_client_id = client_id  # Public ID only; the OAuth token remains in RAM.
+        self.save_settings()
+        self.pending = ActionPlan(
+            "spotify_connect", client_id,
+            "Відкрити Spotify у браузері для OAuth PKCE. "
+            "Доступ надається лише після твого підтвердження у Spotify.", True)
+        self.confirm_description.configure(text="APPROVAL REQUIRED / " + self.pending.summary)
+        self.confirm_bar.pack(fill="x", padx=20, pady=(0, 10), before=self.input.master)
+        self.set_status("●  SPOTIFY APPROVAL", AMBER)
+
+    def _refresh_spotify_button(self):
+        if self.spotify_btn.winfo_exists():
+            text = "♫  SPOTIFY: CONNECTED" if spotify_connection.connected else "♫  CONNECT SPOTIFY"
+            if self.spotify_btn.cget("text") != text:
+                self.spotify_btn.configure(text=text)
 
     def report_system(self):
         """Report app settings only. Do not falsely claim a hardware health scan."""
@@ -727,6 +770,7 @@ class JarvisApp:
         except queue.Empty:
             pass
         if self.alive:
+            self._refresh_spotify_button()
             self.root.after(90, self.pump)
 
     def close(self):

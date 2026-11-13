@@ -58,7 +58,7 @@ def concise_speech(reply: str, action_kind: str, success: bool,
     """Limit speech sent to the online TTS; keep detailed result on-screen."""
     if not action_kind:
         return reply
-    sensitive = action_kind in {"ui_windows", "ui_type", "ui_focus", "user_file", "note", "screenshot"}
+    sensitive = action_kind in {"ui_windows", "ui_type", "ui_focus", "user_file", "note", "screenshot", "spotify_play", "spotify_search", "spotify_connect"}
     if not success:
         return ("Перепрошую, сер. Команду не виконано; деталі на екрані."
                 if cinematic else "Команду не виконано. Деталі на екрані.")
@@ -67,6 +67,8 @@ def concise_speech(reply: str, action_kind: str, success: bool,
         return "Є, сер." if cinematic else ""
     if not cinematic:
         return reply
+    if action_kind.startswith("spotify_"):
+        return "Є, сер. Команду Spotify надіслано; перевір результат у плеєрі."
     if action_kind == "known_uri":
         return "Є, сер. Команду Steam надіслано."
     if action_kind in {"app", "installed_app", "folder", "settings"}:
