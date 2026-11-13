@@ -33,12 +33,29 @@ class ActionPlan:
 
 APPROVAL_REQUIRED = {"note", "screenshot", "external_url", "installed_app", "user_file", "ui_hotkey", "ui_type", "ui_scroll", "ui_click", "ui_focus", "spotify_connect", "spotify_play", "spotify_pause", "spotify_resume", "spotify_next", "spotify_previous", "steam_open_first", "steam_game"}
 
+# An explicit typed command or a wake-word-activated voice command is enough
+# consent for these ordinary, visible, bounded actions. Preserve the existing
+# approval metadata and safeguards inside run_action; never silently approve
+# arbitrary UI typing, clicks, file writes, or external website URLs.
+DIRECT_EXECUTION_KINDS = frozenset({
+    "app", "folder", "website", "settings", "installed_app",
+    "steam_open_first", "steam_game", "steam_list",
+    "spotify_search", "spotify_play", "spotify_pause",
+    "spotify_resume", "spotify_next", "spotify_previous",
+    "say", "volume", "ui_windows",
+})
+
+
+def can_execute_directly(action: ActionPlan | None) -> bool:
+    return action is not None and action.kind in DIRECT_EXECUTION_KINDS
+
+
 HELP_TEXT = (
     "Я можу відкрити блокнот, калькулятор, Paint, провідник, диспетчер задач, "
     "налаштування, папки Документи або Завантаження, YouTube, Google й GitHub; "
     "знайти інформацію в браузері, сказати час, змінити гучність, створити "
     "нотатку або зберегти скріншот після підтвердження. "
-    "Можу знайти встановлену програму за назвою та запустити її після підтвердження. "
+    "Можу знайти встановлену програму за назвою та запустити її без зайвого підтвердження. "
     "Також можу відкрити файл через діалог вибору, показати локально встановлені ігри Steam, "
     "вибрати перший збережений акаунт ПЕРЕД запуском Steam і запустити встановлену гру за назвою. "
     "Можу шукати пісні у Spotify, а після добровільного підключення офіційного Spotify API — "

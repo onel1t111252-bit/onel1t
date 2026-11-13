@@ -18,10 +18,11 @@ import tkinter as tk
 from tkinter import scrolledtext, messagebox, filedialog, simpledialog
 from urllib import request, error
 
-from desktop_actions import ActionPlan, plan_action, run_action
+from desktop_actions import ActionPlan, plan_action, run_action, can_execute_directly
 from command_sequences import split_sequence
 from voice_engine import speak, clamp_volume, VOICE_PROFILES, VOICE_LABELS
-from assistant_persona import style_action_reply, concise_speech, cinematic_quick_reply, normalize_spoken
+from assistant_persona import (style_action_reply, concise_speech, cinematic_quick_reply,
+                               normalize_spoken, extract_wake_command)
 from spotify_control import spotify_connection, valid_client_id
 
 ROOT_DIR = Path(__file__).resolve().parent
@@ -79,11 +80,6 @@ def get_settings() -> dict:
         return {}
 
 
-def extract_wake_command(text: str) -> str | None:
-    match = re.search(r"(?:джарвісе|джарвіс|джарвис|jarvis)\b[\s,!:;.-]*(.*)", text, re.I)
-    return match.group(1).strip() if match else None
-
-
 def ollama_status() -> tuple[bool, str]:
     try:
         with request.urlopen(API_URL + "/api/tags", timeout=4) as stream:
@@ -130,6 +126,14 @@ class JarvisApp:
         self.handsfree = threading.Event()
         self.speaking = threading.Event()
         self.mic_listening = threading.Event()
+        self.handoff_pending = threading.Event()
+        self.mic_index = None
+        self.mic_energy_threshold = 350.0
+        self.mic_calibrated = False
+        self.mic_error_streak = 0
+        self.last_mic_warning = 0.0
+        self.handsfree_thread = None
+        self.handsfree_generation = 0
         self.alive = True
         self.busy = False
         self.pending: ActionPlan | None = None
@@ -138,6 +142,8 @@ class JarvisApp:
         self.followup_until = 0.0
         self.history: list[dict[str, str]] = []
         self.settings = get_settings()
+        mic = self.settings.get("microphone_index")
+        self.mic_index = mic if type(mic) is int and 0 <= mic < 128 else None
         self.voice_on = bool(self.settings.get("voice_on", True))
         self.spotify_client_id = str(self.settings.get("spotify_client_id", "")).strip()
         if self.spotify_client_id and not valid_client_id(self.spotify_client_id):
@@ -159,7 +165,8 @@ class JarvisApp:
         self._build_ui()
         self.post("JARVIS", "Так, сер. Системи готові. Скажи «Джарвіс, відкрий Steam і запусти Доту», "
                   "«Джарвіс, відкрий Spotify» або запитай мене про щось. "
-                  "Встановлені програми запускаються після підтвердження.", "ai")
+                  "Звичайні команди працюють без CONFIRM. "
+                  "Вибір мікрофона: правий клік на HANDS-FREE.", "ai")
         self.root.after(80, self.pump)
         self.root.after(150, self.check_ai)
         self.root.after(100, self.animate_reactor)
@@ -251,7 +258,7 @@ class JarvisApp:
 
         self._button(side, "♫  FIND SONG", self.search_spotify, bg=PANEL).pack(
             fill="x", padx=16, pady=3)
-        self._label(side, "SAFE ACTIONS  /  CONSENT FIRST", size=8, color=MUTED, mono=True,
+        self._label(side, "DIRECT COMMANDS  /  PROTECTED CHANGES", size=8, color=MUTED, mono=True,
                     wraplength=232, justify="left").pack(side="bottom", padx=18, pady=17)
 
         top = tk.Frame(panel, bg=PANEL)
@@ -269,7 +276,7 @@ class JarvisApp:
         telemetry.pack(fill="x", padx=22, pady=(0, 14))
         for title, value, color in [
             ("INTELLIGENCE", "OLLAMA LOCAL", CYAN),
-            ("CONTROL", "OWNER APPROVAL", GREEN),
+            ("CONTROL", "DIRECT COMMANDS", GREEN),
             ("VOICE LINK", "UKRAINIAN TTS", BLUE),
         ]:
             card = tk.Frame(telemetry, bg="#12283b", highlightbackground="#255168", highlightthickness=1)
@@ -280,6 +287,7 @@ class JarvisApp:
         bar.pack(fill="x", padx=22, pady=(0, 6))
         self.handsfree_btn = self._button(bar, "🎙  HANDS-FREE: OFF", self.toggle_handsfree, bg=PANEL_2)
         self.handsfree_btn.pack(side="left", padx=(0, 7))
+        self.handsfree_btn.bind("<Button-3>", lambda _event: self.choose_microphone())
         self.voice_btn = self._button(bar, "🔊  VOICE: ON", self.toggle_voice, bg=PANEL_2)
         self.voice_btn.pack(side="left", padx=(0, 7))
         self.voice_select = self._button(bar, "VOICE: JARVIS DEEP", self.cycle_voice, bg=PANEL_2)
@@ -327,14 +335,6 @@ class JarvisApp:
         self.chat.tag_config("body", foreground=WHITE)
         self.chat.tag_config("muted", foreground=MUTED)
 
-        confirm_bar = tk.Frame(panel, bg="#183047")
-        self.confirm_bar = confirm_bar
-        self.confirm_description = self._label(confirm_bar, "", size=10, color=WHITE,
-                                                wraplength=420, justify="left")
-        self.confirm_description.pack(side="left", fill="x", expand=True, padx=9)
-        self._button(confirm_bar, "CANCEL", self.cancel_action, bg="#593544").pack(side="right", padx=(4, 8), pady=7)
-        self._button(confirm_bar, "CONFIRM", self.approve_action, bg="#13728d").pack(side="right", pady=7)
-
         compose = tk.Frame(panel, bg=PANEL)
         compose.pack(fill="x", padx=20, pady=(0, 8))
         self.input = tk.Entry(compose, bg=INPUT, fg=WHITE, insertbackground=CYAN,
@@ -348,7 +348,7 @@ class JarvisApp:
         bottom.pack(fill="x", padx=22, pady=(0, 16))
         self.status = self._label(bottom, "●  READY", size=9, color=GREEN, mono=True)
         self.status.pack(side="left")
-        self._label(bottom, "LOCAL ACTIONS  /  EXPLICIT APPROVAL  /  MIC OFF BY DEFAULT", size=8,
+        self._label(bottom, "RIGHT-CLICK HANDS-FREE FOR MIC  /  SAFE ACTIONS AUTO", size=8,
                     color=MUTED, mono=True).pack(side="right")
         self.input.focus_set()
 
@@ -407,7 +407,8 @@ class JarvisApp:
                                                 "voice_volume": self.voice_volume,
                                                 "window_mode": self.window_mode,
                                                 "cinematic_mode": self.cinematic_mode,
-                                                "spotify_client_id": self.spotify_client_id},
+                                                "spotify_client_id": self.spotify_client_id,
+                                                "microphone_index": self.mic_index},
                                                ensure_ascii=False, indent=2), encoding="utf-8")
         except OSError:
             logging.warning("Could not save preferences")
@@ -495,13 +496,11 @@ class JarvisApp:
             return
         self.spotify_client_id = client_id  # Public ID only; the OAuth token remains in RAM.
         self.save_settings()
-        self.pending = ActionPlan(
+        # User clicked CONNECT SPOTIFY and will grant permissions in Spotify's
+        # official browser consent screen. No redundant JARVIS CONFIRM button.
+        self.start_answer("", ActionPlan(
             "spotify_connect", client_id,
-            "Відкрити Spotify у браузері для OAuth PKCE. "
-            "Доступ надається лише після твого підтвердження у Spotify.", True)
-        self.confirm_description.configure(text="APPROVAL REQUIRED / " + self.pending.summary)
-        self.confirm_bar.pack(fill="x", padx=20, pady=(0, 10), before=self.input.master)
-        self.set_status("●  SPOTIFY APPROVAL", AMBER)
+            "Підключити Spotify з OAuth PKCE", True))
 
     def _refresh_spotify_button(self):
         if self.spotify_btn.winfo_exists():
@@ -562,7 +561,9 @@ class JarvisApp:
                 return
             self.steps = actions
             self.step_index = 0
-            self.post("SYSTEM", "Сценарій з " + str(len(actions)) + " кроків: кожен потрібно підтвердити окремо.", "sys")
+            self.post("SYSTEM", "Сценарій з " + str(len(actions))
+                      + " кроків: звичайні дії виконуються без CONFIRM; "
+                        "для введення тексту або кліків запитаю окремий дозвіл.", "sys")
             self.show_next_step()
             return
         if route and route.kind == "file_picker":
@@ -573,13 +574,37 @@ class JarvisApp:
                 return
             route = ActionPlan("user_file", selected,
                                "Відкрити вибраний файл: " + Path(selected).name, True)
-        if route and route.needs_approval:
-            self.pending = route
-            self.confirm_description.configure(text="APPROVAL REQUIRED   /   " + route.summary + "  /  Для дій у вікні після CONFIRM активуй потрібну програму.")
-            self.confirm_bar.pack(fill="x", padx=20, pady=(0, 10), before=self.input.master)
-            self.set_status("●  AWAITING APPROVAL", AMBER)
-            return
-        self.start_answer(text, route)
+        if route:
+            self.dispatch_action(route)
+        else:
+            self.start_answer(text, None)
+
+    def dispatch_action(self, action: ActionPlan):
+        """One explicit command is enough for harmless bounded actions.
+
+        Sensitive actions still need a separate yes/no prompt, but never
+        create a blocking CONFIRM button in the conversation layout.
+        """
+        if action.needs_approval and not can_execute_directly(action):
+            self.pending = action
+            self.set_status("●  ACTION PERMISSION", AMBER)
+            try:
+                allowed = messagebox.askyesno(
+                    "JARVIS • Дозвіл на дію",
+                    action.summary
+                    + "\n\nЦя дія змінює активне вікно, вводить текст або "
+                      "працює з локальним файлом. Дозволити?",
+                    parent=self.root)
+            finally:
+                self.pending = None
+            if not allowed:
+                self.steps.clear()
+                self.step_index = 0
+                self.flow_label.configure(text="◈  AUTOMATION QUEUE  /  STOPPED")
+                self.post("SYSTEM", "Дію скасовано. Наступні кроки не виконуються.", "sys")
+                self.set_status("●  READY", GREEN)
+                return
+        self.start_answer("", action)
 
     def show_next_step(self):
         if not self.steps or self.step_index >= len(self.steps):
@@ -588,14 +613,8 @@ class JarvisApp:
             return
         index = self.step_index + 1
         current = self.steps[self.step_index]
-        self.pending = current
         self.flow_label.configure(text=f"◈  AUTOMATION QUEUE  /  STEP {index} OF {len(self.steps)}")
-        self.confirm_description.configure(
-            text=f"КРОК {index}/{len(self.steps)} • {current.summary}. "
-                 "Підтверди саме цей крок. Для введення/кліку після CONFIRM "
-                 "активуй цільове вікно. Можна натиснути STOP PLAN.")
-        self.confirm_bar.pack(fill="x", padx=20, pady=(0, 10), before=self.input.master)
-        self.set_status("●  AWAITING STEP APPROVAL", AMBER)
+        self.dispatch_action(current)
 
     def stop_plan(self):
         if not self.steps and not self.pending:
@@ -604,24 +623,10 @@ class JarvisApp:
         self.steps.clear()
         self.step_index = 0
         self.pending = None
-        self.confirm_bar.pack_forget()
         self.flow_label.configure(text="◈  AUTOMATION QUEUE  /  STOPPED")
         self.post("SYSTEM", "Чергу скасовано. Уже запущену дію неможливо гарантовано зупинити.", "sys")
         if not self.busy:
             self.set_status("●  READY", GREEN)
-
-    def approve_action(self):
-        if not self.pending:
-            return
-        action = self.pending
-        self.pending = None
-        self.confirm_bar.pack_forget()
-        self.start_answer("", action)
-
-    def cancel_action(self):
-        if self.pending:
-            self.stop_plan()
-            self.finish("Дію скасовано за бажанням користувача.")
 
     def start_answer(self, text, action: ActionPlan | None):
         self.busy = True
@@ -665,7 +670,7 @@ class JarvisApp:
                 if self.step_index < len(self.steps):
                     self.show_next_step()
                     return
-                self.post("SYSTEM", "Усі підтверджені кроки завершено.", "sys")
+                self.post("SYSTEM", "Усі кроки сценарію виконано.", "sys")
             else:
                 self.post("SYSTEM", "Сценарій зупинено після невдалого кроку.", "sys")
             self.steps.clear()
@@ -678,79 +683,184 @@ class JarvisApp:
         self.status.configure(text=value, fg=color)
         self.header_status.configure(text=value, fg=color)
 
+    def choose_microphone(self):
+        """Optional local mic selector. Right-click the HANDS-FREE button."""
+        if self.handsfree.is_set() or self.mic_lock.locked():
+            self.post("SYSTEM", "Спочатку вимкни HANDS-FREE, щоб змінити мікрофон.", "sys")
+            return
+        try:
+            import speech_recognition as sr
+            devices = sr.Microphone.list_microphone_names()
+        except (ImportError, OSError, AttributeError) as exc:
+            self.post("SYSTEM", "Не можу показати мікрофони (" + type(exc).__name__
+                      + "). Запусти INSTALL_VOICE.bat і перевір мікрофон Windows.", "sys")
+            return
+        preview = ["0 — мікрофон Windows за замовчуванням"]
+        preview += [f"{i + 1} — {name[:65]}" for i, name in enumerate(devices[:20])]
+        selection = simpledialog.askinteger(
+            "JARVIS • Вибір мікрофона",
+            "Введи номер пристрою для розпізнавання голосу:\n\n"
+            + "\n".join(preview)
+            + "\n\nЗазвичай потрібен саме мікрофон або гарнітура, не динамік.",
+            minvalue=0, maxvalue=min(20, len(devices)),
+            parent=self.root)
+        if selection is None:
+            return
+        self.mic_index = None if selection == 0 else selection - 1
+        self.mic_calibrated = False
+        self.mic_energy_threshold = 350.0
+        self.mic_error_streak = 0
+        self.save_settings()
+        label = preview[selection]
+        self.post("SYSTEM", "Мікрофон обрано: " + label
+                  + ". Увімкни HANDS-FREE та скажи «Джарвіс, котра година».", "sys")
+
     def toggle_handsfree(self):
         if self.handsfree.is_set():
+            self.handsfree_generation += 1
             self.handsfree.clear()
+            self.handoff_pending.clear()
             self.followup_until = 0
             self.handsfree_btn.configure(text="🎙  HANDS-FREE: OFF", bg=PANEL_2)
             self.post("SYSTEM", "Прослуховування вимкнено.", "sys")
-        else:
-            ok = messagebox.askyesno(
-                "Увімкнути мікрофон?",
-                "Режим HANDS-FREE постійно обробляє фрагменти аудіо через онлайн-сервіс Google. "
-                "Він вимикається кнопкою HANDS-FREE OFF або закриттям програми. Увімкнути?",
-                parent=self.root,
-            )
-            if not ok:
-                return
-            self.handsfree.set()
-            self.handsfree_btn.configure(text="🎙  HANDS-FREE: ON", bg="#145570")
-            self.post("SYSTEM", "Мікрофон увімкнено. Скажи «Джарвіс, котра година».", "sys")
-            threading.Thread(target=self.handsfree_worker, daemon=True).start()
+            return
+        ok = messagebox.askyesno(
+            "Увімкнути мікрофон?",
+            "HANDS-FREE постійно прослуховує мікрофон після ввімкнення. "
+            "Розпізнавання надсилає фрагменти звуку онлайн-сервісу Google. "
+            "Режим вимикається кнопкою HANDS-FREE OFF або закриттям програми. "
+            "Дозволити?",
+            parent=self.root)
+        if not ok:
+            return
+        self.handsfree_generation += 1
+        generation = self.handsfree_generation
+        self.handsfree.set()
+        self.mic_error_streak = 0
+        self.followup_until = 0
+        self.handsfree_btn.configure(text="🎙  HANDS-FREE: ON", bg="#145570")
+        self.post("SYSTEM", "HANDS-FREE увімкнено. Скажи «Джарвіс, котра година». "
+                  "Якщо не чує — правий клік на HANDS-FREE дозволяє вибрати мікрофон "
+                  "(спочатку вимкни режим).", "sys")
+        # Always attach a new listener to this activation. A prior listener
+        # might still be exiting, so its stale generation must not win a race.
+        self.handsfree_thread = threading.Thread(
+            target=self.handsfree_worker, args=(generation,),
+            name="jarvis-microphone", daemon=True)
+        self.handsfree_thread.start()
 
     def push_to_talk(self):
+        if self.handsfree.is_set():
+            # The old implementation called toggle_handsfree() here and
+            # unexpectedly switched continuous listening OFF.
+            self.post("SYSTEM", "HANDS-FREE уже ввімкнений. Скажи команду зі словом "
+                      "«Джарвіс» без натискання кнопки 🎤.", "sys")
+            return
         if self.busy or self.pending or self.mic_lock.locked() or self.speaking.is_set():
             return
-        if self.handsfree.is_set():
-            self.toggle_handsfree()
         threading.Thread(target=self.listen_once, args=(False,), daemon=True).start()
 
-    def handsfree_worker(self):
-        while self.alive and self.handsfree.is_set():
-            if self.busy or self.pending or self.speaking.is_set() or self.mic_lock.locked():
+    def handsfree_worker(self, generation: int):
+        while (self.alive and self.handsfree.is_set()
+               and generation == self.handsfree_generation):
+            if (self.busy or self.pending or self.speaking.is_set()
+                    or self.mic_lock.locked() or self.handoff_pending.is_set()):
                 threading.Event().wait(.20)
                 continue
-            self.listen_once(True)
-        self.queue.put(("wake_off", None))
+            self.listen_once(True, session_id=generation)
+        self.queue.put(("wake_off", generation))
 
-    def listen_once(self, with_wake_word):
+    def _mic_notice(self, message: str, minimum_interval: float = 15.0):
+        now = time.monotonic()
+        if now - self.last_mic_warning >= minimum_interval:
+            self.last_mic_warning = now
+            self.queue.put(("hint", message))
+
+    def listen_once(self, with_wake_word: bool, session_id: int | None = None):
         if not self.mic_lock.acquire(blocking=False):
             return
         try:
             import speech_recognition as sr
+            recognizer = sr.Recognizer()
+            recognizer.dynamic_energy_threshold = True
+            recognizer.energy_threshold = self.mic_energy_threshold
             self.mic_listening.set()
             self.queue.put(("mic_status", "●  LISTENING"))
-            recognizer = sr.Recognizer()
-            with sr.Microphone() as microphone:
-                recognizer.adjust_for_ambient_noise(microphone, duration=.35)
-                audio = recognizer.listen(microphone, timeout=4 if with_wake_word else 7,
-                                          phrase_time_limit=8 if with_wake_word else 12)
+            with sr.Microphone(device_index=self.mic_index) as microphone:
+                # Calibrate once per selected mic, not at the start of every
+                # phrase where someone may already be speaking.
+                if not self.mic_calibrated:
+                    recognizer.adjust_for_ambient_noise(microphone, duration=.65)
+                    self.mic_calibrated = True
+                    self.queue.put(("hint", "Мікрофон готовий. Скажи «Джарвіс, "
+                                    "котра година»."))
+                try:
+                    audio = recognizer.listen(
+                        microphone, timeout=6 if with_wake_word else 7,
+                        phrase_time_limit=9 if with_wake_word else 12)
+                finally:
+                    # Even on silence/timeout, preserve the updated automatic
+                    # threshold across recognition attempts.
+                    self.mic_energy_threshold = recognizer.energy_threshold
+            if with_wake_word and (not self.handsfree.is_set()
+                                   or (session_id is not None and
+                                       session_id != self.handsfree_generation)):
+                return
+            self.queue.put(("mic_status", "●  RECOGNIZING"))
             spoken = recognizer.recognize_google(audio, language="uk-UA").strip()
+            self.mic_error_streak = 0
+            if not spoken:
+                return
             if with_wake_word:
                 if time.monotonic() <= self.followup_until:
                     self.followup_until = 0
+                    self.handoff_pending.set()
                     self.queue.put(("heard", spoken))
                 else:
                     command = extract_wake_command(spoken)
                     if command is None:
+                        # Ignore ambient speech not addressed to JARVIS.
                         return
                     if command:
+                        self.handoff_pending.set()
                         self.queue.put(("heard", command))
                     else:
                         self.followup_until = time.monotonic() + 12
-                        self.queue.put(("hint", "Так, сер. Слухаю наступну команду..."))
+                        self.queue.put(("hint", "Почув «Джарвіс». Слухаю команду "
+                                        "протягом 12 секунд..."))
             else:
                 self.queue.put(("heard", spoken))
         except ImportError:
             self.handsfree.clear()
-            self.queue.put(("hint", "Потрібно запустити INSTALL_VOICE.bat."))
+            self.queue.put(("hint", "Голосовий ввід не встановлений. Запусти "
+                            "INSTALL_VOICE.bat і перезапусти JARVIS."))
         except Exception as exc:
             reason = type(exc).__name__
-            if reason not in {"UnknownValueError", "WaitTimeoutError"}:
-                logging.warning("Voice input: %s", reason)
-                self.queue.put(("hint", "Мікрофон або сервіс розпізнавання: " + reason))
-                if reason in {"OSError", "RequestError"}:
+            if reason in {"WaitTimeoutError", "UnknownValueError"}:
+                return  # Silence or unrecognized background audio is normal.
+            if reason == "RequestError":
+                # Previously this disabled HANDS-FREE forever on a single
+                # temporary Google STT/network error. Retry instead.
+                self._mic_notice("Google Speech не відповідає. HANDS-FREE "
+                                 "залишається увімкненим і спробує ще раз.")
+                threading.Event().wait(2.0)
+            elif reason in {"OSError", "AssertionError", "AttributeError"}:
+                self.mic_error_streak += 1
+                self.mic_calibrated = False
+                if self.mic_error_streak >= 3:
                     self.handsfree.clear()
+                    self.queue.put(("hint", "Не вдалося відкрити мікрофон 3 рази. "
+                                    "Перевір дозволи мікрофона Windows; "
+                                    "правим кліком на HANDS-FREE обери пристрій."))
+                else:
+                    self._mic_notice("Мікрофон тимчасово недоступний (" + reason
+                                     + "). Повторюю спробу...", 5.0)
+                    threading.Event().wait(1.2)
+            else:
+                logging.warning("Voice input failed: %s", reason)
+                self._mic_notice("Розпізнавання голосу: " + reason
+                                 + ". Перевір мікрофон і мережу.")
+                threading.Event().wait(.5)
         finally:
             self.mic_listening.clear()
             self.mic_lock.release()
@@ -783,13 +893,18 @@ class JarvisApp:
                 elif kind == "ai_status":
                     online, label = data
                     self.ai_state.configure(text=label, fg=GREEN if online else AMBER)
-                elif kind == "heard" and not self.busy and not self.pending:
-                    self.submit(str(data), via_voice=True)
+                elif kind == "heard":
+                    try:
+                        if not self.busy and not self.pending:
+                            self.submit(str(data), via_voice=True)
+                    finally:
+                        self.handoff_pending.clear()
                 elif kind == "hint":
                     self.post("SYSTEM", str(data), "sys")
                 elif kind == "mic_status" and not self.busy:
                     self.set_status(str(data), CYAN if data != "●  READY" else GREEN)
-                elif kind == "wake_off" and not self.handsfree.is_set():
+                elif (kind == "wake_off" and not self.handsfree.is_set()
+                      and data == self.handsfree_generation):
                     self.handsfree_btn.configure(text="🎙  HANDS-FREE: OFF", bg=PANEL_2)
         except queue.Empty:
             pass
@@ -799,7 +914,9 @@ class JarvisApp:
 
     def close(self):
         self.alive = False
+        self.handsfree_generation += 1
         self.handsfree.clear()
+        self.handoff_pending.clear()
         self.save_settings()
         self.root.destroy()
 

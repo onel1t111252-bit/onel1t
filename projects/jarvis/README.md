@@ -1,6 +1,6 @@
 # ONEL1T JARVIS 3.0 — Windows 11 Desktop Assistant
 
-An owner-controlled Ukrainian voice assistant with local Ollama AI, a resizable sci-fi HUD, and visible, **approval-gated** Windows automation. It is a prototype, not an administrator, an unrestricted autonomous agent, or remote-control software.
+An owner-controlled Ukrainian voice assistant with local Ollama AI, a resizable sci-fi HUD, **one-command launch for ordinary apps and games**, and separate permission prompts for sensitive Windows automation. It is a prototype, not an administrator, an unrestricted autonomous agent, or remote-control software.
 
 ![JARVIS HUD concept](cover.svg)
 
@@ -20,6 +20,18 @@ The archive contains Python sources, the Ollama Modelfile, installation scripts,
 6. JARVIS opens as a **normal, resizable window**, not fullscreen. Use **WINDOW: COMPACT / LARGE** to change its preset size; resizing by dragging a window edge is also supported.
 
 Your old settings from a previous extracted folder are not copied automatically; you can change volume and window size in the app. If AI chat is unavailable, the fixed, explicitly defined local commands still work.
+
+## HANDS-FREE and zero-click commands
+
+**No more extra CONFIRM button for ordinary commands.** Saying "Джарвіс, відкрий Steam", "Джарвіс, запусти Доту", "відкрий блокнот", Spotify playback/pause or typing an ordinary app-launch command sends the requested action directly. Explicit owner commands are still required; JARVIS doesn't invent system actions from Ollama conversation.
+
+**Sensitive actions still ask permission** in a native yes/no dialog: text typing, clicks, hotkeys, window switching, screenshots, private file opening, external/untrusted URLs, and notes. This prevents accidental changes from a misheard microphone command. Steam Guard, app account sign-in and Spotify OAuth consent remain separate, official login steps.
+
+**HANDS-FREE:** click "HANDS-FREE: OFF", review the microphone/privacy prompt, then say **"Джарвіс, котра година"** or **"Джарвіс, відкрий Steam"**. The microphone listens for the JARVIS wake word and processes the following command without touching a button. You can also say **"Джарвіс"**, pause, and give a command within approximately 12 seconds. The system ignores phrases that do not contain a recognized wake word, and it pauses listening while JARVIS speaks or processes a command to reduce feedback.
+
+**If HANDS-FREE cannot hear you:** turn it OFF first, then **right-click the HANDS-FREE button** to list Windows input devices; choose the microphone or headset (0 selects the Windows default). Turn HANDS-FREE back ON. This selection is stored locally in \`settings.json\`. In Windows 11, also check Settings → Privacy & security → Microphone → allow microphone access for desktop apps. Run \`INSTALL_VOICE.bat\` in the newly extracted ZIP to install/reinstall audio dependencies. A temporary Google SpeechRecognition connection error no longer switches hands-free OFF immediately, and silence doesn't reset the microphone calibration.
+
+**Privacy and limitations:** Hands-free requires an explicit on/off click and sends recorded speech fragments to Google's online speech recognition service while enabled; it is not an offline wake-word engine. Turning it OFF or closing JARVIS stops further listening, although an ongoing brief recognition request may finish. Internet connection and a Windows-compatible microphone are required. Automated tests cannot guarantee that your particular PC microphone works; test on your computer with "Джарвіс, котра година".
 
 ## More natural Ukrainian replies — «Так, сер»
 
