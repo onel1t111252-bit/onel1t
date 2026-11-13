@@ -56,15 +56,17 @@ def style_action_reply(reply: str, action_kind: str, success: bool,
 def concise_speech(reply: str, action_kind: str, success: bool,
                    cinematic: bool = True) -> str:
     """Limit speech sent to the online TTS; keep detailed result on-screen."""
-    if action_kind in {"ui_windows", "ui_type", "ui_focus", "user_file", "note", "screenshot"}:
-        # Window titles, typed text, file names and their contents stay off online TTS.
-        return "Є, сер." if success and cinematic else ""
     if not action_kind:
         return reply
+    sensitive = action_kind in {"ui_windows", "ui_type", "ui_focus", "user_file", "note", "screenshot"}
+    if not success:
+        return ("Перепрошую, сер. Команду не виконано; деталі на екрані."
+                if cinematic else "Команду не виконано. Деталі на екрані.")
+    if sensitive:
+        # Window titles, typed text, file names and their contents stay off online TTS.
+        return "Є, сер." if cinematic else ""
     if not cinematic:
         return reply
-    if not success:
-        return "Перепрошую, сер. Не вдалося виконати команду. Подробиці на екрані."
     if action_kind == "known_uri":
         return "Є, сер. Команду Steam надіслано."
     if action_kind in {"app", "installed_app", "folder", "settings"}:
