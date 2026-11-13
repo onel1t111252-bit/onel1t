@@ -204,9 +204,9 @@ class JarvisApp:
 
         tk.Frame(side, bg=CYAN, height=3).pack(fill="x")
         self._label(side, "◈  VOICE-OPERATED SYSTEM", size=9, color=CYAN, mono=True).pack(pady=(19, 1))
-        self.orb = tk.Canvas(side, height=204, width=254, bg=SIDEBAR, highlightthickness=0)
+        self.orb = tk.Canvas(side, height=176, width=254, bg=SIDEBAR, highlightthickness=0)
         self.orb.pack(pady=(0, 4))
-        self.orb.create_text(127, 104, text="J", font=(FONT, 54, "bold"), fill=CYAN, tags="center")
+        self.orb.create_text(127, 87, text="J", font=(FONT, 46, "bold"), fill=CYAN, tags="center")
         self._label(side, "J A R V I S   //   CORE", size=13, weight="bold").pack(pady=(0, 4))
         self.ai_state = self._label(side, "CHECKING OLLAMA...", size=9, color=MUTED, mono=True)
         self.ai_state.pack(pady=(0, 12))
@@ -218,11 +218,8 @@ class JarvisApp:
             ("▣  NOTEPAD", "відкрий блокнот"),
             ("◉  STEAM", "відкрий стім"),
             ("▶  DOTA 2", "відкрий стім і запусти доту"),
-            ("⌕  YOUTUBE", "відкрий ютуб"),
             ("▤  WINDOWS", "покажи відкриті вікна"),
-            ("▤  DOCUMENTS", "відкрий документи"),
             ("▧  CHOOSE FILE", "відкрий файл"),
-            ("◫  SETTINGS", "відкрий налаштування"),
             ("?  COMMANDS", "допомога"),
         ]:
             self._button(side, title, lambda cmd=cmd: self.submit(cmd), bg=PANEL, pad=(11, 6)).pack(
@@ -328,17 +325,17 @@ class JarvisApp:
         if not self.alive:
             return
         self.orb.delete("rings")
-        x, y = 127, 102
+        x, y = 127, 87
         self.reactor_tick += 1
         phase = self.reactor_tick * 0.065
-        for radius, line in [(85, 1), (66, 2), (52, 2), (40, 1)]:
+        for radius, line in [(72, 1), (57, 2), (44, 2), (32, 1)]:
             self.orb.create_oval(x-radius, y-radius, x+radius, y+radius,
-                                 outline="#184158" if radius >= 80 else BLUE,
+                                 outline="#184158" if radius >= 70 else BLUE,
                                  width=line, tags="rings")
-        self.orb.create_arc(x-77, y-77, x+77, y+77,
+        self.orb.create_arc(x-67, y-67, x+67, y+67,
                              start=(math.degrees(phase) % 360), extent=74,
                              outline=CYAN, width=5, style="arc", tags="rings")
-        self.orb.create_arc(x-55, y-55, x+55, y+55,
+        self.orb.create_arc(x-50, y-50, x+50, y+50,
                              start=(-math.degrees(phase) % 360), extent=100,
                              outline=GREEN if self.handsfree.is_set() else CYAN,
                              width=3, style="arc", tags="rings")
