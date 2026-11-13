@@ -140,6 +140,40 @@ JARVIS supports owner-approved Steam account selection and game launching withou
 
 **Why approval is required:** Selecting an account changes local sign-in preferences; starting an app/game is a visible local action. Every `steam_open_first` and `steam_game` action shows its purpose in JARVIS and needs an explicit **CONFIRM**. There is no automated password entry, credentials storage, Steam Guard workaround or game-file execution.
 
+## Spotify playback verification fix (November 2026)
+
+The previous desktop Spotify code opened Quick Search (\`Ctrl+K\`), typed a
+song, and pressed \`Enter\` **without selecting a suggestion**. Depending on
+the Spotify build this can navigate to a search page instead of playing.
+
+The new route waits for the suggestions, explicitly uses \`Down\` to select
+a suggestion and then \`Enter\` to request playback. It also checks the
+**Windows Media Session** via \`winsdk\` to see whether Spotify is **actually
+playing the requested song**, comparing the song title **and** artist words.
+If the result is wrong, playback is paused, or the Windows media information
+is unavailable, JARVIS **reports a failure or that playback is unverified**,
+never a false "song is playing" message. JARVIS cannot guarantee the correct
+suggestion exists in every Spotify version; for exact playback when supported,
+the authorized Spotify Web API remains an option. API search itself now
+rejects catalog results that do not contain all requested title/artist words.
+
+**Install:** close JARVIS, extract the newly published ZIP and **run
+\`INSTALL_VOICE.bat\` again**. The requirements install \`winsdk\` on Windows
+with Python 3.12 so the track/status verification can function. Open the
+Spotify desktop app and sign in. The Windows media session may not be
+available on all Spotify installations. No audio recording, credentials,
+browser cookies or private data is collected by this verification.
+
+**Diagnose:** press **♫ SPOTIFY STATUS** in JARVIS, or say
+\`Джарвіс, статус Spotify\`. This read-only command tells you whether the
+installed Spotify.exe window is detected and, if Windows exposes it,
+the current song and whether playback is running. If Spotify is detected
+but no media info is visible, manually play one song in the desktop app
+and check STATUS again. When reporting a problem, send the JARVIS status
+message and a screenshot of the Spotify window without exposing account
+credentials; that will distinguish a Spotify window/focus problem from a
+search-result or account/playback problem.
+
 ## 🎵 Spotify: play songs in the INSTALLED Windows app
 
 **The key difference: "увімкни/включи/відтвори пісню" is a PLAY command, not a web search.**
@@ -149,7 +183,7 @@ For example:
 - \`Джарвіс, увімкни Linkin Park Numb\`
 - Click **♫ PLAY IN SPOTIFY** and enter the song/artist.
 
-JARVIS first tries an already authorized, **active desktop Computer** through the optional Spotify Web API. If the API is not connected, is unavailable or refuses playback, it uses the **installed Spotify.exe Windows app** directly. It identifies the real Spotify process/window (not a web browser), brings it to the foreground, opens Spotify's native Quick Search with **Ctrl+K**, types the title (Ukrainian/Unicode supported, no clipboard), waits for suggestions and presses **Enter** on the top result. This is a best-effort playback request: Spotify's interface, account state, network and result order may change, so the top track or playback are **not guaranteed**. JARVIS reports the attempt rather than claiming it definitely played.
+JARVIS first tries an already authorized, **active desktop Computer** through the optional Spotify Web API. If the API is not connected, is unavailable or refuses playback, it uses the **installed Spotify.exe Windows app** directly. It identifies the real Spotify process/window (not a web browser), brings it to the foreground, opens Spotify's native Quick Search with **Ctrl+K**, types the title (Ukrainian/Unicode supported, no clipboard), waits for suggestions, explicitly presses **Down** to select one, then **Enter**. It verifies the reported track/status through Windows media sessions when available. This is a best-effort playback request: Spotify's interface, account state, network and result order may change. JARVIS now checks the Windows media session and refuses to report verified success when the track cannot be confirmed. JARVIS reports the attempt rather than claiming it definitely played.
 
 **This desktop route requires no Spotify Developer app, Client ID, Premium API access or Ollama.** It requires Windows, the installed Spotify app and a signed-in Spotify account whose playback is available. It may work with Spotify Free subject to Spotify's own playback restrictions. If the app is not open, JARVIS tries the registered \`spotify:\` Windows protocol, then verifies a genuine Spotify.exe window before sending **any keys**. If Windows refuses to bring Spotify to the foreground or the app isn't installed, JARVIS explains the issue; it **does not open Google or browser search as a hidden fallback**.
 
