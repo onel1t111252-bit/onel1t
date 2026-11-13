@@ -148,6 +148,10 @@ class JarvisApp:
         if self.window_mode not in {"compact", "wide"}:
             self.window_mode = "compact"
         self.voice_profile = self.settings.get("voice_profile", VOICE_PROFILES[0])
+        # One-time upgrade of the old, heavily pitched default.
+        if (self.voice_profile in {"jarvis-deep", "uk-UA-PolinaNeural"}
+                and not self.settings.get("voice_upgrade_v4", False)):
+            self.voice_profile = "jarvis-cinematic"
         if self.voice_profile not in VOICE_PROFILES:
             self.voice_profile = VOICE_PROFILES[0]
         self.reactor_tick = 0
@@ -245,6 +249,8 @@ class JarvisApp:
             self._button(side, title, lambda cmd=cmd: self.submit(cmd), bg=PANEL, pad=(11, 6)).pack(
                 fill="x", padx=16, pady=3)
 
+        self._button(side, "♫  FIND SONG", self.search_spotify, bg=PANEL).pack(
+            fill="x", padx=16, pady=3)
         self._label(side, "SAFE ACTIONS  /  CONSENT FIRST", size=8, color=MUTED, mono=True,
                     wraplength=232, justify="left").pack(side="bottom", padx=18, pady=17)
 
@@ -397,6 +403,7 @@ class JarvisApp:
         try:
             SETTINGS_PATH.write_text(json.dumps({"voice_on": self.voice_on,
                                                 "voice_profile": self.voice_profile,
+                                                 "voice_upgrade_v4": True,
                                                 "voice_volume": self.voice_volume,
                                                 "window_mode": self.window_mode,
                                                 "cinematic_mode": self.cinematic_mode,
@@ -432,7 +439,13 @@ class JarvisApp:
     def cycle_voice(self):
         idx = VOICE_PROFILES.index(self.voice_profile)
         self.voice_profile = VOICE_PROFILES[(idx + 1) % len(VOICE_PROFILES)]
-        self.post("SYSTEM", "Обрано голос: " + VOICE_LABELS[self.voice_profile] + (" (локальний голос Windows; мова залежить від установлених голосів)." if self.voice_profile == "windows" else " (потрібен інтернет; текст надсилається сервісу Microsoft)."), "sys")
+        service = ("Локальний Windows SAPI: потрібен український чоловічий голос."
+                   if self.voice_profile == "windows" else
+                   "STUDIO: потрібен власний платний OpenAI API-ключ (OPENAI_API_KEY)."
+                   if self.voice_profile == "studio-onyx" else
+                   "Український голос Microsoft: потрібен інтернет; текст надсилається Microsoft.")
+        self.post("SYSTEM", "Обрано голос: " + VOICE_LABELS[self.voice_profile]
+                  + ". " + service, "sys")
         self.refresh_voice_buttons()
         self.save_settings()
 
@@ -448,7 +461,17 @@ class JarvisApp:
         if self.voice_volume == 0:
             self.post("SYSTEM", "Гучність голосу 0%. Пересунь повзунок праворуч.", "sys")
             return
-        self.enqueue_speech("Так, сер. Я Джарвіс. Голосові системи активовано.")
+        self.enqueue_speech("Так, сер. Усі системи готові. Чекаю ваших команд.")
+
+    def search_spotify(self):
+        """Search official Spotify immediately, without AI or API login."""
+        if self.busy or self.pending:
+            return
+        title = simpledialog.askstring(
+            "JARVIS • Швидкий пошук Spotify",
+            "Назва пісні або виконавець:", parent=self.root)
+        if title and title.strip():
+            self.submit("знайди пісню " + title.strip()[:120] + " в Spotify")
 
     def connect_spotify(self):
         """Owner-initiated OAuth: client ID is public, tokens are never saved."""
@@ -602,7 +625,8 @@ class JarvisApp:
 
     def start_answer(self, text, action: ActionPlan | None):
         self.busy = True
-        self.set_status("●  PROCESSING", CYAN)
+        self.set_status("♫  SPOTIFY / SEARCHING" if action and action.kind.startswith("spotify_")
+                        else "●  PROCESSING", CYAN)
         threading.Thread(target=self.answer_worker, args=(text, action), daemon=True).start()
 
     def answer_worker(self, text, action):
@@ -744,7 +768,7 @@ class JarvisApp:
                 if not result.ok:
                     self.queue.put(("hint", "ГОЛОС: " + result.detail))
             finally:
-                threading.Event().wait(.65)
+                threading.Event().wait(.12)
                 if self.audio_queue.empty():
                     self.speaking.clear()
                 self.queue.put(("mic_status", "●  READY"))

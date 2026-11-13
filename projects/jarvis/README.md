@@ -25,7 +25,7 @@ Your old settings from a previous extracted folder are not copied automatically;
 
 The assistant uses a courteous, calm Ukrainian persona in its local Ollama prompt. Short command acknowledgements use **«Так, сер»**, **«Є, сер»** and, if execution fails, **«Перепрошую, сер»**. No text claims an app opened or a game started unless JARVIS has actually invoked the corresponding action; sending a Steam launch URI does **not** prove the game started.
 
-The voice remains the Ukrainian male **JARVIS DEEP** (modified Ostap), not a recording or imitation of an actor.
+The new default is **JARVIS CINEMATIC** (original Ukrainian male Ostap with milder tuning). Existing installations on the old over-pitched JARVIS DEEP profile migrate to this voice once. It is not a recording or imitation of a film actor.
 
 ## Cinematic JARVIS mode (original, not a film voice clone)
 
@@ -33,7 +33,7 @@ The voice remains the Ukrainian male **JARVIS DEEP** (modified Ostap), not a rec
 
 - Calm Ukrainian `сер`-style conversations via the local Ollama system prompt, plus safe deterministic replies to `Джарвіс, ти тут?`, `дякую`, `доброго ранку` and similar short phrases.
 - Short, truthful spoken acknowledgments for known Windows commands. The screen still shows the detailed result; speech never falsely claims Steam completed a game launch.
-- A brief spoken startup greeting when voice is enabled, volume is above 0, and JARVIS MODE is ON. This sends a fixed greeting text to Microsoft's online voice service if JARVIS DEEP is selected; it does not turn on the microphone.
+- A brief spoken startup greeting when voice is enabled, volume is above 0, and JARVIS MODE is ON. This sends a fixed greeting text to the selected online voice service when using an online voice; it does not turn on the microphone.
 - The rotating reactor changes indicators between **STANDBY**, **LISTENING**, **SPEAKING** and **PROCESSING**. These labels reflect actual local program state, not a hardware scan.
 - `статус системи` or `статус джарвіса`: reports the last observed Ollama status and local mic/voice settings without claiming to inspect all Windows hardware.
 
@@ -42,6 +42,20 @@ Turning **JARVIS MODE: OFF** switches AI replies to a neutral Ukrainian persona.
 The voice is an original assistant-style Ukrainian neural voice with a lowered pitch. **It is not the exact copyrighted dialogue or the actor's voice from the films.** Exact sounding and prosody remain subject to the installed Windows audio devices and the online TTS service.
 
 For privacy, dictated input, private file paths and foreground window titles are not read aloud by online TTS for UI-control actions. When a sensitive action fails, TTS uses a generic error announcement; details appear on screen.
+
+## Voice quality upgrade and optional studio voice
+
+The **VOICE** button cycles through distinct supported profiles; select the profile and press **TEST VOICE** to compare them. All voices are original AI-generated speech, **not an impersonation of the actor or the copyrighted movie audio**.
+
+- **JARVIS CINEMATIC ♂ (default, free):** Ukrainian male Microsoft Ostap with milder `−12Hz` pitch and `−3%` speaking rate. This avoids the very unnatural previous `−32Hz` deepening.
+- **JARVIS DEEP ♂ (free):** a slightly deeper version at `−19Hz`, `−7%`, also improved from the old setting.
+- **OSTAP / POLINA (free):** unmodified Ukrainian Microsoft neural voices to compare natural pronunciation.
+- **STUDIO ♂ / API (optional, paid):** experimental original cinematic masculine delivery using OpenAI's audio synthesis API (model `gpt-4o-mini-tts`, voice `onyx`, with instructions to speak natural Ukrainian). This requires a **separate paid OpenAI API account** and an `OPENAI_API_KEY` environment variable; ChatGPT Plus alone does not provide API credits. The user opts in by selecting STUDIO. Audio quality and Ukrainian pronunciation are not guaranteed to match expectations. The API model is currently scheduled to retire on January 6, 2027, so STUDIO is a temporary option that may need migration.
+- **WINDOWS:** local SAPI, only when a suitable male Ukrainian Windows voice is installed.
+
+**Privacy:** The free voices transmit the selected spoken text to Microsoft; STUDIO transmits it to OpenAI, which may charge according to usage. JARVIS does not write your API key to settings or logs. Use Windows user environment variables or a terminal session to supply it; **never share an API key, commit it to GitHub, or paste it into JARVIS chat**. Short, generic acknowledgments are cached in memory during the current run, reducing repeat synthesis latency. Dictated/private text is never cached.
+
+Network speech may still pause due to the provider. It is limited to a roughly 14-second synthesis timeout in free mode; a local Windows SAPI voice works offline when available.
 
 ## Separate voice volume control
 
@@ -83,16 +97,25 @@ JARVIS supports owner-approved Steam account selection and game launching withou
 
 **Why approval is required:** Selecting an account changes local sign-in preferences; starting an app/game is a visible local action. Every `steam_open_first` and `steam_game` action shows its purpose in JARVIS and needs an explicit **CONFIRM**. There is no automated password entry, credentials storage, Steam Guard workaround or game-file execution.
 
-## 🎵 Spotify — opt-in voice music control (new)
+## 🎵 Spotify — fast search and opt-in playback
+
+**Search is immediate and does NOT need Spotify Developer API, Premium, or Ollama**:
+- Say `Джарвіс, знайди пісню Numb в Spotify`, `знайди в Spotify Numb`, or `знайди пісню Numb`, or click **♫ FIND SONG** in the sidebar.
+- JARVIS opens the official Spotify search result in your browser immediately. You choose the result if the account is not connected.
+- Say `Джарвіс, увімкни Linkin Park Numb`: when no authorized API session is connected, JARVIS **falls back to Spotify search** instead of silently waiting or claiming playback. When connected, it requests playback on your active device; if that fails, it opens search and shows the reason.
+- Manual search does not require an approval prompt; playback and login still do.
+- The optional official API requests now have **six-second per-request timeouts**, avoiding the prior up-to-20-second waits per call. Network speed still affects real latency.
+
+
 
 JARVIS now understands these commands:
 
 | Command | Result |
 | --- | --- |
 | `Джарвіс, відкрий Spotify` | Open Spotify, if discoverable in the Windows Start menu |
-| `Джарвіс, увімкни Linkin Park Numb` | Search Spotify and request playback of the top valid track on the **currently active** player |
+| `Джарвіс, увімкни Linkin Park Numb` | Request playback **if connected**, otherwise quickly open Spotify search |
 | `відтвори пісню Numb в Spotify` | Same explicit, owner-approved Spotify music command |
-| `знайди в Spotify Numb` | Open a Spotify search page **without requiring an API connection**; select a track manually |
+| `знайди в Spotify Numb` | Immediately open Spotify search (no API, no Ollama, no confirmation required) |
 | `наступна пісня`, `попередній трек` | Spotify next/previous media control |
 | `постав музику на паузу`, `продовж музику` | Spotify pause/resume media control |
 
@@ -109,7 +132,7 @@ To control playback, you must **personally connect your Spotify account** throug
 
 **Privacy:** OAuth uses authorization-code **PKCE**, a fixed **127.0.0.1** loopback callback and a random anti-forgery state. The temporary access/refresh tokens exist **only in JARVIS process memory** and disappear when it closes. Only the **public Client ID** is saved in local `settings.json`. There is no Client Secret, embedded Spotify password, credential harvesting or hidden API connection. You must reconnect when starting a fresh JARVIS process. Search queries go to Spotify only after action approval; player searches through Spotify API are not sent to the assistant AI model for autonomous use. The local detailed result may include the track title; spoken online replies use a generic confirmation instead.
 
-**Limitations:** Playback depends on Spotify account eligibility, Premium, API quotas and an active supported Spotify Connect device. The top catalog result can be an alternate version/remaster, so verify the track in Spotify. A spoken song command cannot guarantee that Spotify started playback. When login/Premium is unavailable, use `знайди в Spotify ...` for manual search.
+**Limitations:** Playback depends on Spotify account eligibility, Premium, API quotas and an active supported Spotify Connect device. The top catalog result can be an alternate version/remaster, so verify the track in Spotify. A spoken song command cannot guarantee that Spotify started playback. When login/Premium is unavailable, both the search request and a play request fall back to the Spotify search page (manual song selection).
 
 **Official Spotify references:** https://developer.spotify.com/documentation/web-api/tutorials/code-pkce-flow , https://developer.spotify.com/documentation/web-api/reference/start-a-users-playback , https://developer.spotify.com/documentation/web-api/tutorials/february-2026-migration-guide
 

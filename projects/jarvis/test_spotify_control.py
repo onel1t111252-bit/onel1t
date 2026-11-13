@@ -2,7 +2,7 @@
 import unittest
 from unittest.mock import patch
 
-from desktop_actions import plan_action, run_action, ActionPlan
+from desktop_actions import plan_action, run_action, ActionPlan, spotify_music_plan
 from spotify_control import (SpotifyConnection, SpotifyError, find_track,
                              pkce_pair, valid_client_id, TRACK_URI_PATTERN)
 from assistant_persona import concise_speech
@@ -20,11 +20,54 @@ class SpotifyPlanTests(unittest.TestCase):
         self.assertEqual(plan_action("відтвори пісню Numb в Spotify").kind, "spotify_play")
         plan = plan_action("знайди в Spotify Numb")
         self.assertEqual(plan.kind, "spotify_search")
-        self.assertTrue(plan.needs_approval)
+        self.assertFalse(plan.needs_approval)
 
     def test_combined_steam_spotify_commands(self):
         pieces = split_sequence("Джарвіс, відкрий Spotify і увімкни Numb")
         self.assertEqual(pieces, ["відкрий Spotify", "увімкни Numb"])
+
+    def test_fast_search_for_natural_ukrainian_variants(self):
+        searches = [
+            "знайди пісню Numb в Spotify",
+            "знайди в Spotify Numb",
+            "пошукай мені пісню Numb у спотіфай",
+            "знайди пісню Numb",
+            "знайди в спотифай пісню Numb",
+        ]
+        for command in searches:
+            with self.subTest(command=command):
+                plan = plan_action("Джарвіс, " + command)
+                self.assertIsNotNone(plan)
+                self.assertEqual(plan.kind, "spotify_search")
+                self.assertEqual(plan.target, "numb")
+                self.assertFalse(plan.needs_approval)
+
+    def test_music_not_sent_to_ollama_or_steam(self):
+        for command in ("увімкни пісню Numb", "увімкни Numb", "включи в Spotify Numb"):
+            with self.subTest(command=command):
+                self.assertEqual(plan_action(command).kind, "spotify_play")
+        self.assertEqual(plan_action("постав музику на паузу").kind, "spotify_pause")
+        self.assertEqual(plan_action("знайди Python tutorial").kind, "website")
+        self.assertEqual(plan_action("увімкни звук").kind, "volume")
+        self.assertEqual(plan_action("запусти гру Portal 2").kind, "steam_game")
+
+    def test_play_without_api_opens_search_instead_of_hanging(self):
+        from desktop_actions import spotify_connection
+        with patch.object(type(spotify_connection), "connected", new_callable=lambda: property(lambda self: False)):
+            with patch("desktop_actions.webbrowser.open") as browser:
+                result = run_action(plan_action("увімкни пісню Numb"))
+        browser.assert_called_once()
+        self.assertIn("open.spotify.com/search/numb", browser.call_args.args[0])
+        self.assertIn("CONNECT SPOTIFY", result)
+
+    def test_spotify_api_error_opens_search_as_fallback(self):
+        from desktop_actions import spotify_connection
+        with patch.object(type(spotify_connection), "connected", new_callable=lambda: property(lambda self: True)), \
+             patch.object(spotify_connection, "play_track", side_effect=SpotifyError("Spotify offline")), \
+             patch("desktop_actions.webbrowser.open") as browser:
+            result = run_action(plan_action("увімкни пісню Numb"))
+        browser.assert_called_once()
+        self.assertIn("Не вдалося", result)
 
     def test_media_actions(self):
         for command, kind in (
