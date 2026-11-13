@@ -19,6 +19,8 @@ import uuid
 import webbrowser
 from window_control import parse_ui, perform_ui
 from spotify_control import spotify_connection
+from steam_control import (SteamError, find_installed_game, list_installed_games,
+                           open_steam_first, launch_installed_game)
 
 
 @dataclass(frozen=True)
@@ -29,7 +31,7 @@ class ActionPlan:
     needs_approval: bool = False
 
 
-APPROVAL_REQUIRED = {"note", "screenshot", "external_url", "installed_app", "user_file", "ui_hotkey", "ui_type", "ui_scroll", "ui_click", "ui_focus", "spotify_connect", "spotify_play", "spotify_pause", "spotify_resume", "spotify_next", "spotify_previous", "spotify_search"}
+APPROVAL_REQUIRED = {"note", "screenshot", "external_url", "installed_app", "user_file", "ui_hotkey", "ui_type", "ui_scroll", "ui_click", "ui_focus", "spotify_connect", "spotify_play", "spotify_pause", "spotify_resume", "spotify_next", "spotify_previous", "spotify_search", "steam_open_first", "steam_game"}
 
 HELP_TEXT = (
     "Я можу відкрити блокнот, калькулятор, Paint, провідник, диспетчер задач, "
@@ -37,7 +39,8 @@ HELP_TEXT = (
     "знайти інформацію в браузері, сказати час, змінити гучність, створити "
     "нотатку або зберегти скріншот після підтвердження. "
     "Можу знайти встановлену програму за назвою та запустити її після підтвердження. "
-    "Також можу відкрити файл через діалог вибору та запустити Dota 2 через Steam. "
+    "Також можу відкрити файл через діалог вибору, показати локально встановлені ігри Steam, "
+    "вибрати перший збережений акаунт ПЕРЕД запуском Steam і запустити встановлену гру за назвою. "
     "Можу шукати пісні у Spotify, а після добровільного підключення офіційного Spotify API — "
     "відтворювати композиції, ставити на паузу й перемикати треки за наявності Spotify Premium. "
     "Системні та небезпечні дії не виконую без дозволу."
@@ -172,7 +175,36 @@ def plan_action(raw_text: str) -> ActionPlan | None:
     if (re.fullmatch(fr"{verb} {steam}\s+(?:і|та|а потім|потім)\s+{verb} {dota}", q)
             or re.fullmatch(fr"{verb} {steam}\s+а\s+потім\s+{verb} {dota}", q)
             or re.fullmatch(fr"{verb} {dota}(?: через {steam})?", q)):
-        return ActionPlan("known_uri", "steam://run/570", "Запустити Dota 2 через Steam")
+        return ActionPlan("steam_game", "Dota 2",
+                          "Вибрати перший збережений акаунт Steam і запустити Dota 2", True)
+    if q in {"покажи ігри steam", "покажи ігри стім", "список ігор steam",
+             "мої ігри steam", "мої ігри стім", "бібліотека steam",
+             "бібліотека стім", "покажи встановлені ігри", "покажи бібліотеку steam"}:
+        return ActionPlan("steam_list", "", "Показати локально встановлені ігри Steam")
+    if q in {"вибери перший акаунт steam", "вибери перший акаунт стім",
+             "відкрий steam і вибери перший акаунт",
+             "відкрий стім і вибери перший акаунт", "вибери перший акаунт",
+             "запусти steam з першим акаунтом", "запусти стім з першим акаунтом"}:
+        return ActionPlan("steam_open_first", "",
+                          "Запустити Steam з першим ЗБЕРЕЖЕНИМ акаунтом (Steam має бути закритий)", True)
+    game_request = re.fullmatch(
+        r"(?:запусти|запустити|відкрий|відкрити|увімкни|включи)\s+"
+        r"(гру\s+)?(.+?)(?:\s+(?:у|в|через)\s+(steam|стім|стим))?", q)
+    if game_request:
+        explicit_game = bool(game_request.group(1) or game_request.group(3))
+        candidate = game_request.group(2).strip()
+        if candidate not in {"steam", "стім", "стим", "spotify", "спотіфай", "спотифай"}:
+            if explicit_game:
+                return ActionPlan("steam_game", candidate,
+                                  "Вибрати перший збережений акаунт і запустити Steam-гру: " + candidate, True)
+            if os.name == "nt":
+                try:
+                    game = find_installed_game(candidate)
+                except SteamError:
+                    pass
+                else:
+                    return ActionPlan("steam_game", game.title,
+                                      "Запустити встановлену Steam-гру: " + game.title, True)
     # Spotify playback is an explicit, owner-approved action, not a shell command.
     spotify_actions = {
         "пауза spotify": "pause", "пауза спотіфай": "pause",
@@ -234,7 +266,8 @@ def plan_action(raw_text: str) -> ActionPlan | None:
     if m:
         name = m.group(1).strip()
         if name in {"стім", "стим", "steam"}:
-            return ActionPlan("known_uri", "steam://open/main", "Відкрити Steam")
+            return ActionPlan("steam_open_first", "",
+                              "Вибрати перший збережений акаунт і відкрити Steam", True)
         if name in APPS:
             return ActionPlan("app", APPS[name], "Відкрити: " + name)
         if name in FOLDERS:
@@ -274,6 +307,12 @@ def run_action(action: ActionPlan) -> str:
         return action.target
     if action.kind in {"ui_hotkey", "ui_type", "ui_scroll", "ui_click", "ui_focus", "ui_windows"}:
         return perform_ui(action.kind[3:], action.target)
+    if action.kind == "steam_list":
+        return list_installed_games()
+    if action.kind == "steam_open_first":
+        return open_steam_first()
+    if action.kind == "steam_game":
+        return launch_installed_game(action.target)
     if action.kind == "spotify_connect":
         return spotify_connection.connect(action.target)
     if action.kind == "spotify_play":
