@@ -364,9 +364,7 @@ def _ui_player_state(hwnd: int, request: str, *, try_play: bool = False) -> str:
             return "unknown"
         _, control, label = max(buttons, key=lambda item: item[0])
         playing = label.startswith("pause") or label in {"пауза", "призупинити", "призупинити трек"}
-        if playing:
-            return "playing"
-        if not try_play:
+        if not playing and not try_play:
             return "paused"
 
         # Require the visible current track to resemble the user's request.
@@ -385,7 +383,7 @@ def _ui_player_state(hwnd: int, request: str, *, try_play: bool = False) -> str:
         requested = re.findall(r"[^\W_]+", request.casefold())
         visible = re.findall(r"[^\W_]+", " ".join(current_titles).casefold())
         if not requested or not visible:
-            return "paused"
+            return "unknown" if playing else "paused"
         # Tolerate "Jan" vs "Jane!" transcription, but do not relax artist
         # names or long/full titles. Ambiguous requests remain best-effort.
         def word_match(word: str) -> bool:
@@ -394,7 +392,9 @@ def _ui_player_state(hwnd: int, request: str, *, try_play: bool = False) -> str:
                         and token.startswith(word))
                        for token in visible)
         if not all(word_match(word) for word in requested):
-            return "paused"
+            return "unknown" if playing else "paused"
+        if playing:
+            return "playing"
         if not _still_focused(hwnd):
             return "unknown"
         try:
