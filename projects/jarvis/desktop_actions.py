@@ -18,6 +18,7 @@ import subprocess
 import uuid
 import webbrowser
 from window_control import parse_ui, perform_ui
+from spotify_control import spotify_connection
 
 
 @dataclass(frozen=True)
@@ -28,7 +29,7 @@ class ActionPlan:
     needs_approval: bool = False
 
 
-APPROVAL_REQUIRED = {"note", "screenshot", "external_url", "installed_app", "user_file", "ui_hotkey", "ui_type", "ui_scroll", "ui_click", "ui_focus"}
+APPROVAL_REQUIRED = {"note", "screenshot", "external_url", "installed_app", "user_file", "ui_hotkey", "ui_type", "ui_scroll", "ui_click", "ui_focus", "spotify_connect", "spotify_play", "spotify_pause", "spotify_resume", "spotify_next", "spotify_previous", "spotify_search"}
 
 HELP_TEXT = (
     "Я можу відкрити блокнот, калькулятор, Paint, провідник, диспетчер задач, "
@@ -37,6 +38,8 @@ HELP_TEXT = (
     "нотатку або зберегти скріншот після підтвердження. "
     "Можу знайти встановлену програму за назвою та запустити її після підтвердження. "
     "Також можу відкрити файл через діалог вибору та запустити Dota 2 через Steam. "
+    "Можу шукати пісні у Spotify, а після добровільного підключення офіційного Spotify API — "
+    "відтворювати композиції, ставити на паузу й перемикати треки за наявності Spotify Premium. "
     "Системні та небезпечні дії не виконую без дозволу."
 )
 
@@ -170,6 +173,39 @@ def plan_action(raw_text: str) -> ActionPlan | None:
             or re.fullmatch(fr"{verb} {steam}\s+а\s+потім\s+{verb} {dota}", q)
             or re.fullmatch(fr"{verb} {dota}(?: через {steam})?", q)):
         return ActionPlan("known_uri", "steam://run/570", "Запустити Dota 2 через Steam")
+    # Spotify playback is an explicit, owner-approved action, not a shell command.
+    spotify_actions = {
+        "пауза spotify": "pause", "пауза спотіфай": "pause",
+        "постав музику на паузу": "pause", "зупини музику": "pause",
+        "наступна пісня": "next", "наступний трек": "next",
+        "наступна пісня spotify": "next", "наступний трек spotify": "next",
+        "попередня пісня": "previous", "попередній трек": "previous",
+        "продовж музику": "resume", "продовж spotify": "resume",
+        "віднови музику": "resume",
+    }
+    if q in spotify_actions:
+        op = spotify_actions[q]
+        return ActionPlan("spotify_" + op, "", "Spotify: " + {
+            "pause": "пауза", "resume": "продовжити", "next": "наступний трек",
+            "previous": "попередній трек"}[op], True)
+    m = re.fullmatch(
+        r"(?:знайди|шукай|пошукай)\s+(?:пісню\s+|трек\s+)?(?:у|в)\s+(?:spotify|спотіфай|спотифай)\s+(.+)", q)
+    if m:
+        title = m.group(1).strip()
+        if 1 <= len(title) <= 120:
+            return ActionPlan("spotify_search", title, "Відкрити пошук Spotify: " + title, True)
+    m = re.fullmatch(r"(?:увімкни|включи|відтвори|постав|запусти)\s+"
+                     r"(?:(?:пісню|трек|композицію)\s+)?(.+)", q)
+    if m:
+        title = m.group(1).strip()
+        title = re.sub(r"\s+(?:в|у|через)\s+(?:spotify|спотіфай|спотифай)$", "", title)
+        if (1 <= len(title) <= 120 and
+                title not in {"доту", "доту 2", "дота", "дота 2",
+                              "звук", "комп'ютер", "пк", "spotify", "спотіфай",
+                              "мікрофон", "браузер", "калькулятор"}):
+            return ActionPlan("spotify_play", title,
+                              "Знайти й надіслати команду відтворення у Spotify: " + title,
+                              True)
     if q in {"допомога", "команди", "help", "що ти вмієш"}:
         return ActionPlan("say", HELP_TEXT, "Список можливостей")
     if q in {"привіт", "вітаю", "hello", "hi"}:
@@ -236,8 +272,18 @@ def run_action(action: ActionPlan) -> str:
         raise ValueError("Approval metadata required")
     if action.kind == "say":
         return action.target
-    if action.kind in {"ui_hotkey", "ui_type"}:
+    if action.kind in {"ui_hotkey", "ui_type", "ui_scroll", "ui_click", "ui_focus", "ui_windows"}:
         return perform_ui(action.kind[3:], action.target)
+    if action.kind == "spotify_connect":
+        return spotify_connection.connect(action.target)
+    if action.kind == "spotify_play":
+        return spotify_connection.play_track(action.target)
+    if action.kind in {"spotify_pause", "spotify_resume", "spotify_next", "spotify_previous"}:
+        return spotify_connection.player_command(action.kind[len("spotify_"):])
+    if action.kind == "spotify_search":
+        url = "https://open.spotify.com/search/" + quote_plus(action.target)
+        webbrowser.open(url)
+        return "Відкриваю пошук Spotify для «" + action.target + "». Обери композицію в плеєрі."
     if action.kind == "file_picker":
         return "Обери файл у вікні вибору."
     if action.kind in {"website", "external_url"}:
