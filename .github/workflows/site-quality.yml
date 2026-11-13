@@ -297,7 +297,7 @@ jobs:
           workflows = root / '.github' / 'workflows'
           if workflows.exists():
               for wf in workflows.glob('*.yml'):
-                  if wf.name not in ('site-quality.yml', 'jarvis-tests.yml'):
+                  if wf.name not in ('site-quality.yml', 'jarvis-tests.yml', 'jarvis-release.yml'):
                       errors.append(f'Unexpected temporary workflow remains: {wf.relative_to(root)}')
 
           for msg in warnings:
