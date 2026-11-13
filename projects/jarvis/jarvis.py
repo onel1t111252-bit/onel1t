@@ -132,6 +132,7 @@ class JarvisApp:
         self.mic_error_streak = 0
         self.last_mic_warning = 0.0
         self.handsfree_thread = None
+        self.handsfree_generation = 0
         self.alive = True
         self.busy = False
         self.pending: ActionPlan | None = None
@@ -715,6 +716,7 @@ class JarvisApp:
 
     def toggle_handsfree(self):
         if self.handsfree.is_set():
+            self.handsfree_generation += 1
             self.handsfree.clear()
             self.followup_until = 0
             self.handsfree_btn.configure(text="🎙  HANDS-FREE: OFF", bg=PANEL_2)
@@ -729,6 +731,8 @@ class JarvisApp:
             parent=self.root)
         if not ok:
             return
+        self.handsfree_generation += 1
+        generation = self.handsfree_generation
         self.handsfree.set()
         self.mic_error_streak = 0
         self.followup_until = 0
@@ -736,10 +740,12 @@ class JarvisApp:
         self.post("SYSTEM", "HANDS-FREE увімкнено. Скажи «Джарвіс, котра година». "
                   "Якщо не чує — правий клік на HANDS-FREE дозволяє вибрати мікрофон "
                   "(спочатку вимкни режим).", "sys")
-        if self.handsfree_thread is None or not self.handsfree_thread.is_alive():
-            self.handsfree_thread = threading.Thread(
-                target=self.handsfree_worker, name="jarvis-microphone", daemon=True)
-            self.handsfree_thread.start()
+        # Always attach a new listener to this activation. A prior listener
+        # might still be exiting, so its stale generation must not win a race.
+        self.handsfree_thread = threading.Thread(
+            target=self.handsfree_worker, args=(generation,),
+            name="jarvis-microphone", daemon=True)
+        self.handsfree_thread.start()
 
     def push_to_talk(self):
         if self.handsfree.is_set():
@@ -752,13 +758,14 @@ class JarvisApp:
             return
         threading.Thread(target=self.listen_once, args=(False,), daemon=True).start()
 
-    def handsfree_worker(self):
-        while self.alive and self.handsfree.is_set():
+    def handsfree_worker(self, generation: int):
+        while (self.alive and self.handsfree.is_set()
+               and generation == self.handsfree_generation):
             if self.busy or self.pending or self.speaking.is_set() or self.mic_lock.locked():
                 threading.Event().wait(.20)
                 continue
-            self.listen_once(True)
-        self.queue.put(("wake_off", None))
+            self.listen_once(True, session_id=generation)
+        self.queue.put(("wake_off", generation))
 
     def _mic_notice(self, message: str, minimum_interval: float = 15.0):
         now = time.monotonic()
@@ -766,7 +773,7 @@ class JarvisApp:
             self.last_mic_warning = now
             self.queue.put(("hint", message))
 
-    def listen_once(self, with_wake_word: bool):
+    def listen_once(self, with_wake_word: bool, session_id: int | None = None):
         if not self.mic_lock.acquire(blocking=False):
             return
         try:
@@ -784,11 +791,17 @@ class JarvisApp:
                     self.mic_calibrated = True
                     self.queue.put(("hint", "Мікрофон готовий. Скажи «Джарвіс, "
                                     "котра година»."))
-                audio = recognizer.listen(
-                    microphone, timeout=6 if with_wake_word else 7,
-                    phrase_time_limit=9 if with_wake_word else 12)
-                self.mic_energy_threshold = recognizer.energy_threshold
-            if with_wake_word and not self.handsfree.is_set():
+                try:
+                    audio = recognizer.listen(
+                        microphone, timeout=6 if with_wake_word else 7,
+                        phrase_time_limit=9 if with_wake_word else 12)
+                finally:
+                    # Even on silence/timeout, preserve the updated automatic
+                    # threshold across recognition attempts.
+                    self.mic_energy_threshold = recognizer.energy_threshold
+            if with_wake_word and (not self.handsfree.is_set()
+                                   or (session_id is not None and
+                                       session_id != self.handsfree_generation)):
                 return
             self.queue.put(("mic_status", "●  RECOGNIZING"))
             spoken = recognizer.recognize_google(audio, language="uk-UA").strip()
@@ -881,7 +894,8 @@ class JarvisApp:
                     self.post("SYSTEM", str(data), "sys")
                 elif kind == "mic_status" and not self.busy:
                     self.set_status(str(data), CYAN if data != "●  READY" else GREEN)
-                elif kind == "wake_off" and not self.handsfree.is_set():
+                elif (kind == "wake_off" and not self.handsfree.is_set()
+                      and data == self.handsfree_generation):
                     self.handsfree_btn.configure(text="🎙  HANDS-FREE: OFF", bg=PANEL_2)
         except queue.Empty:
             pass
@@ -891,6 +905,7 @@ class JarvisApp:
 
     def close(self):
         self.alive = False
+        self.handsfree_generation += 1
         self.handsfree.clear()
         self.save_settings()
         self.root.destroy()
