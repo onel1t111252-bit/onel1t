@@ -298,4 +298,7 @@ def play_in_desktop(title: str) -> str:
         updated = _read_spotify_playback()
         if updated is not None:
             result = updated
-    return _playback_feedback(query, result)
+    feedback = _playback_feedback(query, result)
+    if result is None or not result.playing or not _track_matches(query, result):
+        raise SpotifyDesktopError(feedback)
+    return feedback
