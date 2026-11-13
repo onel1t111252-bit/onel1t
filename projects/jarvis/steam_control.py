@@ -344,7 +344,7 @@ def open_steam_first() -> str:
     account_note = None
     try:
         account_note = choose_first_account()
-    except SteamError as exc:
+    except (SteamError, OSError, ValueError) as exc:
         account_note = None
         warning = str(exc)
     _open_steam_client()
@@ -446,7 +446,7 @@ def launch_installed_game(title: str) -> str:
     game = find_installed_game(title)
     try:
         chosen = choose_first_account()
-    except SteamError as exc:
+    except (SteamError, OSError, ValueError) as exc:
         # Open Steam so the user can choose the correct account. Do NOT send
         # the game launch URI until the desired account can be verified: the
         # current account might not own the game.
