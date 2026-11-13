@@ -79,3 +79,13 @@ MIT. UI is an original JARVIS-inspired fan design; this repository is not affili
 - Dota 2 запускається через фіксоване Steam URI `steam://run/570`.
 - Невідомі команди Windows не відправляються в чат ШІ.
 - Голос `JARVIS DEEP` — український Ostap з нижчим тоном, не копія голосу актора.
+
+## Experimental foreground control (4.3 preview)
+
+JARVIS can now request permission for a limited set of **foreground-window keyboard actions**. This is not unrestricted access to every app: controls depend on the active window, application permissions, and keyboard shortcuts. Each action requires clicking **APPROVE**; after approval, there is a two-second delay to focus the intended window.
+
+Examples: `скопіюй`, `встав`, `виділи все`, `збережи`, `скасуй дію`, `нова вкладка`, `перемкни вікно`, `надрукуй Привіт, Україно!`.
+
+Install dependencies with `python -m pip install -r requirements.txt`. Unicode typing temporarily uses the local clipboard and attempts to restore its previous text content. **Do not use this for passwords or other sensitive information**. Clipboard content may be exposed to the focused application or clipboard history. Actions are sent only to the currently focused application, not to a background target. JARVIS cannot verify that a target application accepted an action. Do not enable this feature on a managed work computer without permission.
+
+This preview intentionally does **not** provide arbitrary shell commands, clicking arbitrary coordinates, credential entry, remote access, file deletion, or privileged operations. It has not been verified on a real Windows desktop; run `python -m unittest discover -p "test_*.py" -v` and test manually.
