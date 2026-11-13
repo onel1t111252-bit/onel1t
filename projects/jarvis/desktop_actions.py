@@ -197,6 +197,9 @@ def youtube_search_plan(q: str) -> ActionPlan | None:
         phrase = opener.group(1)
 
     # The user may start with "YouTube, знайди ...".
+    platform_was_explicit = bool(opener)
+    if re.match(rf"^{_YOUTUBE_NAME}\s+", phrase):
+        platform_was_explicit = True
     phrase = re.sub(rf"^{_YOUTUBE_NAME}\s+", "", phrase)
     match = re.fullmatch(rf"{_YOUTUBE_SEARCH_VERB}\s+(.+)", phrase)
     if not match:
@@ -205,7 +208,7 @@ def youtube_search_plan(q: str) -> ActionPlan | None:
     detail = re.sub(r"^(?:мені|будь ласка)\s+", "", detail)
     has_youtube = bool(re.search(rf"(?<!\w){_YOUTUBE_NAME}\b", detail))
     has_video = bool(re.search(rf"(?<!\w){_YOUTUBE_VIDEO_CUE}\b", detail))
-    if not (has_youtube or has_video):
+    if not (platform_was_explicit or has_youtube or has_video):
         return None  # Ordinary web search remains Google search.
 
     # Accept "знайди відео на ютубі по ..." and "знайди на ютубі
