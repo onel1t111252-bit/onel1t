@@ -26,6 +26,22 @@ QUICK_RESPONSES = {
 _PREFIXES = ("так, сер", "є, сер", "перепрошую, сер", "слухаю вас, сер")
 
 
+_WAKE_WORD_RE = re.compile(
+    r"(?<!\w)(?:джарвісе|джарвіса|джарвіс|джарвис|джарвіз|"
+    r"джервіс|джарвез|жарвіс|jarvis)\b[\s,!:;.\-]*", re.I
+)
+
+
+def extract_wake_command(text: str) -> str | None:
+    """Extract wake-word command from Ukrainian STT without guessing action.
+
+    None: no wake word recognized. Empty string: wake word spoken alone,
+    so the assistant should listen for one short follow-up.
+    """
+    match = _WAKE_WORD_RE.search(text.strip())
+    return text.strip()[match.end():].strip() if match else None
+
+
 def normalize_spoken(text: str) -> str:
     """Normalize lightweight phrases only; never rewrite dictated text."""
     return re.sub(r"[\s,;.!?]+", " ", text.casefold()).strip()
