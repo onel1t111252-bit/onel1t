@@ -24,11 +24,13 @@ from voice_engine import speak, clamp_volume, VOICE_PROFILES, VOICE_LABELS
 from assistant_persona import (style_action_reply, concise_speech, cinematic_quick_reply,
                                normalize_spoken, extract_wake_command)
 from spotify_control import spotify_connection, valid_client_id
+from ai_router import suggest_action
 
 ROOT_DIR = Path(__file__).resolve().parent
 SETTINGS_PATH = ROOT_DIR / "settings.json"
 API_URL = "http://127.0.0.1:11434"
-MODEL = os.getenv("JARVIS_MODEL", "jarvis")
+MODEL = os.getenv("JARVIS_MODEL", "qwen3.5:4b")
+AI_MODEL_OPTIONS = ("qwen3.5:4b", "qwen3.5:9b", "jarvis")
 
 BG = "#050811"
 SIDEBAR = "#0a1422"
@@ -80,24 +82,27 @@ def get_settings() -> dict:
         return {}
 
 
-def ollama_status() -> tuple[bool, str]:
+def ollama_status(model: str | None = None) -> tuple[bool, str]:
     try:
         with request.urlopen(API_URL + "/api/tags", timeout=4) as stream:
             models = json.loads(stream.read().decode("utf-8")).get("models", [])
         names = [x.get("name", "") for x in models]
-        if MODEL in names or MODEL + ":latest" in names:
-            return True, "AI ONLINE / " + MODEL
-        return False, "MODEL NOT FOUND / " + MODEL
+        selected = model or MODEL
+        if selected in names or selected + ":latest" in names:
+            return True, "AI ONLINE / " + selected
+        return False, "MODEL NOT INSTALLED / " + selected
     except (OSError, ValueError):
         return False, "OLLAMA OFFLINE"
 
 
-def ollama_chat(text: str, history: list[dict[str, str]], cinematic: bool = True) -> tuple[str, list[dict[str, str]]]:
+def ollama_chat(text: str, history: list[dict[str, str]], cinematic: bool = True,
+                model: str | None = None) -> tuple[str, list[dict[str, str]]]:
     system_prompt = SYSTEM_PROMPT if cinematic else NEUTRAL_PROMPT
     conversation = [{"role": "system", "content": system_prompt}] + history[-10:]
     conversation.append({"role": "user", "content": text})
-    packet = {"model": MODEL, "messages": conversation, "stream": False,
-              "think": False, "options": {"temperature": 0.55, "num_predict": 340}}
+    packet = {"model": model or MODEL, "messages": conversation, "stream": False,
+              "think": False, "keep_alive": "10m",
+              "options": {"temperature": 0.45, "num_predict": 360, "num_ctx": 4096}}
     payload = json.dumps(packet, ensure_ascii=False).encode("utf-8")
     req = request.Request(API_URL + "/api/chat", data=payload,
                           headers={"Content-Type": "application/json"}, method="POST")
@@ -142,6 +147,9 @@ class JarvisApp:
         self.followup_until = 0.0
         self.history: list[dict[str, str]] = []
         self.settings = get_settings()
+        selected_ai = self.settings.get("ai_model", MODEL)
+        self.ai_model = selected_ai if isinstance(selected_ai, str) and (
+            selected_ai in AI_MODEL_OPTIONS or selected_ai == os.getenv("JARVIS_MODEL", "")) else MODEL
         mic = self.settings.get("microphone_index")
         self.mic_index = mic if type(mic) is int and 0 <= mic < 128 else None
         self.voice_on = bool(self.settings.get("voice_on", True))
@@ -285,7 +293,14 @@ class JarvisApp:
             card = tk.Frame(telemetry, bg="#12283b", highlightbackground="#255168", highlightthickness=1)
             card.pack(side="left", fill="x", expand=True, padx=(0, 8))
             self._label(card, title, size=8, mono=True, color=MUTED).pack(anchor="w", padx=13, pady=(10, 1))
-            self._label(card, value, size=10, weight="bold", mono=True, color=color).pack(anchor="w", padx=13, pady=(0, 10))
+            if title == "INTELLIGENCE":
+                self.ai_model_button = self._button(
+                    card, "AI: " + self.ai_model.upper(), self.cycle_ai_model,
+                    bg=PANEL_2, pad=(7, 4))
+                self.ai_model_button.pack(anchor="w", padx=10, pady=(2, 8))
+            else:
+                self._label(card, value, size=10, weight="bold", mono=True, color=color).pack(
+                    anchor="w", padx=13, pady=(0, 10))
         bar = tk.Frame(panel, bg=PANEL)
         bar.pack(fill="x", padx=22, pady=(0, 6))
         self.handsfree_btn = self._button(bar, "🎙  HANDS-FREE: OFF", self.toggle_handsfree, bg=PANEL_2)
@@ -411,7 +426,8 @@ class JarvisApp:
                                                 "window_mode": self.window_mode,
                                                 "cinematic_mode": self.cinematic_mode,
                                                 "spotify_client_id": self.spotify_client_id,
-                                                "microphone_index": self.mic_index},
+                                                "microphone_index": self.mic_index,
+                                                 "ai_model": self.ai_model},
                                                ensure_ascii=False, indent=2), encoding="utf-8")
         except OSError:
             logging.warning("Could not save preferences")
@@ -519,15 +535,34 @@ class JarvisApp:
         answer = (f"Так, сер. Звіт JARVIS: останній стан Ollama — {ai}; "
                   f"мікрофон без рук — {microphone}; голос — {voice}; "
                   f"гучність голосу — {self.voice_volume}%; "
-                  f"режим — {'JARVIS' if self.cinematic_mode else 'ЗВИЧАЙНИЙ'}. "
+                  f"режим — {'JARVIS' if self.cinematic_mode else 'ЗВИЧАЙНИЙ'}; "
+                   f"ШІ-модель — {self.ai_model}. "
                   "Це стан програми, не перевірка обладнання Windows.")
         self.post("JARVIS", answer, "ai")
         self.enqueue_speech("Так, сер. Параметри Джарвіса перевірено. "
                             "Докладний звіт на екрані.")
 
+    def cycle_ai_model(self):
+        """Cycle among known, local-only Ollama options; no API keys."""
+        options = AI_MODEL_OPTIONS
+        try:
+            index = options.index(self.ai_model)
+        except ValueError:
+            index = -1
+        self.ai_model = options[(index + 1) % len(options)]
+        self.history.clear()
+        self.ai_model_button.configure(text="AI: " + self.ai_model.upper())
+        self.save_settings()
+        self.post("SYSTEM", "Обрано модель " + self.ai_model
+                  + ". 4B встановлює INSTALL_AI.bat, 9B — UPGRADE_AI_9B.bat. "
+                    "9B потребує більше RAM/VRAM. Вибір не завантажує модель сам.", "sys")
+        self.check_ai()
+
     def check_ai(self):
         self.ai_state.configure(text="CHECKING AI ...", fg=MUTED)
-        threading.Thread(target=lambda: self.queue.put(("ai_status", ollama_status())), daemon=True).start()
+        chosen = self.ai_model
+        threading.Thread(target=lambda: self.queue.put(
+            ("ai_status", (chosen, ollama_status(chosen)))), daemon=True).start()
 
     def send(self):
         if self.busy or self.pending:
@@ -643,7 +678,13 @@ class JarvisApp:
             if action:
                 reply = run_action(action)
             else:
-                reply, self.history = ollama_chat(text, self.history, self.cinematic_mode)
+                inferred = suggest_action(text, self.ai_model, API_URL)
+                if inferred is not None:
+                    action = inferred
+                    reply = run_action(action)
+                else:
+                    reply, self.history = ollama_chat(
+                        text, self.history, self.cinematic_mode, self.ai_model)
         except (ValueError, RuntimeError) as exc:
             success = False
             reply = "Дія не виконана: " + str(exc)
@@ -899,8 +940,9 @@ class JarvisApp:
                     message, success, action_kind = data
                     self.finish(str(message), success=success, action_kind=action_kind)
                 elif kind == "ai_status":
-                    online, label = data
-                    self.ai_state.configure(text=label, fg=GREEN if online else AMBER)
+                    chosen, (online, label) = data
+                    if chosen == self.ai_model:
+                        self.ai_state.configure(text=label, fg=GREEN if online else AMBER)
                 elif kind == "heard":
                     try:
                         if not self.busy and not self.pending:
