@@ -5,9 +5,9 @@ const L=lang==='uk'?'uk':lang==='cs'?'cs':'en';
 const cv=L==='uk'?'cv-uk.html':L==='cs'?'cv-cz.html':'cv.html';
 const email='onel1t111252@gmail.com';
 const T={
- en:{stats:[['03','IT INTERNSHIPS'],['09','PORTFOLIO PROJECTS'],['03','LANGUAGE VERSIONS'],['03','FLAGSHIP CYBER PROJECTS']],cv:'CV',mail:'EMAIL',git:'GITHUB',copy:'EMAIL COPIED',skip:'Skip to main content',quick:'Quick actions',newTab:'opens in a new tab'},
- uk:{stats:[['03','IT-ПРАКТИКИ'],['09','ПРОЄКТІВ У ПОРТФОЛІО'],['03','МОВНІ ВЕРСІЇ'],['03','ФЛАГМАНСЬКІ КІБЕРПРОЄКТИ']],cv:'CV',mail:'EMAIL',git:'GITHUB',copy:'EMAIL СКОПІЙОВАНО',skip:'Перейти до основного вмісту',quick:'Швидкі дії',newTab:'відкривається в новій вкладці'},
- cs:{stats:[['03','IT PRAXE'],['09','PROJEKTŮ V PORTFOLIU'],['03','JAZYKOVÉ VERZE'],['03','HLAVNÍ KYBERNETICKÉ PROJEKTY']],cv:'CV',mail:'E-MAIL',git:'GITHUB',copy:'E-MAIL ZKOPÍROVÁN',skip:'Přejít na hlavní obsah',quick:'Rychlé akce',newTab:'otevře se na nové kartě'}
+ en:{stats:[['03','IT INTERNSHIPS'],['10','PORTFOLIO PROJECTS'],['03','LANGUAGE VERSIONS'],['03','FLAGSHIP CYBER PROJECTS']],cv:'CV',mail:'EMAIL',git:'GITHUB',copy:'EMAIL COPIED',skip:'Skip to main content',quick:'Quick actions',newTab:'opens in a new tab'},
+ uk:{stats:[['03','IT-ПРАКТИКИ'],['10','ПРОЄКТІВ У ПОРТФОЛІО'],['03','МОВНІ ВЕРСІЇ'],['03','ФЛАГМАНСЬКІ КІБЕРПРОЄКТИ']],cv:'CV',mail:'EMAIL',git:'GITHUB',copy:'EMAIL СКОПІЙОВАНО',skip:'Перейти до основного вмісту',quick:'Швидкі дії',newTab:'відкривається в новій вкладці'},
+ cs:{stats:[['03','IT PRAXE'],['10','PROJEKTŮ V PORTFOLIU'],['03','JAZYKOVÉ VERZE'],['03','HLAVNÍ KYBERNETICKÉ PROJEKTY']],cv:'CV',mail:'E-MAIL',git:'GITHUB',copy:'E-MAIL ZKOPÍROVÁN',skip:'Přejít na hlavní obsah',quick:'Rychlé akce',newTab:'otevře se na nové kartě'}
 }[L];
 
 if(!document.querySelector('.skip-link')){const a=document.createElement('a');a.className='skip-link';a.href='#about';a.textContent=T.skip;document.body.prepend(a);}
