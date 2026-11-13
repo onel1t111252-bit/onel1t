@@ -126,6 +126,7 @@ class JarvisApp:
         self.handsfree = threading.Event()
         self.speaking = threading.Event()
         self.mic_listening = threading.Event()
+        self.handoff_pending = threading.Event()
         self.mic_index = None
         self.mic_energy_threshold = 350.0
         self.mic_calibrated = False
@@ -718,6 +719,7 @@ class JarvisApp:
         if self.handsfree.is_set():
             self.handsfree_generation += 1
             self.handsfree.clear()
+            self.handoff_pending.clear()
             self.followup_until = 0
             self.handsfree_btn.configure(text="🎙  HANDS-FREE: OFF", bg=PANEL_2)
             self.post("SYSTEM", "Прослуховування вимкнено.", "sys")
@@ -761,7 +763,8 @@ class JarvisApp:
     def handsfree_worker(self, generation: int):
         while (self.alive and self.handsfree.is_set()
                and generation == self.handsfree_generation):
-            if self.busy or self.pending or self.speaking.is_set() or self.mic_lock.locked():
+            if (self.busy or self.pending or self.speaking.is_set()
+                    or self.mic_lock.locked() or self.handoff_pending.is_set()):
                 threading.Event().wait(.20)
                 continue
             self.listen_once(True, session_id=generation)
@@ -811,6 +814,7 @@ class JarvisApp:
             if with_wake_word:
                 if time.monotonic() <= self.followup_until:
                     self.followup_until = 0
+                    self.handoff_pending.set()
                     self.queue.put(("heard", spoken))
                 else:
                     command = extract_wake_command(spoken)
@@ -818,6 +822,7 @@ class JarvisApp:
                         # Ignore ambient speech not addressed to JARVIS.
                         return
                     if command:
+                        self.handoff_pending.set()
                         self.queue.put(("heard", command))
                     else:
                         self.followup_until = time.monotonic() + 12
@@ -888,8 +893,12 @@ class JarvisApp:
                 elif kind == "ai_status":
                     online, label = data
                     self.ai_state.configure(text=label, fg=GREEN if online else AMBER)
-                elif kind == "heard" and not self.busy and not self.pending:
-                    self.submit(str(data), via_voice=True)
+                elif kind == "heard":
+                    try:
+                        if not self.busy and not self.pending:
+                            self.submit(str(data), via_voice=True)
+                    finally:
+                        self.handoff_pending.clear()
                 elif kind == "hint":
                     self.post("SYSTEM", str(data), "sys")
                 elif kind == "mic_status" and not self.busy:
@@ -907,6 +916,7 @@ class JarvisApp:
         self.alive = False
         self.handsfree_generation += 1
         self.handsfree.clear()
+        self.handoff_pending.clear()
         self.save_settings()
         self.root.destroy()
 
