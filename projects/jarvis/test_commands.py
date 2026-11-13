@@ -58,6 +58,34 @@ class CommandTests(unittest.TestCase):
                 self.assertEqual((plan.kind, plan.target), ("steam_game", "Dota 2"))
                 self.assertTrue(plan.needs_approval)
 
+    def test_actual_speech_transcript_misheard_steam_without_and(self):
+        # Real user screenshot: Google hears "стіні" and drops the "і".
+        spoken = [
+            "Відкрий стіні Запусти Dota 2",
+            "Джарвіс, відкрий стіні запусти доту",
+            "відкрий стім запусти Dota 2",
+            "відкрий steam запусти дота 2",
+            "відкрий стіні і запусти Dota 2",
+            "відкрий стіні, потім запусти Dota 2",
+            "увімкни Dota 2",
+            "запусти Dota2",
+            "запусти доту два",
+        ]
+        for phrase in spoken:
+            with self.subTest(phrase=phrase):
+                planned = plan_action(phrase)
+                self.assertEqual((planned.kind, planned.target),
+                                 ("steam_game", "Dota 2"))
+                self.assertTrue(planned.needs_approval)
+
+    def test_misheard_steam_single_command_only(self):
+        plan = plan_action("відкрий стіні")
+        self.assertEqual(plan.kind, "steam_open_first")
+        self.assertTrue(plan.needs_approval)
+        # Never turn arbitrary phrases into Steam game launches.
+        self.assertNotEqual(plan_action("відкрий стінку").kind, "steam_open_first")
+        self.assertEqual(plan_action("відкрий Steam і зроби ще щось").kind, "say")
+
     def test_steam_dota_only_approved_uri(self):
         with patch("desktop_actions.os.name", "nt"), patch("desktop_actions.os.startfile", create=True) as launch:
             result = run_action(ActionPlan("known_uri", "steam://run/570", "Dota"))
