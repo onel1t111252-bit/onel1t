@@ -28,7 +28,7 @@ class ActionPlan:
     needs_approval: bool = False
 
 
-APPROVAL_REQUIRED = {"note", "screenshot", "external_url", "installed_app", "user_file", "ui_hotkey", "ui_type"}
+APPROVAL_REQUIRED = {"note", "screenshot", "external_url", "installed_app", "user_file", "ui_hotkey", "ui_type", "ui_scroll", "ui_click", "ui_focus"}
 
 HELP_TEXT = (
     "Я можу відкрити блокнот, калькулятор, Paint, провідник, диспетчер задач, "
@@ -161,7 +161,7 @@ def plan_action(raw_text: str) -> ActionPlan | None:
     ui = parse_ui(original_ui)
     if ui:
         kind, payload, preview = ui
-        return ActionPlan("ui_" + kind, payload, preview, True)
+        return ActionPlan("ui_" + kind, payload, preview, kind != "windows")
     # A Steam launch URI starts Steam automatically before opening Dota 2.
     steam = r"(?:стім|стим|steam)"
     dota = r"(?:доту(?: 2)?|дота(?: 2)?|dota(?: 2)?)"
@@ -221,6 +221,8 @@ def plan_action(raw_text: str) -> ActionPlan | None:
         return ActionPlan("website", "https://www.google.com/search?q=" + quote_plus(m.group(1)), "Пошук у Google")
     if re.match(r"^(?:видали|видалити|очисти|очистити|вимкни комп|перезавантаж|запусти команду|виконай код|відправ|надішли файл)", q):
         return ActionPlan("say", "Цю дію не виконую автоматично заради безпеки комп'ютера.", "Обмежена дія")
+    if re.match(r"^(?:надрукуй|напиши текст|введи текст|перемкнись|активуй вікно|перейди до вікна|прокрути|клацни|клікни|натисни)\b", q):
+        return ActionPlan("say", "Таку дію не підтримую або вона заборонена. Скажи «допомога» для прикладів.", "Непідтримувана дія")
     # An unknown desktop instruction is not a normal chat request; the AI
     # cannot run it, so offer a precise example instead of a misleading refusal.
     if re.search(r"\b(?:відкрий|відкрити|запусти|запустити|включи|увімкни|open|launch)\b", q):
