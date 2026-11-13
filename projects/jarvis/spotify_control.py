@@ -193,7 +193,7 @@ class SpotifyConnection:
             self._set_tokens(tokens)
             return self._access_token
 
-    def _api(self, method: str, path: str, payload: dict | None = None) -> dict:
+    def _api(self, method: str, path: str, payload: dict | None = None, *, timeout: float = 6.0) -> dict:
         if not path.startswith("/") or "://" in path:
             raise ValueError("Spotify endpoint must be local API path")
         raw = None if payload is None else json.dumps(payload, ensure_ascii=False).encode("utf-8")
@@ -202,7 +202,7 @@ class SpotifyConnection:
             headers["Content-Type"] = "application/json"
         req = request.Request(API_BASE + path, data=raw, method=method, headers=headers)
         try:
-            with request.urlopen(req, timeout=20) as response:
+            with request.urlopen(req, timeout=timeout) as response:
                 body = response.read(512 * 1024)
                 return json.loads(body.decode("utf-8")) if body else {}
         except error.HTTPError as exc:
@@ -234,6 +234,8 @@ class SpotifyConnection:
         if not (1 <= len(query) <= 120):
             raise SpotifyError("Назва композиції має містити від 1 до 120 символів.")
         params = parse.urlencode({"q": query, "type": "track", "limit": 5})
+        # Most searches return immediately; network calls are bounded to avoid
+        # waiting a minute when Spotify is offline or throttled.
         found = self._api("GET", "/search?" + params)
         track_uri, display = find_track(found)
         device_id = self._active_device()
