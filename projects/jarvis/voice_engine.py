@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass
 import logging
+import math
 import os
 from pathlib import Path
 import subprocess
@@ -25,9 +26,21 @@ class SpeechResult:
     detail: str = ""
 
 
-def _windows_sapi(text: str) -> SpeechResult:
+def clamp_volume(value: object) -> int:
+    """Validate 0-100 percent from settings and UI without trusting corrupted values."""
+    try:
+        number = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return 80
+    if not math.isfinite(number):
+        return 80
+    return max(0, min(100, int(round(number))))
+
+
+def _windows_sapi(text: str, volume: int = 80) -> SpeechResult:
     if os.name != "nt":
         return SpeechResult(False, "Windows SAPI доступний лише на Windows.")
+    volume = clamp_volume(volume)
     script = (
         "Add-Type -AssemblyName System.Speech; "
         "$s = New-Object System.Speech.Synthesis.SpeechSynthesizer; "
@@ -36,7 +49,7 @@ def _windows_sapi(text: str) -> SpeechResult:
         "$_.VoiceInfo.Gender -eq [System.Speech.Synthesis.VoiceGender]::Male } | Select-Object -First 1; "
         "if (-not $v) { [Console]::Error.WriteLine('UKRAINIAN_MALE_MISSING'); exit 3 }; "
         "$s.SelectVoice($v.VoiceInfo.Name); "
-        "$s.Volume=90; $s.Speak([Console]::In.ReadToEnd()); $s.Dispose()"
+        f"$s.Volume={volume}; $s.Speak([Console]::In.ReadToEnd()); $s.Dispose()"
     )
     try:
         run = subprocess.run(
@@ -55,13 +68,16 @@ def _windows_sapi(text: str) -> SpeechResult:
         return SpeechResult(False, "Помилка голосу Windows.")
 
 
-def speak(text: str, voice: str = "uk-UA-OstapNeural") -> SpeechResult:
+def speak(text: str, voice: str = "uk-UA-OstapNeural", volume: int = 80) -> SpeechResult:
     """Synthesize then play full text. Call only on the background audio thread."""
     if not text.strip():
         return SpeechResult(True)
     text = text.strip()[:3200]
+    volume = clamp_volume(volume)
+    if volume == 0:
+        return SpeechResult(True, "Гучність голосу 0%.")
     if voice == "windows":
-        return _windows_sapi(text)
+        return _windows_sapi(text, volume)
     if voice not in VOICE_PROFILES:
         return SpeechResult(False, "Невідомий профіль голосу.")
     try:
@@ -87,6 +103,7 @@ def speak(text: str, voice: str = "uk-UA-OstapNeural") -> SpeechResult:
         pygame.mixer.init()
         try:
             pygame.mixer.music.load(str(filename))
+            pygame.mixer.music.set_volume(volume / 100.0)
             pygame.mixer.music.play()
             while pygame.mixer.music.get_busy():
                 time.sleep(.08)
