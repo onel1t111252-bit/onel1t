@@ -229,6 +229,30 @@ class SpotifyConnection:
                 return item["id"]
         raise SpotifyError("Немає активного плеєра Spotify. Відкрий Spotify, увімкни щось вручну та повтори.")
 
+    def _active_desktop_device(self) -> str:
+        """Avoid playing a requested PC song on the user's phone or speaker.
+
+        Only a currently active, unrestricted Spotify Connect COMPUTER is
+        eligible. An inactive desktop can instead be driven locally by the
+        foreground-verified Spotify GUI fallback in desktop_actions.
+        """
+        devices = self._api("GET", "/me/player/devices").get("devices", [])
+        if not isinstance(devices, list):
+            raise SpotifyError("Spotify не повернув список пристроїв.")
+        computers = [
+            d for d in devices
+            if isinstance(d, dict)
+            and d.get("is_active") and not d.get("is_restricted")
+            and str(d.get("type", "")).casefold() == "computer"
+            and isinstance(d.get("id"), str) and d["id"]
+        ]
+        if len(computers) == 1:
+            return computers[0]["id"]
+        raise SpotifyError(
+            "Немає однозначного активного комп'ютера Spotify. "
+            "Відкрий встановлений Spotify, щоб JARVIS міг запустити "
+            "пісню локально без перемикання на чужий пристрій.")
+
     def play_track(self, title: str) -> str:
         query = title.strip()
         if not (1 <= len(query) <= 120):
@@ -238,7 +262,7 @@ class SpotifyConnection:
         # waiting a minute when Spotify is offline or throttled.
         found = self._api("GET", "/search?" + params)
         track_uri, display = find_track(found)
-        device_id = self._active_device()
+        device_id = self._active_desktop_device()
         self._api("PUT", "/me/player/play?device_id=" + parse.quote(device_id, safe=""),
                   {"uris": [track_uri]})
         return "Spotify отримав команду відтворення: " + display + ". Перевір плеєр."
