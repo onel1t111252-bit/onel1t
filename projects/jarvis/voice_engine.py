@@ -74,12 +74,12 @@ def speak(text: str, voice: str = "uk-UA-OstapNeural", volume: int = 80) -> Spee
         return SpeechResult(True)
     text = text.strip()[:3200]
     volume = clamp_volume(volume)
+    if voice not in VOICE_PROFILES:
+        return SpeechResult(False, "Невідомий профіль голосу.")
     if volume == 0:
         return SpeechResult(True, "Гучність голосу 0%.")
     if voice == "windows":
         return _windows_sapi(text, volume)
-    if voice not in VOICE_PROFILES:
-        return SpeechResult(False, "Невідомий профіль голосу.")
     try:
         import edge_tts
         import pygame
