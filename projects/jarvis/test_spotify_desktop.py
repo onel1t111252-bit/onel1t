@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 
 from spotify_desktop import (
     SpotifyDesktopError, SpotifyPlayback, validate_query,
-    play_in_desktop, _open_and_focus_spotify,
+    play_in_desktop, play_current_in_desktop, _open_and_focus_spotify,
     _track_matches, _playback_feedback,
 )
 
@@ -52,7 +52,7 @@ class NativeSpotifyTests(unittest.TestCase):
         self.assertIn("Підтверджено", _playback_feedback("Numb", correct))
         self.assertIn("не відповідає", _playback_feedback("Numb", wrong))
         self.assertIn("НЕ активне", _playback_feedback("Numb", paused))
-        self.assertIn("Не можу підтвердити", _playback_feedback("Numb", None))
+        self.assertIn("НЕ ПІДТВЕРДЖЕНО", _playback_feedback("Numb", None))
 
     def test_status_reports_app_missing_or_known_song(self):
         from spotify_desktop import spotify_desktop_status
@@ -95,7 +95,7 @@ class NativeSpotifyTests(unittest.TestCase):
             with self.assertRaisesRegex(SpotifyDesktopError, "НЕ активне"):
                 play_in_desktop("Numb")
 
-    def test_unverifiable_song_reports_failure_not_false_playback(self):
+    def test_unverifiable_song_reports_uncertainty_not_false_failure(self):
         keys = types.SimpleNamespace(hotkey=Mock(), press=Mock())
         with patch("spotify_desktop.os.name", "nt"), \
              patch("spotify_desktop._open_and_focus_spotify", return_value=42), \
@@ -104,8 +104,63 @@ class NativeSpotifyTests(unittest.TestCase):
              patch("spotify_desktop._read_spotify_playback", return_value=None), \
              patch("spotify_desktop.time.sleep"), \
              patch.dict(sys.modules, {"pyautogui": keys}):
-            with self.assertRaisesRegex(SpotifyDesktopError, "Не можу підтвердити"):
-                play_in_desktop("Numb")
+            result = play_in_desktop("Numb")
+        self.assertIn("НЕ ПІДТВЕРДЖЕНО", result)
+        self.assertNotIn("не вдалося відтворити", result.casefold())
+
+    def test_resume_current_track_does_not_search_new_song(self):
+        paused = SpotifyPlayback("Jingle Bells", "Artist", False)
+        playing = SpotifyPlayback("Jingle Bells", "Artist", True)
+        with patch("spotify_desktop._open_and_focus_spotify", return_value=42), \
+             patch("spotify_desktop._read_spotify_playback",
+                   side_effect=[paused, playing]), \
+             patch("spotify_desktop._try_media_session_play", return_value=True) as play, \
+             patch("spotify_desktop._send_spotify_play_command") as fallback:
+            result = play_current_in_desktop()
+        play.assert_called_once()
+        fallback.assert_not_called()
+        self.assertIn("Spotify відтворює", result)
+
+    def test_current_track_already_playing_is_not_paused(self):
+        with patch("spotify_desktop._open_and_focus_spotify", return_value=42), \
+             patch("spotify_desktop._read_spotify_playback",
+                   return_value=SpotifyPlayback("Numb", "Linkin Park", True)), \
+             patch("spotify_desktop._try_media_session_play") as play, \
+             patch("spotify_desktop._send_spotify_play_command") as fallback:
+            result = play_current_in_desktop()
+        play.assert_not_called()
+        fallback.assert_not_called()
+        self.assertIn("вже відтворює", result)
+
+    def test_no_media_telemetry_sends_idempotent_play_not_pause_toggle(self):
+        with patch("spotify_desktop._open_and_focus_spotify", return_value=42), \
+             patch("spotify_desktop._read_spotify_playback", return_value=None), \
+             patch("spotify_desktop._try_media_session_play", return_value=False), \
+             patch("spotify_desktop._still_focused", return_value=True), \
+             patch("spotify_desktop._send_spotify_play_command",
+                   return_value=True) as fallback:
+            result = play_current_in_desktop()
+        fallback.assert_called_once_with(42)
+        self.assertIn("Windows не надає", result)
+        self.assertIn("без пошуку", result)
+
+    def test_current_play_reports_failed_dispatch(self):
+        with patch("spotify_desktop._open_and_focus_spotify", return_value=42), \
+             patch("spotify_desktop._read_spotify_playback", return_value=None), \
+             patch("spotify_desktop._try_media_session_play", return_value=False), \
+             patch("spotify_desktop._still_focused", return_value=True), \
+             patch("spotify_desktop._send_spotify_play_command",
+                   return_value=False):
+            with self.assertRaisesRegex(SpotifyDesktopError, "Не вдалося надіслати"):
+                play_current_in_desktop()
+
+    def test_spotify_status_missing_session_does_not_imply_music_stopped(self):
+        from spotify_desktop import spotify_desktop_status
+        with patch("spotify_desktop.os.name", "nt"), \
+             patch("spotify_desktop._spotify_window", return_value=42), \
+             patch("spotify_desktop._read_spotify_playback", return_value=None):
+            status = spotify_desktop_status()
+        self.assertIn("НЕ доводить", status)
 
     def test_does_not_type_into_other_foreground_window(self):
         keys = types.SimpleNamespace(hotkey=Mock(), press=Mock())
