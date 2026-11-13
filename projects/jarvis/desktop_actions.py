@@ -19,7 +19,8 @@ import uuid
 import webbrowser
 from window_control import parse_ui, perform_ui
 from spotify_control import spotify_connection, SpotifyError
-from spotify_desktop import play_in_desktop, spotify_desktop_status, SpotifyDesktopError
+from spotify_desktop import (play_in_desktop, play_current_in_desktop,
+                             spotify_desktop_status, SpotifyDesktopError)
 from steam_control import (SteamError, find_installed_game, list_installed_games,
                            open_steam_first, launch_installed_game)
 
@@ -32,7 +33,7 @@ class ActionPlan:
     needs_approval: bool = False
 
 
-APPROVAL_REQUIRED = {"note", "screenshot", "external_url", "installed_app", "user_file", "ui_hotkey", "ui_type", "ui_scroll", "ui_click", "ui_focus", "spotify_connect", "spotify_play", "spotify_pause", "spotify_resume", "spotify_next", "spotify_previous", "steam_open_first", "steam_game"}
+APPROVAL_REQUIRED = {"note", "screenshot", "external_url", "installed_app", "user_file", "ui_hotkey", "ui_type", "ui_scroll", "ui_click", "ui_focus", "spotify_connect", "spotify_play", "spotify_resume_current", "spotify_pause", "spotify_resume", "spotify_next", "spotify_previous", "steam_open_first", "steam_game"}
 
 # An explicit typed command or a wake-word-activated voice command is enough
 # consent for these ordinary, visible, bounded actions. Preserve the existing
@@ -41,7 +42,7 @@ APPROVAL_REQUIRED = {"note", "screenshot", "external_url", "installed_app", "use
 DIRECT_EXECUTION_KINDS = frozenset({
     "app", "folder", "website", "settings", "installed_app",
     "steam_open_first", "steam_game", "steam_list",
-    "spotify_search", "spotify_play", "spotify_pause", "spotify_status",
+    "spotify_search", "spotify_play", "spotify_resume_current", "spotify_pause", "spotify_status",
     "spotify_resume", "spotify_next", "spotify_previous",
     "say", "volume", "ui_windows", "youtube_search",
 })
@@ -282,7 +283,7 @@ def spotify_music_plan(q: str) -> ActionPlan | None:
         return None  # Steam, games and installed apps take priority.
     return ActionPlan("spotify_play", text,
                       "Знайти й відтворити у Spotify: " + text
-                      + " (якщо підключений API; інакше відкрити пошук)", True)
+                      + " (через Spotify API або встановлений Spotify)", True)
 
 
 def plan_action(raw_text: str) -> ActionPlan | None:
@@ -292,6 +293,16 @@ def plan_action(raw_text: str) -> ActionPlan | None:
     q = re.sub(r"\s*[,;]\s*", " ", q).strip()
     if not q:
         return None
+    # "Відтвори поточний трек" means PLAY/RESUME the existing selection.
+    # Do not route "поточний трек" as the literal title of a new song.
+    if q in {"відтвори поточний трек", "відтвори поточну пісню",
+             "увімкни поточний трек", "увімкни поточну пісню",
+             "включи поточний трек", "програй поточний трек",
+             "відтвори поточний трек spotify",
+             "продовж відтворення", "відтвори цей трек",
+             "play current track"}:
+        return ActionPlan("spotify_resume_current", "",
+                          "Відтворити або продовжити поточну пісню у Spotify", True)
     if q in {"статус spotify", "статус спотіфай", "статус спотифай",
              "перевір spotify", "перевір спотіфай",
              "діагностика spotify", "діагностика спотіфай"}:
@@ -471,6 +482,8 @@ def run_action(action: ActionPlan) -> str:
         return launch_installed_game(action.target)
     if action.kind == "spotify_status":
         return spotify_desktop_status()
+    if action.kind == "spotify_resume_current":
+        return play_current_in_desktop()
     if action.kind == "spotify_connect":
         return spotify_connection.connect(action.target)
     if action.kind == "spotify_play":
