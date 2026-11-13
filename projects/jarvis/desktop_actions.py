@@ -17,6 +17,7 @@ import re
 import subprocess
 import uuid
 import webbrowser
+from window_control import parse_ui, perform_ui
 
 
 @dataclass(frozen=True)
@@ -27,7 +28,7 @@ class ActionPlan:
     needs_approval: bool = False
 
 
-APPROVAL_REQUIRED = {"note", "screenshot", "external_url", "installed_app", "user_file"}
+APPROVAL_REQUIRED = {"note", "screenshot", "external_url", "installed_app", "user_file", "ui_hotkey", "ui_type"}
 
 HELP_TEXT = (
     "Я можу відкрити блокнот, калькулятор, Paint, провідник, диспетчер задач, "
@@ -155,6 +156,10 @@ def plan_action(raw_text: str) -> ActionPlan | None:
     q = re.sub(r"\s*[,;]\s*", " ", q).strip()
     if not q:
         return None
+    ui = parse_ui(q)
+    if ui:
+        kind, payload, preview = ui
+        return ActionPlan("ui_" + kind, payload, preview, True)
     # A Steam launch URI starts Steam automatically before opening Dota 2.
     steam = r"(?:стім|стим|steam)"
     dota = r"(?:доту(?: 2)?|дота(?: 2)?|dota(?: 2)?)"
@@ -227,6 +232,8 @@ def run_action(action: ActionPlan) -> str:
         raise ValueError("Approval metadata required")
     if action.kind == "say":
         return action.target
+    if action.kind in {"ui_hotkey", "ui_type"}:
+        return perform_ui(action.kind[3:], action.target)
     if action.kind == "file_picker":
         return "Обери файл у вікні вибору."
     if action.kind in {"website", "external_url"}:
