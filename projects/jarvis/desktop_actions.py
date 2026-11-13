@@ -1,4 +1,4 @@
-"""Restricted, user-visible desktop commands for JARVIS 4.2.
+"""Restricted, user-visible desktop commands for JARVIS 3.0.
 
 Never executes model-generated code, shell strings or remote commands.
 System-changing actions require an explicit on-screen approval.
