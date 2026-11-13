@@ -27,7 +27,7 @@ jobs:
           python-version: "3.12"
       - name: Syntax check
         working-directory: projects/jarvis
-        run: python -m py_compile jarvis.py desktop_actions.py window_control.py command_sequences.py assistant_persona.py voice_engine.py spotify_control.py steam_control.py
+        run: python -m py_compile jarvis.py desktop_actions.py window_control.py command_sequences.py assistant_persona.py voice_engine.py spotify_control.py spotify_desktop.py steam_control.py
       - name: Unit tests (no microphone/game launch)
         working-directory: projects/jarvis
         run: python -m unittest discover -p "test_*.py" -v

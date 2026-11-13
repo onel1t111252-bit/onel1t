@@ -51,24 +51,57 @@ class SpotifyPlanTests(unittest.TestCase):
         self.assertEqual(plan_action("увімкни звук").kind, "volume")
         self.assertEqual(plan_action("запусти гру Portal 2").kind, "steam_game")
 
-    def test_play_without_api_opens_search_instead_of_hanging(self):
+    def test_play_without_api_controls_installed_spotify_not_browser(self):
         from desktop_actions import spotify_connection
-        with patch.object(type(spotify_connection), "connected", new_callable=lambda: property(lambda self: False)):
-            with patch("desktop_actions.webbrowser.open") as browser:
-                result = run_action(plan_action("увімкни пісню Numb"))
-        browser.assert_called_once()
-        self.assertIn("open.spotify.com/search/numb", browser.call_args.args[0])
-        self.assertIn("CONNECT SPOTIFY", result)
-
-    def test_spotify_api_error_opens_search_as_fallback(self):
-        from desktop_actions import spotify_connection
-        with patch.object(type(spotify_connection), "connected", new_callable=lambda: property(lambda self: True)), \
-             patch.object(spotify_connection, "play_track", side_effect=SpotifyError("Spotify offline")), \
+        with patch.object(type(spotify_connection), "connected",
+                          new_callable=lambda: property(lambda self: False)), \
+             patch("desktop_actions.play_in_desktop",
+                   return_value="Пісню передано настільному Spotify.") as desktop, \
              patch("desktop_actions.webbrowser.open") as browser:
             result = run_action(plan_action("увімкни пісню Numb"))
-        browser.assert_called_once()
-        self.assertIn("Не вдалося", result)
+        desktop.assert_called_once_with("numb")
+        browser.assert_not_called()
+        self.assertIn("настільному Spotify", result)
 
+    def test_spotify_api_error_tries_desktop_instead_of_browser(self):
+        from desktop_actions import spotify_connection
+        with patch.object(type(spotify_connection), "connected",
+                          new_callable=lambda: property(lambda self: True)), \
+             patch.object(spotify_connection, "play_track",
+                          side_effect=SpotifyError("Spotify API offline")), \
+             patch("desktop_actions.play_in_desktop",
+                   return_value="Пошук у настільному Spotify.") as desktop, \
+             patch("desktop_actions.webbrowser.open") as browser:
+            result = run_action(plan_action("увімкни пісню Numb"))
+        desktop.assert_called_once_with("numb")
+        browser.assert_not_called()
+        self.assertIn("настільному Spotify", result)
+
+    def test_failed_desktop_attempt_never_opens_browser_or_claims_success(self):
+        from desktop_actions import spotify_connection
+        from spotify_desktop import SpotifyDesktopError
+        with patch.object(type(spotify_connection), "connected",
+                          new_callable=lambda: property(lambda self: False)), \
+             patch("desktop_actions.play_in_desktop",
+                   side_effect=SpotifyDesktopError("Не знайдено Spotify")), \
+             patch("desktop_actions.webbrowser.open") as browser:
+            with self.assertRaisesRegex(SpotifyError, "Не вдалося відтворити"):
+                run_action(plan_action("увімкни пісню Numb"))
+        browser.assert_not_called()
+
+    def test_song_name_after_platform_voice_variants(self):
+        phrases = (
+            "увімкни пісню в Spotify Numb",
+            "включи пісню в спотіфай Numb",
+            "увімкни в Spotify пісню Numb",
+            "включи мені пісню Numb в спотифай",
+            "програй пісню Numb через Spotify",
+        )
+        for phrase in phrases:
+            with self.subTest(phrase=phrase):
+                action = plan_action("Джарвіс, " + phrase)
+                self.assertEqual(action.kind, "spotify_play")
+                self.assertEqual(action.target, "numb")
     def test_media_actions(self):
         for command, kind in (
             ("наступна пісня", "spotify_next"),
@@ -131,7 +164,8 @@ class SpotifyApiTests(unittest.TestCase):
             {"tracks": {"items": [
                 {"uri": uri, "name": "Numb", "artists": [{"name": "Linkin Park"}]}
             ]}},
-            {"devices": [{"id": "desktop-device", "is_active": True, "is_restricted": False}]},
+            {"devices": [{"id": "desktop-device", "type": "Computer",
+                          "is_active": True, "is_restricted": False}]},
             {}
         ]
         with patch.object(spotify, "_api", side_effect=results) as api:
@@ -140,6 +174,24 @@ class SpotifyApiTests(unittest.TestCase):
         self.assertEqual(api.call_count, 3)
         self.assertEqual(api.call_args_list[-1].args[0], "PUT")
         self.assertEqual(api.call_args_list[-1].args[2], {"uris": [uri]})
+
+    def test_play_track_never_targets_active_phone(self):
+        spotify = SpotifyConnection()
+        song = "spotify:track:" + "a" * 22
+        with patch.object(spotify, "_api", side_effect=[
+            {"tracks": {"items": [{
+                "uri": song, "name": "Numb",
+                "artists": [{"name": "Linkin Park"}]}]}},
+            {"devices": [
+                {"id": "phone", "type": "Smartphone", "is_active": True,
+                 "is_restricted": False},
+                {"id": "desktop", "type": "Computer", "is_active": False,
+                 "is_restricted": False},
+            ]},
+        ]) as api:
+            with self.assertRaisesRegex(SpotifyError, "активного комп'ютера"):
+                spotify.play_track("Numb")
+        self.assertEqual(api.call_count, 2)  # no PUT/play sent to phone
 
     def test_does_not_transfer_to_other_devices(self):
         spotify = SpotifyConnection()
