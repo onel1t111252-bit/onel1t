@@ -223,7 +223,7 @@ def plan_action(raw_text: str) -> ActionPlan | None:
             or re.fullmatch(fr"{verb} {steam}\s+а\s+потім\s+{verb} {dota}", q)
             or re.fullmatch(fr"{verb} {dota}(?: через {steam})?", q)):
         return ActionPlan("steam_game", "Dota 2",
-                          "Вибрати перший збережений акаунт Steam і запустити Dota 2", True)
+                          "Запустити Dota 2 у вже активному Steam-акаунті або налаштувати перший збережений, якщо Steam закритий", True)
     combo_game = re.fullmatch(
         fr"{verb}\s+{steam}\s+(?:і|та|потім|а потім)\s+"
         r"(?:запусти|запустити|відкрий|увімкни|включи)\s+(?:гру\s+)?(.+)", q)
@@ -231,7 +231,7 @@ def plan_action(raw_text: str) -> ActionPlan | None:
         title = combo_game.group(1).strip()
         if 1 <= len(title) <= 170:
             return ActionPlan("steam_game", title,
-                              "Вибрати перший збережений акаунт і запустити Steam-гру: " + title, True)
+                              "Запустити Steam-гру в активному акаунті або першому збереженому, якщо Steam закритий: " + title, True)
     # Spoken two-part Steam requests may have NO conjunction (as in the
     # real Google recognition "відкрий стіні запусти Dota 2"). Treat the
     # combined command as one owner-approved game launch, not as an app title.
@@ -245,7 +245,7 @@ def plan_action(raw_text: str) -> ActionPlan | None:
             title = "Dota 2"
         if 1 <= len(title) <= 170:
             return ActionPlan("steam_game", title,
-                              "Запустити встановлену Steam-гру: " + title
+                              "Запустити встановлену Steam-гру через активний Steam-акаунт або перший збережений: " + title
                               + " (у вже активному акаунті або після налаштування першого)", True)
     # Direct voice variants of the Dota title must not fall through to the
     # Spotify music planner, installed apps or general AI.
@@ -275,7 +275,7 @@ def plan_action(raw_text: str) -> ActionPlan | None:
         if candidate not in {"steam", "стім", "стим", "spotify", "спотіфай", "спотифай"}:
             if explicit_game:
                 return ActionPlan("steam_game", candidate,
-                                  "Вибрати перший збережений акаунт і запустити Steam-гру: " + candidate, True)
+                                  "Запустити Steam-гру в активному акаунті або першому збереженому, якщо Steam закритий: " + candidate, True)
             if os.name == "nt":
                 try:
                     game = find_installed_game(candidate)
@@ -283,7 +283,7 @@ def plan_action(raw_text: str) -> ActionPlan | None:
                     pass
                 else:
                     return ActionPlan("steam_game", game.title,
-                                      "Запустити встановлену Steam-гру: " + game.title, True)
+                                      "Запустити встановлену Steam-гру через активний Steam-акаунт або перший збережений: " + game.title, True)
     # Spotify playback is an explicit, owner-approved action, not a shell command.
     spotify_actions = {
         "пауза spotify": "pause", "пауза спотіфай": "pause",
