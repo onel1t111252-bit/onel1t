@@ -42,8 +42,14 @@ def pkce_pair() -> tuple[str, str]:
     return verifier, challenge
 
 
-def find_track(data: dict) -> tuple[str, str]:
-    """Pick top Spotify result only, never manufacture track URIs."""
+def find_track(data: dict, requested: str | None = None) -> tuple[str, str]:
+    """Find catalog song matching name + artist, never arbitrarily play top hit.
+
+    A Spotify catalog Search result can prioritize an unrelated remix/cover.
+    When the requested song title/artist are provided, choose only results
+    containing all requested words in the actual title/artist metadata.
+    """
+    candidates = []
     try:
         tracks = data["tracks"]["items"]
         if not isinstance(tracks, list):
@@ -55,10 +61,21 @@ def find_track(data: dict) -> tuple[str, str]:
             name = str(item.get("name") or "").strip()[:120]
             artists = ", ".join(str(a.get("name", "")) for a in item.get("artists", [])[:3])[:160]
             if name and artists:
-                return uri, f"{name} — {artists}"
+                candidates.append((uri, f"{name} — {artists}", name + " " + artists))
     except (TypeError, ValueError, KeyError, AttributeError) as exc:
         raise SpotifyError("Spotify повернув некоректну відповідь пошуку.") from exc
-    raise SpotifyError("У Spotify не вдалося знайти таку композицію.")
+    if not candidates:
+        raise SpotifyError("У Spotify не вдалося знайти таку композицію.")
+    if requested:
+        words = re.findall(r"[^\W_]+", requested.casefold())
+        for uri, label, metadata in candidates:
+            available = set(re.findall(r"[^\W_]+", metadata.casefold()))
+            if words and all(word in available for word in words):
+                return uri, label
+        raise SpotifyError("Spotify знайшов результати, але жоден не збігається "
+                           "з усіма словами назви та виконавця. "
+                           "Скажи точну назву пісні й виконавця.")
+    return candidates[0][:2]
 
 
 class SpotifyConnection:
@@ -261,7 +278,7 @@ class SpotifyConnection:
         # Most searches return immediately; network calls are bounded to avoid
         # waiting a minute when Spotify is offline or throttled.
         found = self._api("GET", "/search?" + params)
-        track_uri, display = find_track(found)
+        track_uri, display = find_track(found, query)
         device_id = self._active_desktop_device()
         self._api("PUT", "/me/player/play?device_id=" + parse.quote(device_id, safe=""),
                   {"uris": [track_uri]})
