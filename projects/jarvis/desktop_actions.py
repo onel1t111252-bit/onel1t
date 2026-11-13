@@ -18,7 +18,7 @@ import subprocess
 import uuid
 import webbrowser
 from window_control import parse_ui, perform_ui
-from spotify_control import spotify_connection
+from spotify_control import spotify_connection, SpotifyError
 from steam_control import (SteamError, find_installed_game, list_installed_games,
                            open_steam_first, launch_installed_game)
 
@@ -155,6 +155,46 @@ def find_installed_app(query: str) -> tuple[str, str] | None:
     return matches[0] if len(matches) == 1 else None
 
 
+def spotify_music_plan(q: str) -> ActionPlan | None:
+    """Fast, deterministic Ukrainian music routing; never send music to Ollama.
+
+    Spotify searches open its official search page without requiring Developer API.
+    Automatic playback is a separate, approval-gated command.
+    """
+    platform = r"(?:spotify|спотіфай|спотифай|спотефай|спотіфаї|спотифаї)"
+    m = re.fullmatch(
+        r"(знайди|пошукай|шукай|відшукай|search|увімкни|включи|відтвори|програй|постав|запусти|play)\s+(.+)",
+        q, flags=re.I)
+    if not m:
+        return None
+    verb, text = m.group(1), m.group(2).strip()
+    original = text
+    explicit = bool(re.search(rf"\b{platform}\b", text, flags=re.I))
+    named_song = bool(re.search(r"^(?:пісню|трек|композицію)\b", text))
+    text = re.sub(rf"^(?:(?:в|у|на|через)\s+)?{platform}\s+", "", text, flags=re.I)
+    text = re.sub(r"^(?:пісню|трек|композицію|музику)\s+", "", text)
+    text = re.sub(rf"\s+(?:(?:в|у|на|через)\s+)?{platform}$", "", text, flags=re.I)
+    text = re.sub(r"^(?:пісню|трек|композицію|музику)\s+", "", text)
+    text = text.strip(" !?.,:;«»\"'")
+    blocked = {"", "звук", "гучність", "музику", "пісню", "трек",
+               "spotify", "спотіфай", "спотифай",
+               "доту", "доту 2", "дота", "дота 2", "комп", "комп'ютер",
+               "браузер", "калькулятор", "мікрофон"}
+    if (not 1 <= len(text) <= 120 or text in blocked or
+            re.match(r"^(?:гру|програму|застосунок|додаток)\b", original)):
+        return None
+    searching = verb in {"знайди", "пошукай", "шукай", "відшукай", "search"}
+    if searching:
+        if not explicit and not named_song:
+            return None  # Keep generic Google search.
+        return ActionPlan("spotify_search", text, "Швидко знайти у Spotify: " + text)
+    if verb in {"запусти"} and not (explicit or named_song):
+        return None  # Steam, games and installed apps take priority.
+    return ActionPlan("spotify_play", text,
+                      "Знайти й відтворити у Spotify: " + text
+                      + " (якщо підключений API; інакше відкрити пошук)", True)
+
+
 def plan_action(raw_text: str) -> ActionPlan | None:
     q = normalize(raw_text)
     # Spoken commands can include acknowledgments before the actual request.
@@ -195,6 +235,9 @@ def plan_action(raw_text: str) -> ActionPlan | None:
              "запусти steam з першим акаунтом", "запусти стім з першим акаунтом"}:
         return ActionPlan("steam_open_first", "",
                           "Запустити Steam з першим ЗБЕРЕЖЕНИМ акаунтом (Steam має бути закритий)", True)
+    fast_music = spotify_music_plan(q)
+    if fast_music:
+        return fast_music
     game_request = re.fullmatch(
         r"(?:запусти|запустити|відкрий|відкрити|увімкни|включи)\s+"
         r"(гру\s+)?(.+?)(?:\s+(?:у|в|через)\s+(steam|стім|стим))?", q)
@@ -228,24 +271,6 @@ def plan_action(raw_text: str) -> ActionPlan | None:
         return ActionPlan("spotify_" + op, "", "Spotify: " + {
             "pause": "пауза", "resume": "продовжити", "next": "наступний трек",
             "previous": "попередній трек"}[op], True)
-    m = re.fullmatch(
-        r"(?:знайди|шукай|пошукай)\s+(?:пісню\s+|трек\s+)?(?:у|в)\s+(?:spotify|спотіфай|спотифай)\s+(.+)", q)
-    if m:
-        title = m.group(1).strip()
-        if 1 <= len(title) <= 120:
-            return ActionPlan("spotify_search", title, "Відкрити пошук Spotify: " + title, True)
-    m = re.fullmatch(r"(?:увімкни|включи|відтвори|постав|запусти)\s+"
-                     r"(?:(?:пісню|трек|композицію)\s+)?(.+)", q)
-    if m:
-        title = m.group(1).strip()
-        title = re.sub(r"\s+(?:в|у|через)\s+(?:spotify|спотіфай|спотифай)$", "", title)
-        if (1 <= len(title) <= 120 and
-                title not in {"доту", "доту 2", "дота", "дота 2",
-                              "звук", "комп'ютер", "пк", "spotify", "спотіфай",
-                              "мікрофон", "браузер", "калькулятор"}):
-            return ActionPlan("spotify_play", title,
-                              "Знайти й надіслати команду відтворення у Spotify: " + title,
-                              True)
     if q in {"допомога", "команди", "help", "що ти вмієш"}:
         return ActionPlan("say", HELP_TEXT, "Список можливостей")
     if q in {"привіт", "вітаю", "hello", "hi"}:
@@ -324,7 +349,20 @@ def run_action(action: ActionPlan) -> str:
     if action.kind == "spotify_connect":
         return spotify_connection.connect(action.target)
     if action.kind == "spotify_play":
-        return spotify_connection.play_track(action.target)
+        if not spotify_connection.connected:
+            url = "https://open.spotify.com/search/" + quote(action.target, safe="")
+            webbrowser.open(url)
+            return ("Відкрив пошук «" + action.target + "» у Spotify. "
+                    "Автоматичне відтворення потребує CONNECT SPOTIFY, Spotify Premium "
+                    "і активного плеєра. Можна вибрати результат вручну.")
+        try:
+            return spotify_connection.play_track(action.target)
+        except SpotifyError as exc:
+            # Fail fast and still deliver a useful search result; never claim playback.
+            url = "https://open.spotify.com/search/" + quote(action.target, safe="")
+            webbrowser.open(url)
+            return ("Не вдалося автоматично відтворити: " + str(exc)
+                    + " Відкрив пошук у Spotify — вибери пісню вручну.")
     if action.kind in {"spotify_pause", "spotify_resume", "spotify_next", "spotify_previous"}:
         return spotify_connection.player_command(action.kind[len("spotify_"):])
     if action.kind == "spotify_search":
