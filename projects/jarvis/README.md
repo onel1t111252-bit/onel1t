@@ -27,6 +27,22 @@ The assistant uses a courteous, calm Ukrainian persona in its local Ollama promp
 
 The voice remains the Ukrainian male **JARVIS DEEP** (modified Ostap), not a recording or imitation of an actor.
 
+## Cinematic JARVIS mode (original, not a film voice clone)
+
+**JARVIS MODE: ON** is the default. The app now has a visible mode switch (**ON/OFF**) that persists in `settings.json`. It enables:
+
+- Calm Ukrainian `сер`-style conversations via the local Ollama system prompt, plus safe deterministic replies to `Джарвіс, ти тут?`, `дякую`, `доброго ранку` and similar short phrases.
+- Short, truthful spoken acknowledgments for known Windows commands. The screen still shows the detailed result; speech never falsely claims Steam completed a game launch.
+- A brief spoken startup greeting when voice is enabled, volume is above 0, and JARVIS MODE is ON. This sends a fixed greeting text to Microsoft's online voice service if JARVIS DEEP is selected; it does not turn on the microphone.
+- The rotating reactor changes indicators between **STANDBY**, **LISTENING**, **SPEAKING** and **PROCESSING**. These labels reflect actual local program state, not a hardware scan.
+- `статус системи` or `статус джарвіса`: reports the last observed Ollama status and local mic/voice settings without claiming to inspect all Windows hardware.
+
+Turning **JARVIS MODE: OFF** switches AI replies to a neutral Ukrainian persona. It also clears the in-memory chat context to avoid mixing conversational styles.
+
+The voice is an original assistant-style Ukrainian neural voice with a lowered pitch. **It is not the exact copyrighted dialogue or the actor's voice from the films.** Exact sounding and prosody remain subject to the installed Windows audio devices and the online TTS service.
+
+For privacy, dictated input, private file paths and foreground window titles are not read aloud by online TTS for UI-control actions. When a sensitive action fails, TTS uses a generic error announcement; details appear on screen.
+
 ## Separate voice volume control
 
 The **VOICE VOLUME** slider (0–100%) changes the playback volume of the **assistant's voice only**. It does **not** modify overall Windows speaker volume, music, Steam, games or other apps. The setting is stored locally in `settings.json` and reloaded on next launch. It takes effect for the **next spoken reply**, including the **TEST VOICE** button.
