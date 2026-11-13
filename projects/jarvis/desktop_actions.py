@@ -259,6 +259,9 @@ def spotify_music_plan(q: str) -> ActionPlan | None:
     named_song = bool(re.search(r"^(?:пісню|трек|композицію)\b", text))
     text = re.sub(rf"^(?:(?:в|у|на|через)\s+)?{platform}\s+", "", text, flags=re.I)
     text = re.sub(r"^(?:пісню|трек|композицію|музику)\s+", "", text)
+    # STT often puts the platform AFTER "пісню": "увімкни пісню
+    # в Spotify Numb". Strip that second position as well.
+    text = re.sub(rf"^(?:(?:в|у|на|через)\s+)?{platform}\s+", "", text, flags=re.I)
     text = re.sub(rf"\s+(?:(?:в|у|на|через)\s+)?{platform}$", "", text, flags=re.I)
     text = re.sub(r"^(?:пісню|трек|композицію|музику)\s+", "", text)
     text = re.sub(r"\s+будь ласка$", "", text)
