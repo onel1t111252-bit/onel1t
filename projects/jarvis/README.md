@@ -1,87 +1,83 @@
-# ONEL1T JARVIS 4.3 — Windows 11 Desktop Assistant
+# ONEL1T JARVIS 3.0 — Windows 11 Desktop Assistant
 
-An owner-controlled voice assistant with local Ollama, Ukrainian voice input, a sci-fi HUD and **visible, approval-gated** control of Windows programs. This is a prototype: **not a fully autonomous agent**, not an administrator and not a remote-control service.
+An owner-controlled Ukrainian voice assistant with local Ollama AI, a resizable sci-fi HUD, and visible, **approval-gated** Windows automation. It is a prototype, not an administrator, an unrestricted autonomous agent, or remote-control software.
 
 ![JARVIS HUD concept](cover.svg)
 
-## 📦 Download JARVIS 4.3
+## Download only JARVIS
 
-**[Download standalone JARVIS 4.3 ZIP](https://github.com/onel1t111252-bit/onel1t/raw/refs/heads/main/projects/jarvis/JARVIS_4_3_Windows11.zip)**
+**[Download JARVIS 3.0 for Windows 11 (ZIP)](https://github.com/onel1t111252-bit/onel1t/raw/refs/heads/main/projects/jarvis/JARVIS_3_0_Windows11.zip)**
 
-The archive contains the assistant, modules, setup scripts and tests. It does **not** include a Python runtime, Ollama weights, Steam, credentials or private user data.
+The archive contains Python sources, the Ollama Modelfile, installation scripts, dependencies and tests. It does not include Python, installed Ollama models, Steam, private files or credentials.
 
-## Quick start — Windows 11 / Python 3.12
+## Install (Windows 11 / Python 3.12)
 
-1. Install [Python 3.12](https://www.python.org/) and [Ollama](https://ollama.com/download).
-2. Download and extract the **4.3 ZIP** to a normal user folder.
-3. Run **INSTALL_AI.bat** only if your local Ollama model \`jarvis\` does not already exist (downloads model data).
-4. Run **INSTALL_VOICE.bat** to install speech, UI and audio dependencies.
-5. Run **START_JARVIS.bat**.
-6. Choose **CHECK AI** and **TEST VOICE**. If voice is unavailable, JARVIS shows a diagnostic.
-7. Voice activation **HANDS-FREE is OFF by default**. You may enable it manually after seeing the online microphone notice, or use the microphone button.
+1. Install Python 3.12 and [Ollama](https://ollama.com/download).
+2. Download and extract the ZIP. Start JARVIS from that extracted folder.
+3. If Ollama does not already contain a model called `jarvis`, run `INSTALL_AI.bat`. It may download a large Qwen model. Existing models are not overwritten.
+4. Run `INSTALL_VOICE.bat` once to install audio and foreground UI dependencies.
+5. Run `START_JARVIS.bat`, click **CHECK AI**, then **TEST VOICE**.
+6. JARVIS opens as a **normal, resizable window**, not fullscreen. Use **WINDOW: COMPACT / LARGE** to change its preset size; resizing by dragging a window edge is also supported.
 
-Without Ollama, the local AI chat is unavailable, but the fixed command parser still supports defined actions.
+Your old settings from a previous extracted folder are not copied automatically; you can change volume and window size in the app. If AI chat is unavailable, the fixed, explicitly defined local commands still work.
 
-## Supported commands
+## More natural Ukrainian replies — «Так, сер»
 
-| Example Ukrainian command | Result |
+The assistant uses a courteous, calm Ukrainian persona in its local Ollama prompt. Short command acknowledgements use **«Так, сер»**, **«Є, сер»** and, if execution fails, **«Перепрошую, сер»**. No text claims an app opened or a game started unless JARVIS has actually invoked the corresponding action; sending a Steam launch URI does **not** prove the game started.
+
+The voice remains the Ukrainian male **JARVIS DEEP** (modified Ostap), not a recording or imitation of an actor.
+
+## Separate voice volume control
+
+The **VOICE VOLUME** slider (0–100%) changes the playback volume of the **assistant's voice only**. It does **not** modify overall Windows speaker volume, music, Steam, games or other apps. The setting is stored locally in `settings.json` and reloaded on next launch. It takes effect for the **next spoken reply**, including the **TEST VOICE** button.
+
+The slider applies to online Microsoft Ukrainian voice synthesis (played with pygame) and to the optional local Windows SAPI mode. If an approved Ukrainian male SAPI voice is not installed, JARVIS reports an error rather than silently switching to English or a different gender.
+
+## Sample commands
+
+| Spoken or typed command | Action |
 | --- | --- |
-| \`Джарвіс, відкрий Steam\` | Open Steam through its registered URI |
-| \`Гаразд, а відкрий Steam і запусти Доту\` | Send the fixed \`steam://run/570\` link for Dota 2 |
-| \`Джарвіс, відкрий Discord\` | Look up an installed Start-menu app; request approval |
-| \`покажи відкриті вікна\` | Show up to 15 visible window titles locally |
-| \`перемкнись на Блокнот\` | Request approval, activate the uniquely matching visible window |
-| \`надрукуй Привіт, Україно!\` | Request approval; type Unicode without using the clipboard |
-| \`скопіюй\`, \`встав\`, \`виділи все\` | Request approval; standard foreground shortcuts |
-| \`нова вкладка\`, \`збережи\` | Request approval; foreground shortcut |
-| \`прокрути вниз\`, \`прокрути вгору\` | Request approval; foreground scrolling |
-| \`клацни мишею\` | Request approval; **one** click at the cursor's current position |
-| \`відкрий блокнот, потім надрукуй Привіт\` | Preview and approve the **two steps separately** |
-| \`зроби скріншот\`, \`створи нотатку ...\` | Request approval before saving locally |
+| `Джарвіс, відкрий Steam і запусти Доту` | Uses fixed `steam://run/570` URI |
+| `відкрий Discord` | Finds a Start-menu program, asks approval |
+| `покажи відкриті вікна` | Shows visible window titles locally |
+| `перемкнись на Блокнот` | Requests permission before focusing a visible window |
+| `надрукуй Привіт, Україно!` | Requests permission before Unicode typing |
+| `скопіюй`, `встав`, `виділи все`, `збережи` | Safe foreground keyboard shortcuts after approval |
+| `прокрути вниз`, `клацни мишею` | Scroll / one click at current cursor after approval |
+| `відкрий блокнот, потім надрукуй Привіт` | Up to four explicit steps, each approved separately |
 
-Multi-step parsing is conservative: at most **4 explicit steps**. Text entry may only be the last step. Commands that are not explicitly supported never become free-form system commands. The preexisting Steam+Dota combination remains a single fixed URI action.
+## Safety, privacy and limitations
 
-## Permissions and UI control
+- JARVIS runs **locally**, only under your signed-in Windows user permissions. It cannot bypass system privilege prompts.
+- HANDS-FREE is **off by default**. If enabled, microphone audio is sent to Google's online speech recognizer. Press-to-talk also uses online recognition.
+- The default neural voice sends the spoken **text** to Microsoft's online voice service. The `windows` voice profile uses a local Windows voice if an Ukrainian male SAPI voice is installed.
+- Ollama AI chat runs on `127.0.0.1:11434`.
+- Dictated text and window titles are **not** sent to speech synthesis for UI-typing/window-list actions. Action logs record action type and success/error, not typed text.
+- Every foreground click, typing, key, window switch or multi-step operation requires visible approval. **STOP PLAN** cancels pending steps but cannot reliably interrupt an action already executing.
+- Password entry, unreviewed scripts, remote access, unrestricted shell execution and system-privilege escalation are deliberately unsupported.
+- Avoid payments, password fields, private chats and computers managed by an employer without permission.
 
-- JARVIS operates only on the **local, logged-in Windows desktop** within the user's existing permissions.
-- An approval panel shows the exact action. Every **typing, mouse, keyboard, window-focus and multi-step** action requires a click on **CONFIRM**. Each step requires a fresh click.
-- After approving typing, clicking or shortcuts, there is a **2.5 second delay** to focus the intended app. JARVIS will not send keys to its own window, protected system dialogs or known terminal windows.
-- **STOP PLAN** cancels unstarted steps; it **cannot guarantee interruption** of an action already running. PyAutoGUI's upper-left-screen-corner fail-safe is enabled.
-- The click command uses the current cursor only. There is no invisible targeting, coordinate scripting, arbitrary shell, code execution, remote desktop access, admin escalation or autonomous file deletion.
-- Windows may deny focus switching; report and switch manually. Some apps block simulated input; an action being sent is **not proof** that the app performed it.
-- Local \`actions.log\` records timestamps, action **types** and success/error, **not dictated text**.
+## Tests
 
-**Do not use this preview for passwords, payments, private messages, privileged tasks or on managed computers without permission.** Voice recognition can misunderstand words; review the confirmation panel before clicking.
+Run from the extracted folder:
 
-## Voice and privacy
-
-- **Input:** push-to-talk or explicitly enabled hands-free uses Google online speech recognition (\`uk-UA\`), transmitting the recorded fragment to Google.
-- **Output:** default **JARVIS DEEP** is an adjusted Ukrainian \`uk-UA-OstapNeural\` male voice via Microsoft's online speech service. Text spoken by this service is sent to Microsoft.
-- Optional **Windows SAPI** mode only uses an installed **Ukrainian male** SAPI voice. If none exists, it reports that fact and **does not silently switch to English or a female voice**.
-- Local AI requests go to Ollama on \`127.0.0.1:11434\`. There is no always-on remote administrator and no hidden listening mode.
-- JARVIS does not send typed text or window listings to online TTS in 4.3; commands spoken into the microphone are still processed by the selected speech input provider.
-- Clicking the voice toggle disables reply audio. Hands-free resets to **OFF** on every program start.
-
-## Tests and limitations
-
-From the extracted folder:
-
-\`\`\`powershell
+```powershell
+python -m py_compile jarvis.py desktop_actions.py window_control.py command_sequences.py assistant_persona.py voice_engine.py
 python -m unittest discover -p "test_*.py" -v
-python -m py_compile jarvis.py desktop_actions.py window_control.py command_sequences.py voice_engine.py
-\`\`\`
+```
 
-These tests exercise command parsing, consent metadata, URI restriction, window command parsing and scenario splitting. **They cannot validate the Windows mouse, microphone, Steam/Dota launch or voice sound** without a Windows PC with the relevant apps installed. Check Windows behavior manually before trusting automation.
+The repository contains a GitHub Actions workflow testing Python syntax and pure logic on Windows and Ubuntu. **CI does not verify live microphone recognition, actual voice sound, Tk visual layout on a physical screen, Windows foreground mouse/keyboard, or Steam/Dota installation.** Test those locally when you have access to your PC.
 
-## Modules
+## Source overview
 
-- \`jarvis.py\`: HUD, chat, voice input, confirmations, step queue, action log.
-- \`desktop_actions.py\`: fixed command router, safe Windows shortcuts/Steam URIs.
-- \`window_control.py\`: enumerates titled windows, foreground mouse/keyboard, Unicode typing.
-- \`command_sequences.py\`: conservative Ukrainian multi-command parser.
-- \`voice_engine.py\`: diagnostic-first Ukrainian TTS.
-- \`test_*.py\`: automated parsing and permission tests.
+- `jarvis.py` — UI, local chat, settings, actions and approval flow
+- `voice_engine.py` — Ukrainian speech, 0–100% playback level
+- `assistant_persona.py` — concise Ukrainian sir-style action acknowledgements
+- `desktop_actions.py`, `window_control.py` — allowlisted local desktop actions
+- `command_sequences.py` — fixed multi-command splitter
+- `Modelfile` — initial Ollama assistant persona
+- `test_*.py` — command, permission, voice level and persona tests
 
 ## License
 
-MIT. Independent fan-inspired interface, not affiliated with Marvel, Steam, Valve or other rights holders.
+MIT. Independent fan-inspired interface; not affiliated with Marvel, Valve or other rights holders.
