@@ -6,6 +6,7 @@ from desktop_actions import plan_action, run_action, ActionPlan
 from spotify_control import (SpotifyConnection, SpotifyError, find_track,
                              pkce_pair, valid_client_id, TRACK_URI_PATTERN)
 from assistant_persona import concise_speech
+from command_sequences import split_sequence
 
 
 class SpotifyPlanTests(unittest.TestCase):
@@ -20,6 +21,10 @@ class SpotifyPlanTests(unittest.TestCase):
         plan = plan_action("знайди в Spotify Numb")
         self.assertEqual(plan.kind, "spotify_search")
         self.assertTrue(plan.needs_approval)
+
+    def test_combined_steam_spotify_commands(self):
+        pieces = split_sequence("Джарвіс, відкрий Spotify і увімкни Numb")
+        self.assertEqual(pieces, ["відкрий Spotify", "увімкни Numb"])
 
     def test_media_actions(self):
         for command, kind in (
