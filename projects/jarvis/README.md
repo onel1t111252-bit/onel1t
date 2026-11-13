@@ -14,12 +14,64 @@ The archive contains Python sources, the Ollama Modelfile, installation scripts,
 
 1. Install Python 3.12 and [Ollama](https://ollama.com/download).
 2. Download and extract the ZIP. Start JARVIS from that extracted folder.
-3. If Ollama does not already contain a model called `jarvis`, run `INSTALL_AI.bat`. It may download a large Qwen model. Existing models are not overwritten.
+3. Run **`INSTALL_AI.bat`** to install the newer free local **`qwen3.5:4b`** model (~3.3–4 GB download). This preserves your old `jarvis` model. If you have plenty of RAM/VRAM and want a stronger option, separately run **`UPGRADE_AI_9B.bat`** (optional; ~6.6–7.6 GB download).
 4. Run `INSTALL_VOICE.bat` once to install audio and foreground UI dependencies.
 5. Run `START_JARVIS.bat`, click **CHECK AI**, then **TEST VOICE**.
 6. JARVIS opens as a **normal, resizable window**, not fullscreen. Use **WINDOW: COMPACT / LARGE** to change its preset size; resizing by dragging a window edge is also supported.
 
 Your old settings from a previous extracted folder are not copied automatically; you can change volume and window size in the app. If AI chat is unavailable, the fixed, explicitly defined local commands still work.
+
+## Smarter local AI: Qwen3.5 + guarded command understanding
+
+The older build used a locally created \`jarvis\` model based on
+\`qwen3:4b-instruct\`, and **only used Ollama for ordinary chat**. Spotify,
+YouTube, Steam and Windows actions used fixed phrase patterns. Swapping the
+chat model alone could not fix command recognition.
+
+This update does two things:
+1. **New free local brain:** default \`qwen3.5:4b\` through Ollama, with
+   optional \`qwen3.5:9b\` if your computer has sufficient RAM/VRAM.
+   The old model \`jarvis\` remains selectable as a fallback. Click the
+   **AI: QWEN3.5:4B** button under *INTELLIGENCE* to cycle between the
+   4B, 9B and old \`jarvis\` profiles. The choice is saved to local
+   \`settings.json\`; **CHECK AI** reports whether the chosen model is
+   installed and Ollama is running. The button does not download a model.
+2. **Guarded intent inference:** JARVIS still prioritizes instant,
+   hand-written command routes. If a natural-language request is not
+   recognized, it can ask local Ollama to interpret an explicit request
+   to **play a named song on Spotify** or **search YouTube videos**.
+   Structured JSON output is validated against the original words,
+   and **only two allowlisted actions** are permitted. The model cannot
+   produce shell commands, arbitrary website URLs, keystrokes, file edits
+   or other system actions. It cannot autonomously install software, log
+   into apps or bypass their permissions. Missing/slow/offline Ollama simply
+   skips the AI router.
+
+Try a natural request such as:
+- \`Я хочу послухати пісню Jingle Bells у Spotify\`
+- \`Можеш пошукати відео про Python?\`
+- \`Could you play the song Jane! The Long Faces on Spotify?\`
+
+**Important:** Google's \`uk-UA\` speech recognizer still transcribes
+microphone audio before the local LLM sees it. If it hears **Jan** instead
+of **Jane!**, a stronger model has no reliable way to reconstruct what was
+actually said. For short or ambiguous music titles, type the title or use
+the **PLAY IN SPOTIFY** button. Similarly, no language model can guarantee
+Spotify will actually play the correct track if its app-specific controls
+are not responding. The voice, AI inference and Spotify app controls are
+different systems; test them separately.
+
+**Cost and privacy:** Qwen3.5 through a local Ollama installation is free
+to run (uses your PC resources), and no paid ChatGPT/OpenAI API key is
+required. Only optional voice STUDIO uses its own paid API. The new intent
+router sends plain text to **localhost Ollama only**; regular Google
+speech recognition and Microsoft neural speech retain the existing online
+privacy characteristics. Downloading 9B does not change Windows or
+Spotify account permissions.
+
+Official model reference: https://ollama.com/library/qwen3.5
+Official Ollama structured outputs reference:
+https://docs.ollama.com/capabilities/structured-outputs
 
 ## HANDS-FREE and zero-click commands
 

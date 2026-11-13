@@ -35,13 +35,13 @@ jobs:
           names = [
               "README.md", "LICENSE", "Modelfile", "cover.svg",
               "jarvis.py", "desktop_actions.py", "window_control.py",
-              "command_sequences.py", "assistant_persona.py", "voice_engine.py",
+              "command_sequences.py", "assistant_persona.py", "ai_router.py", "voice_engine.py",
               "spotify_control.py", "spotify_desktop.py", "steam_control.py", "requirements.txt",
-              "START_JARVIS.bat", "INSTALL_VOICE.bat", "INSTALL_AI.bat",
+              "START_JARVIS.bat", "INSTALL_VOICE.bat", "INSTALL_AI.bat", "UPGRADE_AI_9B.bat",
               "test_commands.py", "test_window_control.py", "test_voice_engine.py",
               "test_ui_v43.py", "test_persona.py", "test_spotify_control.py",
               "test_steam_control.py", "test_handsfree.py",
-              "test_spotify_desktop.py",
+              "test_spotify_desktop.py", "test_ai_router.py",
           ]
           missing = [name for name in names if not (root / name).is_file()]
           if missing:
