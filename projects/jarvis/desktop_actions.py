@@ -156,8 +156,8 @@ def plan_action(raw_text: str) -> ActionPlan | None:
     q = re.sub(r"\s*[,;]\s*", " ", q).strip()
     if not q:
         return None
-    original_ui = re.sub(r"^(?:(?:джарвісе|джарвіс|джарвис|jarvis)[\\s,!:;.-]+)", "", raw_text.strip(), flags=re.I)
-    original_ui = re.sub(r"^(?:(?:гаразд|окей|добре|ну|слухай)[,\\s]+)+(?:а\\s+)?", "", original_ui, flags=re.I)
+    original_ui = re.sub(r"^(?:(?:джарвісе|джарвіс|джарвис|jarvis)[\s,!:;.-]+)", "", raw_text.strip(), flags=re.I)
+    original_ui = re.sub(r"^(?:(?:гаразд|окей|добре|ну|слухай)[,\s]+)+(?:а\s+)?", "", original_ui, flags=re.I)
     ui = parse_ui(original_ui)
     if ui:
         kind, payload, preview = ui
