@@ -31,7 +31,7 @@ class ActionPlan:
     needs_approval: bool = False
 
 
-APPROVAL_REQUIRED = {"note", "screenshot", "external_url", "installed_app", "user_file", "ui_hotkey", "ui_type", "ui_scroll", "ui_click", "ui_focus", "spotify_connect", "spotify_play", "spotify_pause", "spotify_resume", "spotify_next", "spotify_previous", "spotify_search", "steam_open_first", "steam_game"}
+APPROVAL_REQUIRED = {"note", "screenshot", "external_url", "installed_app", "user_file", "ui_hotkey", "ui_type", "ui_scroll", "ui_click", "ui_focus", "spotify_connect", "spotify_play", "spotify_pause", "spotify_resume", "spotify_next", "spotify_previous", "steam_open_first", "steam_game"}
 
 HELP_TEXT = (
     "Я можу відкрити блокнот, калькулятор, Paint, провідник, диспетчер задач, "
