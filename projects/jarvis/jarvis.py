@@ -149,7 +149,7 @@ class JarvisApp:
             self.window_mode = "compact"
         self.voice_profile = self.settings.get("voice_profile", VOICE_PROFILES[0])
         # One-time upgrade of the old, heavily pitched default.
-        if (self.voice_profile == "jarvis-deep"
+        if (self.voice_profile in {"jarvis-deep", "uk-UA-PolinaNeural"}
                 and not self.settings.get("voice_upgrade_v4", False)):
             self.voice_profile = "jarvis-cinematic"
         if self.voice_profile not in VOICE_PROFILES:
