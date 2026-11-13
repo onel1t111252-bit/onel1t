@@ -19,7 +19,7 @@ import uuid
 import webbrowser
 from window_control import parse_ui, perform_ui
 from spotify_control import spotify_connection, SpotifyError
-from spotify_desktop import play_in_desktop, SpotifyDesktopError
+from spotify_desktop import play_in_desktop, spotify_desktop_status, SpotifyDesktopError
 from steam_control import (SteamError, find_installed_game, list_installed_games,
                            open_steam_first, launch_installed_game)
 
@@ -41,7 +41,7 @@ APPROVAL_REQUIRED = {"note", "screenshot", "external_url", "installed_app", "use
 DIRECT_EXECUTION_KINDS = frozenset({
     "app", "folder", "website", "settings", "installed_app",
     "steam_open_first", "steam_game", "steam_list",
-    "spotify_search", "spotify_play", "spotify_pause",
+    "spotify_search", "spotify_play", "spotify_pause", "spotify_status",
     "spotify_resume", "spotify_next", "spotify_previous",
     "say", "volume", "ui_windows", "youtube_search",
 })
@@ -292,6 +292,10 @@ def plan_action(raw_text: str) -> ActionPlan | None:
     q = re.sub(r"\s*[,;]\s*", " ", q).strip()
     if not q:
         return None
+    if q in {"статус spotify", "статус спотіфай", "статус спотифай",
+             "перевір spotify", "перевір спотіфай",
+             "діагностика spotify", "діагностика спотіфай"}:
+        return ActionPlan("spotify_status", "", "Перевірити встановлений Spotify")
     original_ui = re.sub(r"^(?:(?:джарвісе|джарвіс|джарвис|jarvis)[\s,!:;.-]+)", "", raw_text.strip(), flags=re.I)
     original_ui = re.sub(r"^(?:(?:гаразд|окей|добре|ну|слухай)[,\s]+)+(?:а\s+)?", "", original_ui, flags=re.I)
     ui = parse_ui(original_ui)
@@ -465,6 +469,8 @@ def run_action(action: ActionPlan) -> str:
         return open_steam_first()
     if action.kind == "steam_game":
         return launch_installed_game(action.target)
+    if action.kind == "spotify_status":
+        return spotify_desktop_status()
     if action.kind == "spotify_connect":
         return spotify_connection.connect(action.target)
     if action.kind == "spotify_play":

@@ -258,6 +258,9 @@ class JarvisApp:
 
         self._button(side, "♫  PLAY IN SPOTIFY", self.search_spotify, bg=PANEL).pack(
             fill="x", padx=16, pady=3)
+        self._button(side, "♫  SPOTIFY STATUS",
+                     lambda: self.submit("статус spotify"), bg=PANEL).pack(
+            fill="x", padx=16, pady=3)
         self._label(side, "DIRECT COMMANDS  /  PROTECTED CHANGES", size=8, color=MUTED, mono=True,
                     wraplength=232, justify="left").pack(side="bottom", padx=18, pady=17)
 

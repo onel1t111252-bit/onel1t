@@ -152,6 +152,17 @@ class SpotifyApiTests(unittest.TestCase):
         ]}}
         self.assertEqual(find_track(data), (correct, "Numb — Linkin Park"))
 
+    def test_find_track_matches_requested_title_and_artist_not_top_hit(self):
+        wrong = "spotify:track:" + "b" * 22
+        right = "spotify:track:" + "c" * 22
+        data = {"tracks": {"items": [
+            {"uri": wrong, "name": "In The End", "artists": [{"name": "Linkin Park"}]},
+            {"uri": right, "name": "Numb", "artists": [{"name": "Linkin Park"}]}
+        ]}}
+        self.assertEqual(find_track(data, "Linkin Park Numb")[0], right)
+        with self.assertRaisesRegex(SpotifyError, "жоден не збігається"):
+            find_track(data, "Nirvana Something In The Way")
+
     def test_rejects_invalid_results(self):
         with self.assertRaises(SpotifyError):
             find_track({"tracks": {"items": []}})
