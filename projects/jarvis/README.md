@@ -62,6 +62,36 @@ The slider applies to online Microsoft Ukrainian voice synthesis (played with py
 | `прокрути вниз`, `клацни мишею` | Scroll / one click at current cursor after approval |
 | `відкрий блокнот, потім надрукуй Привіт` | Up to four explicit steps, each approved separately |
 
+## 🎵 Spotify — opt-in voice music control (new)
+
+JARVIS now understands these commands:
+
+| Command | Result |
+| --- | --- |
+| `Джарвіс, відкрий Spotify` | Open Spotify, if discoverable in the Windows Start menu |
+| `Джарвіс, увімкни Linkin Park Numb` | Search Spotify and request playback of the top valid track on the **currently active** player |
+| `відтвори пісню Numb в Spotify` | Same explicit, owner-approved Spotify music command |
+| `знайди в Spotify Numb` | Open a Spotify search page **without requiring an API connection**; select a track manually |
+| `наступна пісня`, `попередній трек` | Spotify next/previous media control |
+| `постав музику на паузу`, `продовж музику` | Spotify pause/resume media control |
+
+To control playback, you must **personally connect your Spotify account** through its official browser consent screen. JARVIS cannot log into your account for you and does not ask for your password.
+
+**Spotify setup (at home):**
+
+1. You need an eligible Spotify account with **Spotify Premium** for playback, and a Spotify Developer app with a public **Client ID**. Spotify development-mode access has additional account and user limits as of February 2026; follow Spotify's eligibility rules. Never share a Client Secret.
+2. In your Spotify Developer Dashboard, add the redirect URI **`http://127.0.0.1:8765/callback`** exactly.
+3. Open Spotify on your PC and **activate playback on the device you want to control** (you may need to manually play something first). JARVIS deliberately does not transfer playback to another person's device.
+4. Click **♫ CONNECT SPOTIFY** in JARVIS, enter your **public Client ID**, review the on-screen approval, then grant the two Spotify permissions in the official Spotify browser page.
+5. Now try the voice command `Джарвіс, увімкни Numb`. Review the command in JARVIS and press CONFIRM.
+6. Spotify may accept playback commands asynchronously; JARVIS reports **"command sent"**, not that the audio definitely started.
+
+**Privacy:** OAuth uses authorization-code **PKCE**, a fixed **127.0.0.1** loopback callback and a random anti-forgery state. The temporary access/refresh tokens exist **only in JARVIS process memory** and disappear when it closes. Only the **public Client ID** is saved in local `settings.json`. There is no Client Secret, embedded Spotify password, credential harvesting or hidden API connection. You must reconnect when starting a fresh JARVIS process. Search queries go to Spotify only after action approval; player searches through Spotify API are not sent to the assistant AI model for autonomous use. The local detailed result may include the track title; spoken online replies use a generic confirmation instead.
+
+**Limitations:** Playback depends on Spotify account eligibility, Premium, API quotas and an active supported Spotify Connect device. The top catalog result can be an alternate version/remaster, so verify the track in Spotify. A spoken song command cannot guarantee that Spotify started playback. When login/Premium is unavailable, use `знайди в Spotify ...` for manual search.
+
+**Official Spotify references:** https://developer.spotify.com/documentation/web-api/tutorials/code-pkce-flow , https://developer.spotify.com/documentation/web-api/reference/start-a-users-playback , https://developer.spotify.com/documentation/web-api/tutorials/february-2026-migration-guide
+
 ## Safety, privacy and limitations
 
 - JARVIS runs **locally**, only under your signed-in Windows user permissions. It cannot bypass system privilege prompts.
@@ -78,7 +108,7 @@ The slider applies to online Microsoft Ukrainian voice synthesis (played with py
 Run from the extracted folder:
 
 ```powershell
-python -m py_compile jarvis.py desktop_actions.py window_control.py command_sequences.py assistant_persona.py voice_engine.py
+python -m py_compile jarvis.py desktop_actions.py window_control.py command_sequences.py assistant_persona.py voice_engine.py spotify_control.py
 python -m unittest discover -p "test_*.py" -v
 ```
 
@@ -91,6 +121,7 @@ The repository contains a GitHub Actions workflow testing Python syntax and pure
 - `assistant_persona.py` — concise Ukrainian sir-style action acknowledgements
 - `desktop_actions.py`, `window_control.py` — allowlisted local desktop actions
 - `command_sequences.py` — fixed multi-command splitter
+- `spotify_control.py` — optional user-authorized Spotify PKCE session and playback API
 - `Modelfile` — initial Ollama assistant persona
 - `test_*.py` — command, permission, voice level and persona tests
 
