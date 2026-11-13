@@ -249,6 +249,8 @@ class JarvisApp:
             self._button(side, title, lambda cmd=cmd: self.submit(cmd), bg=PANEL, pad=(11, 6)).pack(
                 fill="x", padx=16, pady=3)
 
+        self._button(side, "♫  FIND SONG", self.search_spotify, bg=PANEL).pack(
+            fill="x", padx=16, pady=3)
         self._label(side, "SAFE ACTIONS  /  CONSENT FIRST", size=8, color=MUTED, mono=True,
                     wraplength=232, justify="left").pack(side="bottom", padx=18, pady=17)
 
@@ -286,7 +288,6 @@ class JarvisApp:
         controls.pack(fill="x", padx=22, pady=(0, 8))
         self._button(controls, "▶  TEST VOICE", self.test_voice, bg=PANEL_2).pack(side="left")
         self._button(controls, "■  STOP PLAN", self.stop_plan, bg="#4e3046").pack(side="left", padx=(8, 0))
-        self._button(controls, "♫  FIND SONG", self.search_spotify, bg=PANEL_2).pack(side="left", padx=(8, 0))
         self.spotify_btn = self._button(controls, "♫  CONNECT SPOTIFY", self.connect_spotify, bg=PANEL_2)
         self.spotify_btn.pack(side="left", padx=(8, 0))
         self.persona_btn = self._button(controls, "◈  JARVIS MODE: " + ("ON" if self.cinematic_mode else "OFF"),
