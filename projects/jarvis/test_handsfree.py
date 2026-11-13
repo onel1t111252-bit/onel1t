@@ -63,6 +63,24 @@ class HandsFreeDispatchTests(unittest.TestCase):
         confirm.assert_not_called()
         app.start_answer.assert_called_once_with("", action)
 
+    def test_youtube_compound_command_is_not_split_into_home_and_search(self):
+        from command_sequences import split_sequence
+        sentence = "Джарвіс, відкрий ютуб і знайди відео по програмуванню"
+        self.assertEqual(split_sequence(sentence),
+                         ["відкрий ютуб", "знайди відео по програмуванню"])
+        app = build_app()
+        app.handsfree.clear()
+        app.cinematic_mode = False
+        app.steps = []
+        app.dispatch_action = MagicMock()
+        app.start_answer = MagicMock()
+        app.submit(sentence, via_voice=True)
+        app.dispatch_action.assert_called_once()
+        planned = app.dispatch_action.call_args.args[0]
+        self.assertEqual(planned.kind, "youtube_search")
+        self.assertEqual(planned.target, "програмуванню")
+        app.start_answer.assert_not_called()
+
     def test_sensitive_typing_requires_explicit_yes_no(self):
         app = build_app()
         app.start_answer = MagicMock()
@@ -107,6 +125,24 @@ def build_app() -> jarvis.JarvisApp:
 
 
 class HandsFreeMicrophoneTests(unittest.TestCase):
+    def test_longer_voice_phrase_is_not_cut_off_at_first_clause(self):
+        app = build_app()
+        recognizer = MagicMock()
+        recognizer.energy_threshold = 270.0
+        recognizer.recognize_google.return_value = (
+            "Джарвіс, відкрий ютуб і знайди відео по програмуванню"
+        )
+        fake_sr = types.ModuleType("speech_recognition")
+        fake_sr.Recognizer = lambda: recognizer
+        fake_sr.Microphone = lambda device_index=None: _FakeMic()
+        with patch.dict(sys.modules, {"speech_recognition": fake_sr}):
+            app.listen_once(True)
+        self.assertEqual(recognizer.pause_threshold, 1.4)
+        self.assertEqual(recognizer.non_speaking_duration, 0.5)
+        self.assertEqual(recognizer.listen.call_args.kwargs["phrase_time_limit"], 16)
+        self.assertIn(("heard", "відкрий ютуб і знайди відео по програмуванню"),
+                      list(app.queue.queue))
+
     def test_recognized_command_emitted_without_button_click(self):
         app = build_app()
         recognizer = MagicMock()
