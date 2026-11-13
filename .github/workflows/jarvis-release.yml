@@ -40,7 +40,7 @@ jobs:
               "START_JARVIS.bat", "INSTALL_VOICE.bat", "INSTALL_AI.bat",
               "test_commands.py", "test_window_control.py", "test_voice_engine.py",
               "test_ui_v43.py", "test_persona.py", "test_spotify_control.py",
-              "test_steam_control.py",
+              "test_steam_control.py", "test_handsfree.py",
           ]
           missing = [name for name in names if not (root / name).is_file()]
           if missing:
@@ -67,7 +67,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add projects/jarvis/JARVIS_3_0_Windows11.zip
           if ! git diff --cached --quiet; then
-            git commit -m "Update JARVIS 3.0 Windows ZIP for Steam library controls"
+            git commit -m "Update JARVIS 3.0 Windows ZIP for latest voice and desktop controls"
             git push origin HEAD:main
           else
             echo "JARVIS ZIP already current."
