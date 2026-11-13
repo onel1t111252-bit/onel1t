@@ -51,6 +51,31 @@ class HandsFreePolicyTests(unittest.TestCase):
         self.assertFalse(can_execute_directly(None))
 
 
+class HandsFreeDispatchTests(unittest.TestCase):
+    def test_steam_opens_without_confirm_dialog(self):
+        app = build_app()
+        app.start_answer = MagicMock()
+        app.set_status = MagicMock()
+        app.root = MagicMock()
+        action = plan_action("відкрий Steam")
+        with patch.object(jarvis.messagebox, "askyesno") as confirm:
+            app.dispatch_action(action)
+        confirm.assert_not_called()
+        app.start_answer.assert_called_once_with("", action)
+
+    def test_sensitive_typing_requires_explicit_yes_no(self):
+        app = build_app()
+        app.start_answer = MagicMock()
+        app.set_status = MagicMock()
+        app.root = MagicMock()
+        action = plan_action("надрукуй Привіт")
+        with patch.object(jarvis.messagebox, "askyesno", return_value=True) as confirm:
+            app.dispatch_action(action)
+        confirm.assert_called_once()
+        app.start_answer.assert_called_once_with("", action)
+        self.assertIsNone(app.pending)
+
+
 class _FakeMic:
     def __enter__(self):
         return self
