@@ -133,8 +133,11 @@ class HandsFreeMicrophoneTests(unittest.TestCase):
         app = build_app()
         recognizer = MagicMock()
         WaitTimeoutError = type("WaitTimeoutError", (Exception,), {})
-        recognizer.energy_threshold = 480.0
-        recognizer.listen.side_effect = WaitTimeoutError()
+        recognizer.energy_threshold = 350.0
+        def timeout_after_threshold_update(*_args, **_kwargs):
+            recognizer.energy_threshold = 480.0
+            raise WaitTimeoutError()
+        recognizer.listen.side_effect = timeout_after_threshold_update
         fake_sr = types.ModuleType("speech_recognition")
         fake_sr.Recognizer = lambda: recognizer
         fake_sr.Microphone = lambda device_index=None: _FakeMic()
