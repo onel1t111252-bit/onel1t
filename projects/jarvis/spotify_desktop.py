@@ -74,9 +74,11 @@ def _read_spotify_playback() -> SpotifyPlayback | None:
 
 def _playback_feedback(query: str, playback: SpotifyPlayback | None) -> str:
     if playback is None:
-        return ("Spotify отримав команду, але Windows не надав інформації "
-                "про поточний трек. Не можу підтвердити відтворення. "
-                "Перевір список результатів у вікні Spotify.")
+        return ("Надіслав запит «" + query + "» у встановлений Spotify "
+                "і вибір результату через клавіатуру. Windows не надає "
+                "інформації про відтворення в цьому Spotify, тому результат "
+                "НЕ ПІДТВЕРДЖЕНО, але це не означає, що дія не виконана. "
+                "Перевір, що показує програма Spotify.")
     shown = "«" + playback.title + "» — " + playback.artist
     if not _track_matches(query, playback):
         return ("Spotify зараз показує " + shown + ", але це не відповідає "
@@ -245,14 +247,83 @@ def spotify_desktop_status() -> str:
                 "і ввійди у власний акаунт.")
     state = _read_spotify_playback()
     if state is None:
-        return ("Вікно Spotify.exe знайдено, але Windows не показує "
-                "поточну композицію. Відкрий Spotify і вручну ввімкни "
-                "будь-яку пісню, щоб перевірити медіасесію. "
-                "Повтори команду «статус Spotify».")
+        return ("Spotify.exe відкритий. Windows не надає назву композиції "
+                "цього плеєра — це НЕ доводить, що музика не грає. "
+                "Перевір плеєр у самому Spotify; для діагностики "
+                "відтвори композицію вручну та повтори «статус Spotify».")
     return ("Вікно Spotify.exe знайдено. У медіасистемі Windows: «"
             + state.title + "» — " + state.artist
             + (". ВІДТВОРЮЄТЬСЯ." if state.playing else
                ". Відтворення призупинено."))
+
+
+async def _try_media_session_play_async() -> bool:
+    """Prefer idempotent WinRT PLAY, not a toggle that could pause a song."""
+    from winsdk.windows.media.control import (
+        GlobalSystemMediaTransportControlsSessionManager as Manager,
+    )
+    manager = await Manager.request_async()
+    for session in manager.get_sessions() or []:
+        source = str(session.source_app_user_model_id).casefold()
+        if "spotify" in source:
+            return bool(await session.try_play_async())
+    return False
+
+
+def _try_media_session_play() -> bool:
+    if os.name != "nt":
+        return False
+    try:
+        return asyncio.run(asyncio.wait_for(_try_media_session_play_async(), timeout=3))
+    except Exception:
+        # Missing WinRT media session is common and not itself a playback error.
+        return False
+
+
+def _send_spotify_play_command(hwnd: int) -> bool:
+    """Request MEDIA_PLAY from the verified Spotify app, never Play/Pause.
+
+    WM_APPCOMMAND with APPCOMMAND_MEDIA_PLAY (46) is an idempotent playback
+    request. Windows/Spotify may ignore it; false is only dispatch failure.
+    """
+    if os.name != "nt":
+        return False
+    user32 = ctypes.windll.user32
+    result = ctypes.c_size_t()
+    fn = user32.SendMessageTimeoutW
+    fn.restype = wintypes.LPARAM
+    fn.argtypes = (
+        wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM,
+        wintypes.UINT, wintypes.UINT, ctypes.POINTER(ctypes.c_size_t),
+    )
+    # WM_APPCOMMAND=0x0319, APPCOMMAND_MEDIA_PLAY=46, SMTO_ABORTIFHUNG=2.
+    return bool(fn(hwnd, 0x0319, hwnd, 46 << 16, 0x0002, 900, ctypes.byref(result)))
+
+
+def play_current_in_desktop() -> str:
+    """Play/resume the current Spotify track; never search 'поточний трек'."""
+    hwnd = _open_and_focus_spotify()
+    state = _read_spotify_playback()
+    if state is not None and state.playing:
+        return ("Spotify вже відтворює «" + state.title + "» — "
+                + state.artist + ". Нічого не перемикав.")
+    sent = _try_media_session_play()
+    if not sent and _still_focused(hwnd):
+        sent = _send_spotify_play_command(hwnd)
+    if not sent:
+        raise SpotifyDesktopError(
+            "Не вдалося надіслати Spotify команду Play. "
+            "Натисни Play у відкритому Spotify. Пошук нової пісні не запускав.")
+    updated = _read_spotify_playback()
+    if updated is None:
+        return ("Надіслав команду Play у встановлений Spotify без пошуку "
+                "нової пісні. Windows не надає даних про поточний трек, "
+                "тому перевірити запуск не можу.")
+    if updated.playing:
+        return ("Spotify відтворює «" + updated.title + "» — "
+                + updated.artist + ".")
+    return ("Надіслав Play у Spotify, але Windows поки показує паузу. "
+            "Можливо, потрібен вибір треку вручну в Spotify.")
 
 
 def play_in_desktop(title: str) -> str:
@@ -291,14 +362,18 @@ def play_in_desktop(title: str) -> str:
     time.sleep(.75)
     # Verify what actually plays instead of asserting success after keypress.
     result = _read_spotify_playback()
+    # Some Spotify builds expose no Windows media session at all. Do NOT
+    # mistake missing telemetry for a failed playback or retry repeatedly.
+    if result is None:
+        return _playback_feedback(query, None)
     for _ in range(2):
-        if result is not None and result.playing and _track_matches(query, result):
+        if result.playing and _track_matches(query, result):
             break
         time.sleep(.8)
         updated = _read_spotify_playback()
         if updated is not None:
             result = updated
     feedback = _playback_feedback(query, result)
-    if result is None or not result.playing or not _track_matches(query, result):
+    if not result.playing or not _track_matches(query, result):
         raise SpotifyDesktopError(feedback)
     return feedback
