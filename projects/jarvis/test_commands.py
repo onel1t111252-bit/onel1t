@@ -38,6 +38,49 @@ class CommandTests(unittest.TestCase):
         self.assertEqual(plan_action("видали всі файли").kind, "say")
         self.assertIsNone(plan_action("Що таке Python?"))
 
+    def test_youtube_search_voice_variants(self):
+        examples = {
+            "Джарвіс, знайди відео в ютубі по програмуванню": "програмуванню",
+            "знайди відео по програмуванню на ютубі": "програмуванню",
+            "знайди на YouTube відео про програмування": "програмування",
+            "відкрий ютуб і знайди відео по програмуванню": "програмуванню",
+            "відкрий youtube знайди відео про Python": "python",
+            "відкрий ютуб та пошукай уроки програмування": "програмування",
+            "відкрий ютуб, потім знайди відео про C++": "c++",
+            "відкрий ютуб і знайди програмування": "програмування",
+            "ютуб знайди програмування": "програмування",
+            "знайди мені на ютубі відео про JavaScript": "javascript",
+            "покажи відео на тему кібербезпеки": "кібербезпеки",
+            "пошукай на ютубі уроки python": "python",
+            "відкрий ютуб пошукай мені відео про C#": "c#",
+        }
+        for spoken, topic in examples.items():
+            with self.subTest(spoken=spoken):
+                plan = plan_action(spoken)
+                self.assertIsNotNone(plan)
+                self.assertEqual(plan.kind, "youtube_search")
+                self.assertEqual(plan.target, topic)
+                self.assertFalse(plan.needs_approval)
+
+    def test_youtube_search_opens_results_not_only_homepage(self):
+        action = plan_action("знайди відео на ютубі по програмуванню")
+        with patch("desktop_actions.webbrowser.open") as open_browser:
+            result = run_action(action)
+        open_browser.assert_called_once_with(
+            "https://www.youtube.com/results?search_query=%D0%BF%D1%80%D0%BE%D0%B3%D1%80%D0%B0%D0%BC%D1%83%D0%B2%D0%B0%D0%BD%D0%BD%D1%8E")
+        self.assertIn("програмуванню", result)
+
+    def test_youtube_plain_open_and_google_search_unaffected(self):
+        home = plan_action("відкрий YouTube")
+        self.assertEqual((home.kind, home.target),
+                         ("website", "https://www.youtube.com"))
+        generic = plan_action("знайди українські книги")
+        self.assertEqual(generic.kind, "website")
+        self.assertIn("google.com", generic.target)
+        self.assertIsNone(plan_action("що таке програмування"))
+        # An incomplete search must not silently open a wrong topic.
+        self.assertNotEqual(plan_action("знайди відео").kind, "youtube_search")
+
     def test_safe_search(self):
         self.assertIn("%D1", plan_action("знайди українські книги").target)
 

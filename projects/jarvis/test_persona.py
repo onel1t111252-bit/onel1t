@@ -43,6 +43,13 @@ class SirPersonaTests(unittest.TestCase):
         self.assertEqual(result, "Є, сер. Команду Steam надіслано.")
         self.assertNotIn("запущено", result)
 
+    def test_youtube_speech_avoids_sending_search_terms_to_tts(self):
+        spoken = concise_speech(
+            "Відкриваю результати пошуку YouTube: приватна назва.",
+            "youtube_search", True)
+        self.assertEqual(spoken, "Є, сер. Відкриваю пошук відео на YouTube.")
+        self.assertNotIn("приватна", spoken)
+
     def test_neutral_mode(self):
         self.assertEqual(style_action_reply("Готово", "app", True, False), "Готово")
         self.assertEqual(concise_speech("Текст", "ui_type", True, False), "")

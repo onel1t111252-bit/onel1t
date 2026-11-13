@@ -33,6 +33,29 @@ Your old settings from a previous extracted folder are not copied automatically;
 
 **Privacy and limitations:** Hands-free requires an explicit on/off click and sends recorded speech fragments to Google's online speech recognition service while enabled; it is not an offline wake-word engine. Turning it OFF or closing JARVIS stops further listening, although an ongoing brief recognition request may finish. Internet connection and a Windows-compatible microphone are required. Automated tests cannot guarantee that your particular PC microphone works; test on your computer with "Джарвіс, котра година".
 
+## One-sentence YouTube video search (Ukrainian voice)
+
+JARVIS now understands a **complete search request**, without splitting it
+into just "open YouTube" and ignoring the actual topic. Examples:
+- \`Джарвіс, знайди відео на ютубі по програмуванню\`
+- \`Джарвіс, відкрий YouTube і знайди відео про Python\`
+- \`Відкрий ютуб, потім пошукай уроки програмування\`
+- \`Покажи відео про кібербезпеку\`
+
+These commands immediately open the **YouTube search results page** in your
+default browser, with the **full topic** URL-encoded. They do not just open
+YouTube's homepage and do not auto-play an arbitrary video. You choose which
+result to watch. The feature works without Ollama, a YouTube API key or an
+additional CONFIRM button.
+
+The online microphone recognizer now allows a longer natural phrase (up to
+16 seconds in HANDS-FREE), with approximately 1.4 seconds for short speaking
+pauses. It cannot guarantee that Google SpeechRecognition never cuts a phrase.
+If a command is still cut, check the **YOU 🎤** transcript in the chat and try
+speaking the complete request with a short pause. Both typed and voice
+commands use the same YouTube routing, so typing the complete request helps
+distinguish speech recognition issues from command parsing issues.
+
 ## More natural Ukrainian replies — «Так, сер»
 
 The assistant uses a courteous, calm Ukrainian persona in its local Ollama prompt. Short command acknowledgements use **«Так, сер»**, **«Є, сер»** and, if execution fails, **«Перепрошую, сер»**. No text claims an app opened or a game started unless JARVIS has actually invoked the corresponding action; sending a Steam launch URI does **not** prove the game started.

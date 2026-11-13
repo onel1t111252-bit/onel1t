@@ -42,7 +42,7 @@ DIRECT_EXECUTION_KINDS = frozenset({
     "steam_open_first", "steam_game", "steam_list",
     "spotify_search", "spotify_play", "spotify_pause",
     "spotify_resume", "spotify_next", "spotify_previous",
-    "say", "volume", "ui_windows",
+    "say", "volume", "ui_windows", "youtube_search",
 })
 
 
@@ -53,6 +53,7 @@ def can_execute_directly(action: ActionPlan | None) -> bool:
 HELP_TEXT = (
     "Я можу відкрити блокнот, калькулятор, Paint, провідник, диспетчер задач, "
     "налаштування, папки Документи або Завантаження, YouTube, Google й GitHub; "
+    "знайти відео на YouTube за темою однією командою, "
     "знайти інформацію в браузері, сказати час, змінити гучність, створити "
     "нотатку або зберегти скріншот після підтвердження. "
     "Можу знайти встановлену програму за назвою та запустити її без зайвого підтвердження. "
@@ -172,6 +173,70 @@ def find_installed_app(query: str) -> tuple[str, str] | None:
     return matches[0] if len(matches) == 1 else None
 
 
+_YOUTUBE_NAME = r"(?:youtube|you\s*tube|ютуб(?:і|у|а|е)?|ютюб(?:і|у)?)"
+_YOUTUBE_SEARCH_VERB = r"(?:знайди|знайти|пошукай|шукай|відшукай|покажи|search|find)"
+_YOUTUBE_VIDEO_CUE = r"(?:відео|відеоролики?|ролики?|уроки?|відеоуроки?|туторіали?)"
+
+
+def youtube_search_plan(q: str) -> ActionPlan | None:
+    """Parse the ENTIRE Ukrainian YouTube request before generic app routing.
+
+    Supports single and compound commands, including "відкрий ютуб і знайди
+    відео по програмуванню". Never opens arbitrary links from recognized text:
+    the search term is URL-encoded into YouTube's known HTTPS search page.
+    """
+    phrase = q.strip()
+    # Sometimes speech recognition omits "і" or punctuation between verbs.
+    opener = re.fullmatch(
+        rf"(?:відкрий|відкрити|запусти|запустити|увімкни)\s+"
+        rf"(?:сайт\s+)?{_YOUTUBE_NAME}\s+"
+        rf"(?:(?:і|та|а потім|потім)\s+)?(.+)",
+        phrase,
+    )
+    if opener:
+        phrase = opener.group(1)
+
+    # The user may start with "YouTube, знайди ...".
+    platform_was_explicit = bool(opener)
+    if re.match(rf"^{_YOUTUBE_NAME}\s+", phrase):
+        platform_was_explicit = True
+    phrase = re.sub(rf"^{_YOUTUBE_NAME}\s+", "", phrase)
+    match = re.fullmatch(rf"{_YOUTUBE_SEARCH_VERB}\s+(.+)", phrase)
+    if not match:
+        return None
+    detail = match.group(1).strip()
+    detail = re.sub(r"^(?:мені|будь ласка)\s+", "", detail)
+    has_youtube = bool(re.search(rf"(?<!\w){_YOUTUBE_NAME}\b", detail))
+    has_video = bool(re.search(rf"(?<!\w){_YOUTUBE_VIDEO_CUE}\b", detail))
+    if not (platform_was_explicit or has_youtube or has_video):
+        return None  # Ordinary web search remains Google search.
+
+    # Accept "знайди відео на ютубі по ..." and "знайди на ютубі
+    # відео про ..." without dropping the actual requested topic.
+    platform_prefix = rf"^(?:(?:в|у|на|через)\s+)?{_YOUTUBE_NAME}\s+"
+    video_prefix = rf"^{_YOUTUBE_VIDEO_CUE}\s+"
+    for _ in range(3):
+        previous = detail
+        detail = re.sub(platform_prefix, "", detail)
+        detail = re.sub(video_prefix, "", detail)
+        detail = re.sub(r"^(?:мені|будь ласка)\s+", "", detail)
+        if detail == previous:
+            break
+    detail = re.sub(
+        rf"\s+(?:(?:в|у|на|через)\s+)?{_YOUTUBE_NAME}$", "", detail)
+    detail = re.sub(r"^(?:про|по|з|із|за|на тему|щодо)\s+", "", detail)
+    detail = re.sub(r"\s+будь ласка$", "", detail)
+    detail = detail.strip(" !?.,:;«»\"'")
+    if not 2 <= len(detail) <= 160 or detail in {
+        "відео", "урок", "уроки", "ютуб", "ютубі", "youtube", "пошук",
+    }:
+        return None
+    return ActionPlan(
+        "youtube_search", detail,
+        "Знайти відео на YouTube за запитом: " + detail,
+    )
+
+
 def spotify_music_plan(q: str) -> ActionPlan | None:
     """Fast, deterministic Ukrainian music routing; never send music to Ollama.
 
@@ -229,6 +294,11 @@ def plan_action(raw_text: str) -> ActionPlan | None:
     if ui:
         kind, payload, preview = ui
         return ActionPlan("ui_" + kind, payload, preview, kind != "windows")
+    # Match complete spoken YouTube searches BEFORE a generic app-open or
+    # compound-command splitter can treat "відкрий ютуб" as the whole request.
+    youtube = youtube_search_plan(q)
+    if youtube:
+        return youtube
     # A Steam launch URI starts Steam automatically before opening Dota 2.
     # Google STT sometimes turns "стім" into "стіні" or drops "і" between
     # "відкрий Steam" and "запусти Dota 2". Only normalize in Steam-specific
@@ -414,6 +484,14 @@ def run_action(action: ActionPlan) -> str:
         url = "https://open.spotify.com/search/" + quote(action.target, safe="")
         webbrowser.open(url)
         return "Відкриваю пошук Spotify для «" + action.target + "». Обери композицію в плеєрі."
+    if action.kind == "youtube_search":
+        term = action.target.strip()
+        if not 2 <= len(term) <= 160:
+            raise ValueError("Некоректний запит пошуку YouTube.")
+        url = "https://www.youtube.com/results?search_query=" + quote_plus(term)
+        webbrowser.open(url)
+        return ("Відкриваю результати пошуку YouTube за темою «" + term
+                + "». Вибери потрібне відео зі списку.")
     if action.kind == "file_picker":
         return "Обери файл у вікні вибору."
     if action.kind in {"website", "external_url"}:
