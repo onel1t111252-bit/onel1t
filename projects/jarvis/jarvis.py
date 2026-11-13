@@ -1,4 +1,4 @@
-"""ONEL1T JARVIS 4.1 — consent-first Windows desktop assistant.
+"""ONEL1T JARVIS 4.2 — consent-first Windows desktop assistant.
 
 Local Ollama chat; online microphone recognition and optional online voice.
 No arbitrary OS command execution. No remote control. No admin privileges.
@@ -46,6 +46,8 @@ SYSTEM_PROMPT = (
     "Не стверджуй, що відкрив програму, змінив файл або виконав команду, "
     "якщо це не зробив модуль команд. Не видавай інструкцій для доступу "
     "до чужих комп'ютерів без дозволу. Якщо функція недоступна, скажи про це. "
+    "Команди Windows обробляються окремим модулем, тому не стверджуй, "
+    "що JARVIS взагалі не має доступу до програм на комп\u0027ютері. "
     "Можеш відповідати на запитання та допомагати користувачу з навчанням."
 )
 
@@ -123,7 +125,7 @@ class JarvisApp:
         self.reactor_tick = 0
         self._setup_window()
         self._build_ui()
-        self.post("JARVIS", "Системи готові. Скажи «Джарвіс, відкрий Steam», "
+        self.post("JARVIS", "Системи готові. Скажи «Джарвіс, відкрий Steam і запусти Доту», "
                   "«Джарвіс, відкрий Spotify» або запитай мене про щось. "
                   "Встановлені програми запускаються після підтвердження.", "ai")
         self.root.after(80, self.pump)
@@ -132,7 +134,7 @@ class JarvisApp:
         threading.Thread(target=self.audio_worker, daemon=True).start()
 
     def _setup_window(self):
-        self.root.title("ONEL1T | JARVIS 4.1")
+        self.root.title("ONEL1T | JARVIS 4.2")
         self.root.configure(bg=BG)
         self.root.geometry("1260x830")
         self.root.minsize(980, 690)
@@ -156,7 +158,7 @@ class JarvisApp:
         header = tk.Frame(self.root, bg=BG, height=72)
         header.pack(fill="x", padx=26, pady=(18, 10))
         self._label(header, "◆  ONEL1T", size=17, color=CYAN, weight="bold").pack(side="left")
-        self._label(header, "    /    JARVIS 4.1    /    PERSONAL COMMAND CENTER", size=10, color=MUTED, mono=True).pack(side="left")
+        self._label(header, "    /    JARVIS 4.2    /    PERSONAL COMMAND CENTER", size=10, color=MUTED, mono=True).pack(side="left")
         self.header_status = self._label(header, "●  STARTING", size=10, color=GREEN, mono=True)
         self.header_status.pack(side="right")
 
@@ -176,12 +178,14 @@ class JarvisApp:
         self._label(side, "J A R V I S   //   CORE", size=13, weight="bold").pack(pady=(0, 4))
         self.ai_state = self._label(side, "CHECKING OLLAMA...", size=9, color=MUTED, mono=True)
         self.ai_state.pack(pady=(0, 12))
-        self._label(side, "VOICE CONTROL • LOCAL AI", color=GREEN, size=8, mono=True).pack(pady=(0, 13))
+        self._label(side, "VOICE CONTROL • LOCAL AI", color=GREEN, size=8, mono=True).pack(pady=(0, 4))
+        self._label(side, "VOICE OUTPUT: ONLINE NEURAL", color=MUTED, size=8, mono=True).pack(pady=(0, 13))
 
         self._label(side, "QUICK COMMANDS", size=10, color=MUTED, mono=True).pack(anchor="w", padx=19, pady=(0, 7))
         for title, cmd in [
             ("▣  NOTEPAD", "відкрий блокнот"),
             ("◉  STEAM", "відкрий стім"),
+            ("▶  DOTA 2", "відкрий стім і запусти доту"),
             ("⌕  YOUTUBE", "відкрий ютуб"),
             ("◷  TIME", "котра година"),
             ("▤  DOCUMENTS", "відкрий документи"),
@@ -220,7 +224,7 @@ class JarvisApp:
         self.handsfree_btn.pack(side="left", padx=(0, 7))
         self.voice_btn = self._button(bar, "🔊  VOICE: ON", self.toggle_voice, bg=PANEL_2)
         self.voice_btn.pack(side="left", padx=(0, 7))
-        self.voice_select = self._button(bar, "VOICE: OSTAP", self.cycle_voice, bg=PANEL_2)
+        self.voice_select = self._button(bar, "VOICE: JARVIS DEEP", self.cycle_voice, bg=PANEL_2)
         self.voice_select.pack(side="left", padx=(0, 7))
         self._button(bar, "▶  TEST VOICE", self.test_voice, bg=PANEL_2).pack(side="left")
         self.refresh_voice_buttons()
@@ -312,6 +316,7 @@ class JarvisApp:
     def cycle_voice(self):
         idx = VOICE_PROFILES.index(self.voice_profile)
         self.voice_profile = VOICE_PROFILES[(idx + 1) % len(VOICE_PROFILES)]
+        self.post("SYSTEM", "Обрано голос: " + VOICE_LABELS[self.voice_profile] + (" (локальний голос Windows; мова залежить від установлених голосів)." if self.voice_profile == "windows" else " (потрібен інтернет; текст надсилається сервісу Microsoft)."), "sys")
         self.refresh_voice_buttons()
         self.save_settings()
 

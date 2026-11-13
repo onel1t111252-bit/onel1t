@@ -1,4 +1,4 @@
-# ONEL1T / JARVIS 4.1 — Windows Voice Assistant
+# ONEL1T / JARVIS 4.2 — Windows Voice Assistant
 
 A futuristic desktop assistant that uses **local Ollama AI**, Ukrainian voice input, and owner-approved Windows automation. It is a **prototype**, not a remote administration tool and not an unrestricted desktop agent.
 
@@ -6,7 +6,7 @@ A futuristic desktop assistant that uses **local Ollama AI**, Ukrainian voice in
 
 ## Download only this project
 
-**[Download JARVIS 4.1 ZIP](https://github.com/onel1t111252-bit/onel1t/raw/refs/heads/main/projects/jarvis/JARVIS_4_1_Windows11.zip)**
+**[Download JARVIS 4.2 ZIP](https://github.com/onel1t111252-bit/onel1t/raw/refs/heads/main/projects/jarvis/JARVIS_4_2_Windows11.zip)**
 
 The ZIP includes only the assistant source code and setup files. It does not contain Ollama model weights, secrets, or credentials.
 
@@ -25,16 +25,18 @@ The ZIP includes only the assistant source code and setup files. It does not con
 ## Installation (Windows 11, Python 3.12)
 
 1. Install Python 3.12 from https://python.org and Ollama from https://ollama.com/download.
-2. Download and extract `JARVIS_4_1_Windows11.zip`.
+2. Download and extract `JARVIS_4_2_Windows11.zip`.
 3. If you already created a local Ollama model named `jarvis`, **skip** `INSTALL_AI.bat`. Otherwise run it once (downloads Qwen3 Instruct, approximately 2.5 GB).
 4. Run `INSTALL_VOICE.bat` once to install microphone + voice dependencies.
 5. Run `START_JARVIS.bat`.
-6. Click **CHECK AI** and **TEST VOICE**. Default voice is **OSTAP ♂**. If there is no sound, check the displayed diagnostic; online neural voice requires internet.
+6. Click **CHECK AI** and **TEST VOICE**. Default voice is **JARVIS DEEP** (a lowered-pitch Ostap voice). If there is no sound, check the displayed diagnostic; online neural voice requires internet.
 7. HANDS-FREE starts **OFF** each time. To enable it, click the button and accept the online microphone privacy notice. Then use the wake phrase without pressing the mic button.
 
 ### Example commands
 
 - `Джарвіс, відкрий Steam`
+- `Гаразд, а відкрий Steam, а потім запусти Dota 2`
+- `Джарвіс, відкрий Steam і запусти Доту`
 - `Джарвіс, відкрий блокнот`
 - `Джарвіс, відкрий Spotify` (finds an installed application, shows confirmation)
 - `Джарвіс, відкрий файл` (user selects a file and approves)
@@ -54,6 +56,10 @@ JARVIS only runs on the **computer where a user opens it** and within that user'
 - Confirmed screenshots, notes and selected files remain local. Files and app shortcuts are never uploaded by the app.
 - Arbitrary commands, privileged actions, file deletion, unsupervised browser clicking and remote control are intentionally **not supported**.
 
+## Verification limits
+
+Automated tests cover command parsing, fixed Steam URIs, safety checks and voice configuration; they do **not** verify microphone recognition, online speech quality or real game launching on a Windows computer. Use the **TEST VOICE** button and the Steam/Dota quick action locally. No exact film voice reproduction is claimed.
+
 ## Development and tests
 
 ```powershell
@@ -66,3 +72,10 @@ Source modules: `jarvis.py` (UI and Ollama), `desktop_actions.py` (local command
 ## License
 
 MIT. UI is an original JARVIS-inspired fan design; this repository is not affiliated with Marvel or other rights holders.
+
+## Що виправлено у 4.2
+
+- Розуміє «гаразд а відкрий стім і запусти доту» та «запусти доту».
+- Dota 2 запускається через фіксоване Steam URI `steam://run/570`.
+- Невідомі команди Windows не відправляються в чат ШІ.
+- Голос `JARVIS DEEP` — український Ostap з нижчим тоном, не копія голосу актора.

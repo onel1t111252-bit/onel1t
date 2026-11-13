@@ -45,6 +45,34 @@ class CommandTests(unittest.TestCase):
         action = plan_action("відкрий стім")
         self.assertEqual((action.kind, action.target), ("known_uri", "steam://open/main"))
 
+    def test_steam_dota_combined(self):
+        for text in ("гаразд а відкрий стім і запусти доту",
+                     "Джарвіс, відкрий Steam і запусти Dota 2",
+                     "відкрий стім та запусти доту", "запусти доту",
+                     "запусти дота 2 через steam",
+                     "гаразд, а відкрий Steam, а потім запусти Dota 2",
+                     "добре, відкрий стім; і запусти доту"):
+            with self.subTest(text=text):
+                plan = plan_action(text)
+                self.assertEqual((plan.kind, plan.target), ("known_uri", "steam://run/570"))
+
+    def test_steam_dota_only_approved_uri(self):
+        with patch("desktop_actions.os.name", "nt"), patch("desktop_actions.os.startfile", create=True) as launch:
+            result = run_action(ActionPlan("known_uri", "steam://run/570", "Dota"))
+            launch.assert_called_once_with("steam://run/570")
+            self.assertIn("Dota 2", result)
+        with patch("desktop_actions.os.name", "nt"):
+            with self.assertRaises(ValueError):
+                run_action(ActionPlan("known_uri", "steam://run/123456", "Unknown"))
+
+    def test_unknown_multi_command_not_sent_to_ollama(self):
+        self.assertEqual(plan_action("відкрий steam і зроби ще щось").kind, "say")
+
+    def test_known_dota_is_not_shell_command(self):
+        a = plan_action("відкрий стім і запусти доту")
+        self.assertFalse(a.needs_approval)
+        self.assertEqual(a.target, "steam://run/570")
+
     def test_file_picker(self):
         self.assertEqual(plan_action("відкрий файл").kind, "file_picker")
 

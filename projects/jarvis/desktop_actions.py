@@ -35,7 +35,8 @@ HELP_TEXT = (
     "знайти інформацію в браузері, сказати час, змінити гучність, створити "
     "нотатку або зберегти скріншот після підтвердження. "
     "Можу знайти встановлену програму за назвою та запустити її після підтвердження. "
-    "Також можу відкрити файл через діалог вибору. Системні та небезпечні дії не виконую без дозволу."
+    "Також можу відкрити файл через діалог вибору та запустити Dota 2 через Steam. "
+    "Системні та небезпечні дії не виконую без дозволу."
 )
 
 APPS = {
@@ -151,6 +152,7 @@ def plan_action(raw_text: str) -> ActionPlan | None:
     q = normalize(raw_text)
     # Spoken commands can include acknowledgments before the actual request.
     q = re.sub(r"^(?:(?:гаразд|окей|добре|ну|слухай)[,\s]+)+(?:а\s+)?", "", q)
+    q = re.sub(r"\s*[,;]\s*", " ", q).strip()
     if not q:
         return None
     # A Steam launch URI starts Steam automatically before opening Dota 2.
@@ -158,6 +160,7 @@ def plan_action(raw_text: str) -> ActionPlan | None:
     dota = r"(?:доту(?: 2)?|дота(?: 2)?|dota(?: 2)?)"
     verb = r"(?:відкрий|відкрити|запусти|запустити|включи|увімкни|open|launch)"
     if (re.fullmatch(fr"{verb} {steam}\s+(?:і|та|а потім|потім)\s+{verb} {dota}", q)
+            or re.fullmatch(fr"{verb} {steam}\s+а\s+потім\s+{verb} {dota}", q)
             or re.fullmatch(fr"{verb} {dota}(?: через {steam})?", q)):
         return ActionPlan("known_uri", "steam://run/570", "Запустити Dota 2 через Steam")
     if q in {"допомога", "команди", "help", "що ти вмієш"}:

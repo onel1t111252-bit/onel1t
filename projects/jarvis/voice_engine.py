@@ -14,8 +14,9 @@ import subprocess
 import tempfile
 import time
 
-VOICE_PROFILES = ("uk-UA-OstapNeural", "uk-UA-PolinaNeural", "windows")
-VOICE_LABELS = {"uk-UA-OstapNeural": "OSTAP ♂", "uk-UA-PolinaNeural": "POLINA ♀", "windows": "WINDOWS"}
+# A lowered-pitch male Ukrainian voice: similar sci-fi mood, not a film-actor imitation.
+VOICE_PROFILES = ("jarvis-deep", "uk-UA-OstapNeural", "uk-UA-PolinaNeural", "windows")
+VOICE_LABELS = {"jarvis-deep": "JARVIS DEEP", "uk-UA-OstapNeural": "OSTAP ♂", "uk-UA-PolinaNeural": "POLINA ♀", "windows": "WINDOWS"}
 
 
 @dataclass(frozen=True)
@@ -68,19 +69,25 @@ def speak(text: str, voice: str = "uk-UA-OstapNeural") -> SpeechResult:
             filename = Path(f.name)
 
         async def generate() -> None:
-            await edge_tts.Communicate(text, voice=voice, rate="-7%", pitch="-18Hz").save(str(filename))
+            voice_name = "uk-UA-OstapNeural" if voice == "jarvis-deep" else voice
+            rate = "-11%" if voice == "jarvis-deep" else "-7%"
+            pitch = "-32Hz" if voice == "jarvis-deep" else "-18Hz"
+            await edge_tts.Communicate(text, voice=voice_name, rate=rate, pitch=pitch).save(str(filename))
 
         asyncio.run(generate())
         if not filename.is_file() or filename.stat().st_size < 128:
             return SpeechResult(False, "Сервіс голосу не повернув аудіо.")
         pygame.mixer.init()
-        pygame.mixer.music.load(str(filename))
-        pygame.mixer.music.play()
-        while pygame.mixer.music.get_busy():
-            time.sleep(.08)
-        pygame.mixer.music.unload()
-        pygame.mixer.quit()
-        return SpeechResult(True)
+        try:
+            pygame.mixer.music.load(str(filename))
+            pygame.mixer.music.play()
+            while pygame.mixer.music.get_busy():
+                time.sleep(.08)
+            return SpeechResult(True)
+        finally:
+            pygame.mixer.music.stop()
+            pygame.mixer.music.unload()
+            pygame.mixer.quit()
     except Exception:
         logging.warning("Neural voice failed", exc_info=True)
         return SpeechResult(False, "Не вдалося відтворити голос Остапа. Перевір інтернет і встановлення голосових бібліотек. Голос Windows автоматично не підміняється.")
