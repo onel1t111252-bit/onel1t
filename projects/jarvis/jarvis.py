@@ -19,6 +19,7 @@ from tkinter import scrolledtext, messagebox, filedialog
 from urllib import request, error
 
 from desktop_actions import ActionPlan, plan_action, run_action
+from command_sequences import split_sequence
 from voice_engine import speak, VOICE_PROFILES, VOICE_LABELS
 
 ROOT_DIR = Path(__file__).resolve().parent
@@ -115,6 +116,8 @@ class JarvisApp:
         self.alive = True
         self.busy = False
         self.pending: ActionPlan | None = None
+        self.steps: list[ActionPlan] = []
+        self.step_index = 0
         self.followup_until = 0.0
         self.history: list[dict[str, str]] = []
         self.settings = get_settings()
@@ -134,7 +137,7 @@ class JarvisApp:
         threading.Thread(target=self.audio_worker, daemon=True).start()
 
     def _setup_window(self):
-        self.root.title("ONEL1T | JARVIS 4.2")
+        self.root.title("ONEL1T | JARVIS 4.3")
         self.root.configure(bg=BG)
         self.root.geometry("1260x830")
         self.root.minsize(980, 690)
@@ -158,7 +161,7 @@ class JarvisApp:
         header = tk.Frame(self.root, bg=BG, height=72)
         header.pack(fill="x", padx=26, pady=(18, 10))
         self._label(header, "◆  ONEL1T", size=17, color=CYAN, weight="bold").pack(side="left")
-        self._label(header, "    /    JARVIS 4.2    /    PERSONAL COMMAND CENTER", size=10, color=MUTED, mono=True).pack(side="left")
+        self._label(header, "    /    JARVIS 4.3    /    PERSONAL COMMAND CENTER", size=10, color=MUTED, mono=True).pack(side="left")
         self.header_status = self._label(header, "●  STARTING", size=10, color=GREEN, mono=True)
         self.header_status.pack(side="right")
 
@@ -187,7 +190,7 @@ class JarvisApp:
             ("◉  STEAM", "відкрий стім"),
             ("▶  DOTA 2", "відкрий стім і запусти доту"),
             ("⌕  YOUTUBE", "відкрий ютуб"),
-            ("◷  TIME", "котра година"),
+            ("▤  WINDOWS", "покажи відкриті вікна"),
             ("▤  DOCUMENTS", "відкрий документи"),
             ("▧  CHOOSE FILE", "відкрий файл"),
             ("◫  SETTINGS", "відкрий налаштування"),
@@ -227,7 +230,13 @@ class JarvisApp:
         self.voice_select = self._button(bar, "VOICE: JARVIS DEEP", self.cycle_voice, bg=PANEL_2)
         self.voice_select.pack(side="left", padx=(0, 7))
         self._button(bar, "▶  TEST VOICE", self.test_voice, bg=PANEL_2).pack(side="left")
+        self._button(bar, "■  STOP PLAN", self.stop_plan, bg="#4e3046").pack(side="right")
         self.refresh_voice_buttons()
+
+        flow = tk.Frame(panel, bg="#12283b", highlightbackground="#255168", highlightthickness=1)
+        flow.pack(fill="x", padx=22, pady=(0, 10))
+        self.flow_label = self._label(flow, "◈  AUTOMATION QUEUE  /  IDLE", size=9, mono=True, color=CYAN)
+        self.flow_label.pack(anchor="w", padx=14, pady=6)
 
         conversation = tk.Frame(panel, bg=PANEL)
         conversation.pack(fill="both", expand=True, padx=20, pady=(0, 12))
@@ -245,7 +254,7 @@ class JarvisApp:
         confirm_bar = tk.Frame(panel, bg="#183047")
         self.confirm_bar = confirm_bar
         self.confirm_description = self._label(confirm_bar, "", size=10, color=WHITE,
-                                                wraplength=390, justify="left")
+                                                wraplength=420, justify="left")
         self.confirm_description.pack(side="left", fill="x", expand=True, padx=9)
         self._button(confirm_bar, "CANCEL", self.cancel_action, bg="#593544").pack(side="right", padx=(4, 8), pady=7)
         self._button(confirm_bar, "CONFIRM", self.approve_action, bg="#13728d").pack(side="right", pady=7)
@@ -348,6 +357,21 @@ class JarvisApp:
             return
         self.post("YOU 🎤" if via_voice else "YOU", text, "user")
         route = plan_action(text)
+        segments = split_sequence(text)
+        # Preserve a single fixed Steam URI for the established Steam+Dota phrase.
+        if segments is not None and not (route and route.kind == "known_uri"):
+            if not segments:
+                self.finish("Сценарій відхилено: не більше 4 кроків; введення тексту має бути останнім кроком.")
+                return
+            actions = [plan_action(piece) for piece in segments]
+            if any(a is None or a.kind in {"say", "file_picker"} for a in actions):
+                self.finish("Не всі кроки підтримуються. Жодної дії не виконано. Спробуй прості команди.")
+                return
+            self.steps = actions
+            self.step_index = 0
+            self.post("SYSTEM", "Сценарій з " + str(len(actions)) + " кроків: кожен потрібно підтвердити окремо.", "sys")
+            self.show_next_step()
+            return
         if route and route.kind == "file_picker":
             selected = filedialog.askopenfilename(
                 parent=self.root, title="Вибери файл, який JARVIS може відкрити")
@@ -358,11 +382,40 @@ class JarvisApp:
                                "Відкрити вибраний файл: " + Path(selected).name, True)
         if route and route.needs_approval:
             self.pending = route
-            self.confirm_description.configure(text="APPROVAL REQUIRED   /   " + route.summary)
+            self.confirm_description.configure(text="APPROVAL REQUIRED   /   " + route.summary + "  /  Для дій у вікні після CONFIRM активуй потрібну програму.")
             self.confirm_bar.pack(fill="x", padx=20, pady=(0, 10), before=self.input.master)
             self.set_status("●  AWAITING APPROVAL", AMBER)
             return
         self.start_answer(text, route)
+
+    def show_next_step(self):
+        if not self.steps or self.step_index >= len(self.steps):
+            self.steps.clear()
+            self.flow_label.configure(text="◈  AUTOMATION QUEUE  /  IDLE")
+            return
+        index = self.step_index + 1
+        current = self.steps[self.step_index]
+        self.pending = current
+        self.flow_label.configure(text=f"◈  AUTOMATION QUEUE  /  STEP {index} OF {len(self.steps)}")
+        self.confirm_description.configure(
+            text=f"КРОК {index}/{len(self.steps)} • {current.summary}. "
+                 "Підтверди саме цей крок. Для введення/кліку після CONFIRM "
+                 "активуй цільове вікно. Можна натиснути STOP PLAN.")
+        self.confirm_bar.pack(fill="x", padx=20, pady=(0, 10), before=self.input.master)
+        self.set_status("●  AWAITING STEP APPROVAL", AMBER)
+
+    def stop_plan(self):
+        if not self.steps and not self.pending:
+            self.post("SYSTEM", "Активного сценарію немає.", "sys")
+            return
+        self.steps.clear()
+        self.step_index = 0
+        self.pending = None
+        self.confirm_bar.pack_forget()
+        self.flow_label.configure(text="◈  AUTOMATION QUEUE  /  STOPPED")
+        self.post("SYSTEM", "Чергу скасовано. Уже запущену дію неможливо гарантовано зупинити.", "sys")
+        if not self.busy:
+            self.set_status("●  READY", GREEN)
 
     def approve_action(self):
         if not self.pending:
@@ -374,8 +427,7 @@ class JarvisApp:
 
     def cancel_action(self):
         if self.pending:
-            self.pending = None
-            self.confirm_bar.pack_forget()
+            self.stop_plan()
             self.finish("Дію скасовано за бажанням користувача.")
 
     def start_answer(self, text, action: ActionPlan | None):
@@ -384,20 +436,45 @@ class JarvisApp:
         threading.Thread(target=self.answer_worker, args=(text, action), daemon=True).start()
 
     def answer_worker(self, text, action):
+        success = True
         try:
             if action:
                 reply = run_action(action)
             else:
                 reply, self.history = ollama_chat(text, self.history)
+        except (ValueError, RuntimeError) as exc:
+            success = False
+            reply = "Дія не виконана: " + str(exc)
         except Exception:
+            success = False
             logging.exception("Cannot process request")
             reply = "Сталася помилка. Перевір файл jarvis.log у папці програми."
-        self.queue.put(("answer", reply))
+        if action:
+            try:
+                with (ROOT_DIR / "actions.log").open("a", encoding="utf-8") as log:
+                    log.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')}  {action.kind}  {'OK' if success else 'ERROR'}\n")
+            except OSError:
+                logging.warning("Cannot append local action log")
+        self.queue.put(("answer", (reply, success, action.kind if action else "")))
 
-    def finish(self, text):
+    def finish(self, text, success=True, action_kind=""):
         self.post("JARVIS", text, "ai")
-        self.enqueue_speech(text)
+        # Do not send window titles or dictated text acknowledgments to online TTS.
+        if action_kind not in {"ui_windows", "ui_type", "ui_focus"}:
+            self.enqueue_speech(text)
         self.busy = False
+        if self.steps:
+            if success:
+                self.step_index += 1
+                if self.step_index < len(self.steps):
+                    self.show_next_step()
+                    return
+                self.post("SYSTEM", "Усі підтверджені кроки завершено.", "sys")
+            else:
+                self.post("SYSTEM", "Сценарій зупинено після невдалого кроку.", "sys")
+            self.steps.clear()
+            self.step_index = 0
+            self.flow_label.configure(text="◈  AUTOMATION QUEUE  /  IDLE")
         self.set_status("●  SPEAKING" if self.speaking.is_set() else "●  READY",
                         CYAN if self.speaking.is_set() else GREEN)
 
@@ -503,7 +580,8 @@ class JarvisApp:
             while True:
                 kind, data = self.queue.get_nowait()
                 if kind == "answer":
-                    self.finish(str(data))
+                    message, success, action_kind = data
+                    self.finish(str(message), success=success, action_kind=action_kind)
                 elif kind == "ai_status":
                     online, label = data
                     self.ai_state.configure(text=label, fg=GREEN if online else AMBER)
