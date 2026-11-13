@@ -440,12 +440,62 @@ def list_installed_games() -> str:
     return f"Знайдено {len(games)} установлених ігор Steam:\n{titles}{extra}"
 
 
+def verified_active_saved_account(steam_dir: Path | None = None) -> str:
+    """Identify the Steam account ALREADY logged in; never switch accounts.
+
+    Steam reports ActiveUser as the low 32 bits of SteamID64. Match it against
+    a locally saved Steam account and display its name for transparency. This
+    is a read-only check: no clicks in the login chooser, credentials, tokens,
+    or changes to another person's account.
+    """
+    if os.name != "nt":
+        raise SteamError("Перевірка активного акаунта Steam працює лише у Windows.")
+    if not steam_running():
+        raise SteamError("Steam ще не запущено.")
+    current_id = active_steam_user()
+    if current_id is None:
+        raise SteamError("Steam запущений, але активний вхід не підтверджений. "
+                         "Вибери збережений акаунт у вікні Steam та повтори команду.")
+    directory = steam_dir or steam_root()
+    config = directory / "config" / "loginusers.vdf"
+    try:
+        users = _entry(_read_vdf(config, 2_000_000), "users")
+    except SteamError as exc:
+        raise SteamError("Не вдалося перевірити список акаунтів Steam. "
+                         "Обери акаунт у Steam та повтори команду.") from exc
+    if not isinstance(users, dict):
+        raise SteamError("Список збережених акаунтів Steam недоступний.")
+    matches = []
+    for steam_id, details in users.items():
+        if not (steam_id.isdecimal() and isinstance(details, dict)):
+            continue
+        if int(steam_id) & 0xFFFFFFFF != current_id:
+            continue
+        account = _value(details, "AccountName").strip()
+        if account and len(account) <= 100 and not any(x in account for x in "\r\n\x00"):
+            matches.append(account)
+    if len(matches) != 1:
+        raise SteamError("Steam працює, але поточний акаунт не вдалося "
+                         "однозначно зіставити зі збереженими. Обери акаунт у Steam.")
+    return matches[0]
+
+
 def launch_installed_game(title: str) -> str:
     if os.name != "nt":
         raise SteamError("Запуск Steam доступний лише у Windows.")
     game = find_installed_game(title)
     try:
-        chosen = choose_first_account()
+        if steam_running():
+            # Do not block a user's signed-in Steam session merely because
+            # it is NOT the first entry in loginusers.vdf (which is not the
+            # same as the first visually displayed account on Steam).
+            active_name = verified_active_saved_account()
+            chosen = ("Steam уже працює під підтвердженим акаунтом «"
+                      + active_name + "». Акаунт не перемикав.")
+        else:
+            # Steam is closed: keep the owner's original first-saved account
+            # preference, without making a password-less-login guarantee.
+            chosen = choose_first_account()
     except (SteamError, OSError, ValueError) as exc:
         # Open Steam so the user can choose the correct account. Do NOT send
         # the game launch URI until the desired account can be verified: the
@@ -453,8 +503,8 @@ def launch_installed_game(title: str) -> str:
         _open_steam_client()
         return ("Steam відкривається, але гру «" + game.title
                 + "» поки не запускав: не вдалося вибрати перший акаунт ("
-                + str(exc) + "). Вибери правильний акаунт у Steam, "
-                "потім повтори команду запуску гри.")
+                + str(exc) + "). Вибери правильний акаунт у Steam "
+                "і дочекайся входу, потім повтори команду запуску гри.")
     try:
         os.startfile("steam://run/" + game.appid)
     except OSError as exc:
