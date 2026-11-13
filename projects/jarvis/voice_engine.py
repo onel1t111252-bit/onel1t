@@ -31,6 +31,11 @@ def _windows_sapi(text: str) -> SpeechResult:
     script = (
         "Add-Type -AssemblyName System.Speech; "
         "$s = New-Object System.Speech.Synthesis.SpeechSynthesizer; "
+        "$v = $s.GetInstalledVoices() | Where-Object { $_.Enabled -and "
+        "$_.VoiceInfo.Culture.Name -eq 'uk-UA' -and "
+        "$_.VoiceInfo.Gender -eq [System.Speech.Synthesis.VoiceGender]::Male } | Select-Object -First 1; "
+        "if (-not $v) { [Console]::Error.WriteLine('UKRAINIAN_MALE_MISSING'); exit 3 }; "
+        "$s.SelectVoice($v.VoiceInfo.Name); "
         "$s.Volume=90; $s.Speak([Console]::In.ReadToEnd()); $s.Dispose()"
     )
     try:
@@ -40,6 +45,8 @@ def _windows_sapi(text: str) -> SpeechResult:
             timeout=120, check=False,
             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
         )
+        if run.returncode == 3:
+            return SpeechResult(False, "У Windows немає українського чоловічого SAPI-голосу. Голос іншою мовою не використано; обери JARVIS DEEP.")
         if run.returncode:
             return SpeechResult(False, "Голос Windows недоступний. Перевір мовні пакети Windows.")
         return SpeechResult(True)
