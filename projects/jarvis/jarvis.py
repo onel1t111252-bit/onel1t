@@ -21,7 +21,7 @@ from urllib import request, error
 from desktop_actions import ActionPlan, plan_action, run_action
 from command_sequences import split_sequence
 from voice_engine import speak, clamp_volume, VOICE_PROFILES, VOICE_LABELS
-from assistant_persona import style_action_reply, concise_speech, cinematic_quick_reply
+from assistant_persona import style_action_reply, concise_speech, cinematic_quick_reply, normalize_spoken
 
 ROOT_DIR = Path(__file__).resolve().parent
 SETTINGS_PATH = ROOT_DIR / "settings.json"
@@ -443,6 +443,20 @@ class JarvisApp:
             return
         self.enqueue_speech("Так, сер. Я Джарвіс. Голосові системи активовано.")
 
+    def report_system(self):
+        """Report app settings only. Do not falsely claim a hardware health scan."""
+        ai = self.ai_state.cget("text")
+        microphone = "УВІМКНЕНО" if self.handsfree.is_set() else "ВИМКНЕНО"
+        voice = VOICE_LABELS[self.voice_profile] if self.voice_on else "ВИМКНЕНО"
+        answer = (f"Так, сер. Звіт JARVIS: останній стан Ollama — {ai}; "
+                  f"мікрофон без рук — {microphone}; голос — {voice}; "
+                  f"гучність голосу — {self.voice_volume}%; "
+                  f"режим — {'JARVIS' if self.cinematic_mode else 'ЗВИЧАЙНИЙ'}. "
+                  "Це стан програми, не перевірка обладнання Windows.")
+        self.post("JARVIS", answer, "ai")
+        self.enqueue_speech("Так, сер. Параметри Джарвіса перевірено. "
+                            "Докладний звіт на екрані.")
+
     def check_ai(self):
         self.ai_state.configure(text="CHECKING AI ...", fg=MUTED)
         threading.Thread(target=lambda: self.queue.put(("ai_status", ollama_status())), daemon=True).start()
@@ -462,6 +476,12 @@ class JarvisApp:
         quick = cinematic_quick_reply(text) if self.cinematic_mode else None
         if quick is not None:
             self.finish(quick)
+            return
+        normalized = normalize_spoken(text)
+        normalized = re.sub(r"^(?:джарвісе|джарвіс|джарвис|jarvis)\s+", "", normalized)
+        if normalized in {"статус системи", "стан системи", "статус джарвіса",
+                          "звіт системи", "перевір системи"}:
+            self.report_system()
             return
         route = plan_action(text)
         segments = split_sequence(text)
