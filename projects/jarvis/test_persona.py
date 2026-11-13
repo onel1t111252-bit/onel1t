@@ -1,6 +1,6 @@
 import unittest
 
-from assistant_persona import style_action_reply
+from assistant_persona import style_action_reply, concise_speech, cinematic_quick_reply, normalize_spoken
 
 
 class SirPersonaTests(unittest.TestCase):
@@ -22,6 +22,33 @@ class SirPersonaTests(unittest.TestCase):
     def test_no_duplicate_prefix(self):
         self.assertEqual(style_action_reply("Є, сер. Виконано.", "app", True),
                          "Є, сер. Виконано.")
+
+    def test_quick_cinematic_responses(self):
+        self.assertEqual(cinematic_quick_reply("Джарвіс, ти тут?"),
+                         "Так, сер. Слухаю вас.")
+        self.assertEqual(cinematic_quick_reply("Дякую!"),
+                         "Завжди до ваших послуг, сер.")
+        self.assertIsNone(cinematic_quick_reply("відкрий Spotify"))
+
+    def test_tts_never_leaks_dictation_or_window_titles(self):
+        self.assertEqual(concise_speech("Є, сер. Введено пароль123", "ui_type", True),
+                         "Є, сер.")
+        self.assertEqual(concise_speech("Є, сер. Windows: private stuff", "ui_windows", True),
+                         "Є, сер.")
+        self.assertEqual(concise_speech("Невдала дія: секретний файл", "user_file", False),
+                         "Перепрошую, сер. Команду не виконано; деталі на екрані.")
+
+    def test_steam_acknowledgment_does_not_claim_launch_complete(self):
+        result = concise_speech("Надсилаю запуск Dota", "known_uri", True)
+        self.assertEqual(result, "Є, сер. Команду Steam надіслано.")
+        self.assertNotIn("запущено", result)
+
+    def test_neutral_mode(self):
+        self.assertEqual(style_action_reply("Готово", "app", True, False), "Готово")
+        self.assertEqual(concise_speech("Текст", "ui_type", True, False), "")
+
+    def test_wake_phrase_normalization(self):
+        self.assertEqual(normalize_spoken("  Джарвіс,  ти тут?!  "), "джарвіс ти тут")
 
 
 if __name__ == "__main__":
