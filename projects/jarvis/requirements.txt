@@ -2,3 +2,4 @@ SpeechRecognition[audio]>=3.10,<4
 edge-tts>=6.1,<9
 pygame>=2.5,<3
 pillow>=10,<13
+pyautogui>=0.9.54,<1
