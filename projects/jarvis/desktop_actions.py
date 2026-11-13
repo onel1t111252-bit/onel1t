@@ -10,7 +10,7 @@ from functools import lru_cache
 import json
 from datetime import datetime
 from pathlib import Path
-from urllib.parse import quote_plus, urlsplit
+from urllib.parse import quote, quote_plus, urlsplit
 import ctypes
 import os
 import re
@@ -281,7 +281,7 @@ def run_action(action: ActionPlan) -> str:
     if action.kind in {"spotify_pause", "spotify_resume", "spotify_next", "spotify_previous"}:
         return spotify_connection.player_command(action.kind[len("spotify_"):])
     if action.kind == "spotify_search":
-        url = "https://open.spotify.com/search/" + quote_plus(action.target)
+        url = "https://open.spotify.com/search/" + quote(action.target, safe="")
         webbrowser.open(url)
         return "Відкриваю пошук Spotify для «" + action.target + "». Обери композицію в плеєрі."
     if action.kind == "file_picker":
