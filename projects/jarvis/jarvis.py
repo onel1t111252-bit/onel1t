@@ -681,31 +681,75 @@ class JarvisApp:
         self.status.configure(text=value, fg=color)
         self.header_status.configure(text=value, fg=color)
 
+    def choose_microphone(self):
+        """Optional local mic selector. Right-click the HANDS-FREE button."""
+        if self.handsfree.is_set() or self.mic_lock.locked():
+            self.post("SYSTEM", "Спочатку вимкни HANDS-FREE, щоб змінити мікрофон.", "sys")
+            return
+        try:
+            import speech_recognition as sr
+            devices = sr.Microphone.list_microphone_names()
+        except (ImportError, OSError, AttributeError) as exc:
+            self.post("SYSTEM", "Не можу показати мікрофони (" + type(exc).__name__
+                      + "). Запусти INSTALL_VOICE.bat і перевір мікрофон Windows.", "sys")
+            return
+        preview = ["0 — мікрофон Windows за замовчуванням"]
+        preview += [f"{i + 1} — {name[:65]}" for i, name in enumerate(devices[:20])]
+        selection = simpledialog.askinteger(
+            "JARVIS • Вибір мікрофона",
+            "Введи номер пристрою для розпізнавання голосу:\n\n"
+            + "\n".join(preview)
+            + "\n\nЗазвичай потрібен саме мікрофон або гарнітура, не динамік.",
+            minvalue=0, maxvalue=min(20, len(devices)),
+            parent=self.root)
+        if selection is None:
+            return
+        self.mic_index = None if selection == 0 else selection - 1
+        self.mic_calibrated = False
+        self.mic_energy_threshold = 350.0
+        self.mic_error_streak = 0
+        self.save_settings()
+        label = preview[selection]
+        self.post("SYSTEM", "Мікрофон обрано: " + label
+                  + ". Увімкни HANDS-FREE та скажи «Джарвіс, котра година».", "sys")
+
     def toggle_handsfree(self):
         if self.handsfree.is_set():
             self.handsfree.clear()
             self.followup_until = 0
             self.handsfree_btn.configure(text="🎙  HANDS-FREE: OFF", bg=PANEL_2)
             self.post("SYSTEM", "Прослуховування вимкнено.", "sys")
-        else:
-            ok = messagebox.askyesno(
-                "Увімкнути мікрофон?",
-                "Режим HANDS-FREE постійно обробляє фрагменти аудіо через онлайн-сервіс Google. "
-                "Він вимикається кнопкою HANDS-FREE OFF або закриттям програми. Увімкнути?",
-                parent=self.root,
-            )
-            if not ok:
-                return
-            self.handsfree.set()
-            self.handsfree_btn.configure(text="🎙  HANDS-FREE: ON", bg="#145570")
-            self.post("SYSTEM", "Мікрофон увімкнено. Скажи «Джарвіс, котра година».", "sys")
-            threading.Thread(target=self.handsfree_worker, daemon=True).start()
+            return
+        ok = messagebox.askyesno(
+            "Увімкнути мікрофон?",
+            "HANDS-FREE постійно прослуховує мікрофон після ввімкнення. "
+            "Розпізнавання надсилає фрагменти звуку онлайн-сервісу Google. "
+            "Режим вимикається кнопкою HANDS-FREE OFF або закриттям програми. "
+            "Дозволити?",
+            parent=self.root)
+        if not ok:
+            return
+        self.handsfree.set()
+        self.mic_error_streak = 0
+        self.followup_until = 0
+        self.handsfree_btn.configure(text="🎙  HANDS-FREE: ON", bg="#145570")
+        self.post("SYSTEM", "HANDS-FREE увімкнено. Скажи «Джарвіс, котра година». "
+                  "Якщо не чує — правий клік на HANDS-FREE дозволяє вибрати мікрофон "
+                  "(спочатку вимкни режим).", "sys")
+        if self.handsfree_thread is None or not self.handsfree_thread.is_alive():
+            self.handsfree_thread = threading.Thread(
+                target=self.handsfree_worker, name="jarvis-microphone", daemon=True)
+            self.handsfree_thread.start()
 
     def push_to_talk(self):
+        if self.handsfree.is_set():
+            # The old implementation called toggle_handsfree() here and
+            # unexpectedly switched continuous listening OFF.
+            self.post("SYSTEM", "HANDS-FREE уже ввімкнений. Скажи команду зі словом "
+                      "«Джарвіс» без натискання кнопки 🎤.", "sys")
+            return
         if self.busy or self.pending or self.mic_lock.locked() or self.speaking.is_set():
             return
-        if self.handsfree.is_set():
-            self.toggle_handsfree()
         threading.Thread(target=self.listen_once, args=(False,), daemon=True).start()
 
     def handsfree_worker(self):
@@ -716,19 +760,41 @@ class JarvisApp:
             self.listen_once(True)
         self.queue.put(("wake_off", None))
 
-    def listen_once(self, with_wake_word):
+    def _mic_notice(self, message: str, minimum_interval: float = 15.0):
+        now = time.monotonic()
+        if now - self.last_mic_warning >= minimum_interval:
+            self.last_mic_warning = now
+            self.queue.put(("hint", message))
+
+    def listen_once(self, with_wake_word: bool):
         if not self.mic_lock.acquire(blocking=False):
             return
         try:
             import speech_recognition as sr
+            recognizer = sr.Recognizer()
+            recognizer.dynamic_energy_threshold = True
+            recognizer.energy_threshold = self.mic_energy_threshold
             self.mic_listening.set()
             self.queue.put(("mic_status", "●  LISTENING"))
-            recognizer = sr.Recognizer()
-            with sr.Microphone() as microphone:
-                recognizer.adjust_for_ambient_noise(microphone, duration=.35)
-                audio = recognizer.listen(microphone, timeout=4 if with_wake_word else 7,
-                                          phrase_time_limit=8 if with_wake_word else 12)
+            with sr.Microphone(device_index=self.mic_index) as microphone:
+                # Calibrate once per selected mic, not at the start of every
+                # phrase where someone may already be speaking.
+                if not self.mic_calibrated:
+                    recognizer.adjust_for_ambient_noise(microphone, duration=.65)
+                    self.mic_calibrated = True
+                    self.queue.put(("hint", "Мікрофон готовий. Скажи «Джарвіс, "
+                                    "котра година»."))
+                audio = recognizer.listen(
+                    microphone, timeout=6 if with_wake_word else 7,
+                    phrase_time_limit=9 if with_wake_word else 12)
+                self.mic_energy_threshold = recognizer.energy_threshold
+            if with_wake_word and not self.handsfree.is_set():
+                return
+            self.queue.put(("mic_status", "●  RECOGNIZING"))
             spoken = recognizer.recognize_google(audio, language="uk-UA").strip()
+            self.mic_error_streak = 0
+            if not spoken:
+                return
             if with_wake_word:
                 if time.monotonic() <= self.followup_until:
                     self.followup_until = 0
@@ -736,24 +802,47 @@ class JarvisApp:
                 else:
                     command = extract_wake_command(spoken)
                     if command is None:
+                        # Ignore ambient speech not addressed to JARVIS.
                         return
                     if command:
                         self.queue.put(("heard", command))
                     else:
                         self.followup_until = time.monotonic() + 12
-                        self.queue.put(("hint", "Так, сер. Слухаю наступну команду..."))
+                        self.queue.put(("hint", "Почув «Джарвіс». Слухаю команду "
+                                        "протягом 12 секунд..."))
             else:
                 self.queue.put(("heard", spoken))
         except ImportError:
             self.handsfree.clear()
-            self.queue.put(("hint", "Потрібно запустити INSTALL_VOICE.bat."))
+            self.queue.put(("hint", "Голосовий ввід не встановлений. Запусти "
+                            "INSTALL_VOICE.bat і перезапусти JARVIS."))
         except Exception as exc:
             reason = type(exc).__name__
-            if reason not in {"UnknownValueError", "WaitTimeoutError"}:
-                logging.warning("Voice input: %s", reason)
-                self.queue.put(("hint", "Мікрофон або сервіс розпізнавання: " + reason))
-                if reason in {"OSError", "RequestError"}:
+            if reason in {"WaitTimeoutError", "UnknownValueError"}:
+                return  # Silence or unrecognized background audio is normal.
+            if reason == "RequestError":
+                # Previously this disabled HANDS-FREE forever on a single
+                # temporary Google STT/network error. Retry instead.
+                self._mic_notice("Google Speech не відповідає. HANDS-FREE "
+                                 "залишається увімкненим і спробує ще раз.")
+                threading.Event().wait(2.0)
+            elif reason in {"OSError", "AssertionError", "AttributeError"}:
+                self.mic_error_streak += 1
+                self.mic_calibrated = False
+                if self.mic_error_streak >= 3:
                     self.handsfree.clear()
+                    self.queue.put(("hint", "Не вдалося відкрити мікрофон 3 рази. "
+                                    "Перевір дозволи мікрофона Windows; "
+                                    "правим кліком на HANDS-FREE обери пристрій."))
+                else:
+                    self._mic_notice("Мікрофон тимчасово недоступний (" + reason
+                                     + "). Повторюю спробу...", 5.0)
+                    threading.Event().wait(1.2)
+            else:
+                logging.warning("Voice input failed: %s", reason)
+                self._mic_notice("Розпізнавання голосу: " + reason
+                                 + ". Перевір мікрофон і мережу.")
+                threading.Event().wait(.5)
         finally:
             self.mic_listening.clear()
             self.mic_lock.release()
