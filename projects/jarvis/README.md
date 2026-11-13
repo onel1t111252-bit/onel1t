@@ -73,6 +73,18 @@ The slider applies to online Microsoft Ukrainian voice synthesis (played with py
 - Password entry, unreviewed scripts, remote access, unrestricted shell execution and system-privilege escalation are deliberately unsupported.
 - Avoid payments, password fields, private chats and computers managed by an employer without permission.
 
+## UI design preview (not included in the main download until reviewed)
+
+The `jarvis-ui-polish-preview` branch proposes a compact HUD pass:
+
+- More legible spacing on typical Windows laptop screens with less vertical waste.
+- A redesigned **editable SVG cover concept** with a 3.0 reactor and updated controls. The cover is an illustration, not proof of live desktop rendering.
+- Three **truthful** status cards: Ollama is *checking / connected / offline*; microphone is *off / wake mode on / actively listening*; voice is *off / muted / a percentage*. The cards show application state, not a hardware diagnostic.
+- Keyboard shortcuts: **Ctrl+L** focuses the text command input, **F1** shows commands, and **Esc** cancels a pending approval or command sequence. None bypasses confirmation.
+- Conservatively reduced spacing, so the chat pane gets more room within the resizable compact window.
+
+This preview is a code/UI change, not a Windows audio or full visual validation. The main download link above remains the last tested **3.0 release** until the preview is explicitly accepted. Validate the visible layout, mouse/keyboard focus, voice and Steam launch on the user's own Windows PC before merging.
+
 ## Tests
 
 Run from the extracted folder:
