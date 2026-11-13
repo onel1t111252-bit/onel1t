@@ -326,6 +326,89 @@ def play_current_in_desktop() -> str:
             "Можливо, потрібен вибір треку вручну в Spotify.")
 
 
+def _ui_player_state(hwnd: int, request: str, *, try_play: bool = False) -> str:
+    """Inspect Spotify's *own* bottom media button via Windows UI Automation.
+
+    Returns 'playing', 'played', 'paused', or 'unknown'. Never click by hard
+    coded screen coordinates, on the search results or an unrelated window.
+    UI Automation is best-effort; the installed Spotify UI can change.
+    """
+    if os.name != "nt" or not _still_focused(hwnd):
+        return "unknown"
+    try:
+        from pywinauto import Desktop
+        window = Desktop(backend="uia").window(handle=hwnd)
+        frame = window.rectangle()
+        height = frame.bottom - frame.top
+        width = frame.right - frame.left
+        if height < 300 or width < 400:
+            return "unknown"
+        buttons = []
+        for control in window.descendants(control_type="Button"):
+            title = (control.window_text() or control.element_info.name or "").strip().casefold()
+            if title not in {"play", "pause", "відтворити", "пауза",
+                             "призупинити", "play current track",
+                             "pause current track", "відтворити трек",
+                             "призупинити трек"}:
+                continue
+            rect = control.rectangle()
+            center_x = (rect.left + rect.right) / 2
+            center_y = (rect.top + rect.bottom) / 2
+            # The global player transport button lives at the bottom center,
+            # not in search results, track cards or a sidebar.
+            if (frame.top + .78 * height < center_y < frame.bottom
+                    and frame.left + .32 * width < center_x <
+                    frame.left + .82 * width):
+                buttons.append((center_y, control, title))
+        if not buttons:
+            return "unknown"
+        _, control, label = max(buttons, key=lambda item: item[0])
+        playing = label.startswith("pause") or label in {"пауза", "призупинити", "призупинити трек"}
+        if playing:
+            return "playing"
+        if not try_play:
+            return "paused"
+
+        # Require the visible current track to resemble the user's request.
+        # This prevents resuming an unrelated old song if search navigation
+        # did not select the requested track.
+        current_titles = []
+        for element in window.descendants(control_type="Text"):
+            rect = element.rectangle()
+            x = (rect.left + rect.right) / 2
+            y = (rect.top + rect.bottom) / 2
+            if (y > frame.top + .79 * height
+                    and x < frame.left + .68 * width):
+                title = (element.window_text() or element.element_info.name or "").strip()
+                if title and len(title) <= 160:
+                    current_titles.append(title)
+        requested = re.findall(r"[^\W_]+", request.casefold())
+        visible = re.findall(r"[^\W_]+", " ".join(current_titles).casefold())
+        if not requested or not visible:
+            return "paused"
+        # Tolerate "Jan" vs "Jane!" transcription, but do not relax artist
+        # names or long/full titles. Ambiguous requests remain best-effort.
+        def word_match(word: str) -> bool:
+            return any(word == token or
+                       (len(word) >= 3 and len(token) <= len(word) + 2
+                        and token.startswith(word))
+                       for token in visible)
+        if not all(word_match(word) for word in requested):
+            return "paused"
+        if not _still_focused(hwnd):
+            return "unknown"
+        try:
+            control.invoke()
+        except (AttributeError, RuntimeError):
+            control.click_input()
+        time.sleep(.30)
+        return "played"
+    except Exception:
+        # Spotify may not expose accessible player controls in all releases.
+        # Never turn a UIA failure into a claim of successful playback.
+        return "unknown"
+
+
 def play_in_desktop(title: str) -> str:
     """Focus user's Spotify app and play quick-search top suggestion.
 
@@ -358,14 +441,31 @@ def play_in_desktop(title: str) -> str:
     pyautogui.press("down")
     if not _still_focused(hwnd):
         raise SpotifyDesktopError("Після вибору результату Spotify втратив фокус.")
-    pyautogui.press("enter")
-    time.sleep(.75)
-    # Verify what actually plays instead of asserting success after keypress.
+    # Spotify Quick Search supports Shift+Enter to PLAY just the selected
+    # suggestion. Regular Enter can navigate to an album, leaving playback
+    # paused (as seen in the user's actual screenshot).
+    pyautogui.hotkey("shift", "enter")
+    time.sleep(.85)
+    if not _still_focused(hwnd):
+        raise SpotifyDesktopError("Spotify втратив фокус після вибору треку.")
+    # Verify first via Windows media. Some Spotify builds expose no session.
     result = _read_spotify_playback()
-    # Some Spotify builds expose no Windows media session at all. Do NOT
-    # mistake missing telemetry for a failed playback or retry repeatedly.
     if result is None:
-        return _playback_feedback(query, None)
+        # When Windows has no media session, inspect the Spotify app's bottom
+        # Play/Pause button. Only press Play if the visible current track
+        # resembles the request: never resume an unrelated previous song.
+        ui_state = _ui_player_state(hwnd, query, try_play=True)
+        if ui_state == "played":
+            return ("У встановленому Spotify знайшов відповідний трек "
+                    "та натиснув Play. Windows не передає даних про звук, "
+                    "тому перевір відтворення в Spotify.")
+        if ui_state == "playing":
+            return ("Установлений Spotify показує стан відтворення "
+                    "після пошуку «" + query + "». "
+                    "Windows не надає даних для незалежної перевірки.")
+        return (_playback_feedback(query, None) + " "
+                "Якщо Spotify показує кнопку ▶, пошук знайшов трек, "
+                "але відтворення не підтверджене.")
     for _ in range(2):
         if result.playing and _track_matches(query, result):
             break
