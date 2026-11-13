@@ -1,15 +1,76 @@
-"""Concise Ukrainian 'sir' acknowledgements without false completion claims."""
+"""Original cinematic Ukrainian assistant tone; no film dialogue or voice cloning.
+
+The speech reply never asserts that a game or third-party app finished launching.
+Do not speak private text dictated into another app or enumerated window titles.
+"""
 from __future__ import annotations
+import re
+
+WAKE_RESPONSES = {
+    "джарвіс": "Слухаю вас, сер.",
+    "джарвісе": "Слухаю вас, сер.",
+    "джарвис": "Слухаю вас, сер.",
+    "jarvis": "Слухаю вас, сер.",
+}
+QUICK_RESPONSES = {
+    "ти тут": "Завжди на зв'язку, сер. Чим можу допомогти?",
+    "ти на зв'язку": "Так, сер. Слухаю.",
+    "ти мене чуєш": "Ваше повідомлення отримано, сер.",
+    "джарвіс ти тут": "Так, сер. Слухаю вас.",
+    "джарвіс ти на зв'язку": "Так, сер. Чекаю на команду.",
+    "доброго ранку": "Доброго ранку, сер. До ваших послуг.",
+    "добрий вечір": "Добрий вечір, сер. Системи готові до роботи.",
+    "дякую": "Завжди до ваших послуг, сер.",
+    "спасибі": "До ваших послуг, сер.",
+}
+_PREFIXES = ("так, сер", "є, сер", "перепрошую, сер", "слухаю вас, сер")
 
 
-def style_action_reply(reply: str, action_kind: str, success: bool) -> str:
-    """Only decorate real tool results. Ollama responses use a separate persona prompt."""
-    if not action_kind or not reply.strip():
+def normalize_spoken(text: str) -> str:
+    """Normalize lightweight phrases only; never rewrite dictated text."""
+    return re.sub(r"[\s,;.!?]+", " ", text.casefold()).strip()
+
+
+def cinematic_quick_reply(text: str) -> str | None:
+    key = normalize_spoken(text)
+    result = QUICK_RESPONSES.get(key)
+    if result:
+        return result
+    return WAKE_RESPONSES.get(key)
+
+
+def style_action_reply(reply: str, action_kind: str, success: bool,
+                       cinematic: bool = True) -> str:
+    """Style an executed action result for display without changing its meaning."""
+    if not cinematic or not action_kind or not reply.strip():
         return reply
-    if reply.lstrip().casefold().startswith(("так, сер", "є, сер", "перепрошую, сер")):
+    if reply.lstrip().casefold().startswith(_PREFIXES):
         return reply
     if not success:
         return "Перепрошую, сер. " + reply
-    if action_kind == "say" or action_kind == "ui_windows":
+    if action_kind in {"say", "ui_windows"}:
         return "Так, сер. " + reply
     return "Є, сер. " + reply
+
+
+def concise_speech(reply: str, action_kind: str, success: bool,
+                   cinematic: bool = True) -> str:
+    """Limit speech sent to the online TTS; keep detailed result on-screen."""
+    if action_kind in {"ui_windows", "ui_type", "ui_focus", "user_file", "note", "screenshot"}:
+        # Window titles, typed text, file names and their contents stay off online TTS.
+        return "Є, сер." if success and cinematic else ""
+    if not action_kind:
+        return reply
+    if not cinematic:
+        return reply
+    if not success:
+        return "Перепрошую, сер. Не вдалося виконати команду. Подробиці на екрані."
+    if action_kind == "known_uri":
+        return "Є, сер. Команду Steam надіслано."
+    if action_kind in {"app", "installed_app", "folder", "settings"}:
+        return "Є, сер. Надсилаю команду відкриття."
+    if action_kind in {"volume", "ui_hotkey", "ui_scroll", "ui_click"}:
+        return "Виконую, сер."
+    if action_kind == "website" or action_kind == "external_url":
+        return "Є, сер. Відкриваю сторінку."
+    return reply
