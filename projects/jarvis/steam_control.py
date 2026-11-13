@@ -217,14 +217,37 @@ def _restore_login_registry(previous: str | None) -> None:
             winreg.SetValueEx(key, "AutoLoginUser", 0, winreg.REG_SZ, previous)
 
 
+def active_steam_user() -> int | None:
+    """Read Steam's current account ID; never guess the active account from order."""
+    if os.name != "nt":
+        return None
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER,
+                            r"Software\Valve\Steam\ActiveProcess") as key:
+            account_id = int(winreg.QueryValueEx(key, "ActiveUser")[0])
+            return account_id if account_id > 0 else None
+    except (OSError, ValueError, TypeError):
+        return None
+
+
 def choose_first_account(steam_dir: Path | None = None) -> str:
     """User-approved step. Do not stop Steam, games, or alter credentials."""
     if os.name != "nt":
         raise SteamError("Вибір акаунта Steam працює лише у Windows.")
     directory = steam_dir or steam_root()
     if steam_running():
-        raise SteamError("Steam уже працює. Щоб вибрати перший збережений акаунт, "
-                         "закрий Steam і запущені ігри вручну, потім повтори команду.")
+        config_path = directory / "config" / "loginusers.vdf"
+        try:
+            first_id, _, _ = first_saved_account(
+                config_path.read_text(encoding="utf-8-sig"))
+        except (OSError, UnicodeError) as exc:
+            raise SteamError("Steam працює, але список збережених акаунтів недоступний.") from exc
+        current_id = active_steam_user()
+        if current_id is not None and current_id == int(first_id) & 0xFFFFFFFF:
+            return "Перший збережений акаунт Steam уже активний."
+        raise SteamError("Steam уже працює під іншим акаунтом або стан входу невідомий. "
+                         "Заверши ігри й закрий Steam вручну, щоб вибрати перший акаунт.")
     config = directory / "config" / "loginusers.vdf"
     try:
         if config.stat().st_size > 2_000_000:
