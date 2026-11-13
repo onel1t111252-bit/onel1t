@@ -213,8 +213,11 @@ def plan_action(raw_text: str) -> ActionPlan | None:
         kind, payload, preview = ui
         return ActionPlan("ui_" + kind, payload, preview, kind != "windows")
     # A Steam launch URI starts Steam automatically before opening Dota 2.
-    steam = r"(?:стім|стим|steam)"
-    dota = r"(?:доту(?: 2)?|дота(?: 2)?|dota(?: 2)?)"
+    # Google STT sometimes turns "стім" into "стіні" or drops "і" between
+    # "відкрий Steam" and "запусти Dota 2". Only normalize in Steam-specific
+    # contexts: never reinterpret an arbitrary unrecognized app as a game.
+    steam = r"(?:стім|стим|steam|стіні|стіни|стіне|стин)"
+    dota = r"(?:доту(?:\s+2)?|дота(?:\s+2)?|dota\s*2?|доту два|дота два)"
     verb = r"(?:відкрий|відкрити|запусти|запустити|включи|увімкни|open|launch)"
     if (re.fullmatch(fr"{verb} {steam}\s+(?:і|та|а потім|потім)\s+{verb} {dota}", q)
             or re.fullmatch(fr"{verb} {steam}\s+а\s+потім\s+{verb} {dota}", q)
@@ -229,6 +232,27 @@ def plan_action(raw_text: str) -> ActionPlan | None:
         if 1 <= len(title) <= 170:
             return ActionPlan("steam_game", title,
                               "Вибрати перший збережений акаунт і запустити Steam-гру: " + title, True)
+    # Spoken two-part Steam requests may have NO conjunction (as in the
+    # real Google recognition "відкрий стіні запусти Dota 2"). Treat the
+    # combined command as one owner-approved game launch, not as an app title.
+    spoken_game = re.fullmatch(
+        fr"{verb}\s+{steam}\s+(?:(?:і|та|а потім|потім)\s+)?"
+        fr"{verb}\s+(?:гру\s+)?(.+)", q
+    )
+    if spoken_game:
+        title = spoken_game.group(1).strip()
+        if re.fullmatch(dota, title):
+            title = "Dota 2"
+        if 1 <= len(title) <= 170:
+            return ActionPlan("steam_game", title,
+                              "Запустити встановлену Steam-гру: " + title
+                              + " (у вже активному акаунті або після налаштування першого)", True)
+    # Direct voice variants of the Dota title must not fall through to the
+    # Spotify music planner, installed apps or general AI.
+    standalone_dota = re.fullmatch(fr"{verb}\s+(?:гру\s+)?({dota})(?:\s+через\s+{steam})?", q)
+    if standalone_dota:
+        return ActionPlan("steam_game", "Dota 2",
+                          "Запустити встановлену гру Dota 2 у Steam", True)
     if q in {"покажи ігри steam", "покажи ігри стім", "список ігор steam",
              "мої ігри steam", "мої ігри стім", "бібліотека steam",
              "бібліотека стім", "покажи встановлені ігри", "покажи бібліотеку steam"}:
@@ -302,7 +326,7 @@ def plan_action(raw_text: str) -> ActionPlan | None:
     m = re.fullmatch(r"(?:відкрий|відкрити|запусти|запустити|покажи|open) (.+)", q)
     if m:
         name = m.group(1).strip()
-        if name in {"стім", "стим", "steam"}:
+        if name in {"стім", "стим", "steam", "стіні", "стіни", "стіне", "стин"}:
             return ActionPlan("steam_open_first", "",
                               "Вибрати перший збережений акаунт і відкрити Steam", True)
         if name in APPS:
