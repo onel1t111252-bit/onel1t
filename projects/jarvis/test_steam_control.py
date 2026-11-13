@@ -104,6 +104,15 @@ class SteamAccountTests(unittest.TestCase):
         self.assertIn("Автоматичний вибір", message)
         self.assertIn("вибери потрібний акаунт вручну", message)
 
+    def test_steam_still_opens_on_registry_read_error(self):
+        with patch("steam_control.os.name", "nt"), \
+             patch("steam_control.choose_first_account",
+                   side_effect=PermissionError("registry denied")), \
+             patch("steam_control.os.startfile", create=True) as start:
+            message = open_steam_first()
+        start.assert_called_once_with("steam://open/main")
+        self.assertIn("registry denied", message)
+
     def test_steam_still_opens_if_already_running_on_different_account(self):
         with patch("steam_control.os.name", "nt"), \
              patch("steam_control.choose_first_account",
