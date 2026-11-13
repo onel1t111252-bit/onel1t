@@ -283,8 +283,8 @@ def choose_first_account(steam_dir: Path | None = None) -> str:
             os.replace(temp_path, config)
             swapped = True
             temp_path = None
+        registry_changed = True  # Also restore if Windows writes then reports an error.
         _set_login_registry(account)
-        registry_changed = True
     except Exception as exc:
         if swapped:
             try:
@@ -313,7 +313,18 @@ def choose_first_account(steam_dir: Path | None = None) -> str:
 def open_steam_first() -> str:
     if os.name != "nt":
         raise SteamError("Steam доступний лише у Windows.")
-    chosen = choose_first_account()
+    try:
+        chosen = choose_first_account()
+    except SteamError as exc:
+        # Steam is still launchable when there are no remembered accounts.
+        # Do not hide errors about Steam already running under a different user.
+        if not any(part in str(exc) for part in (
+                "не має збережених акаунтів", "Немає доступного списку",
+                "потребує ручного входу")):
+            raise
+        os.startfile("steam://open/main")
+        return "Steam відкривається, але перший акаунт не можна вибрати автоматично. " \
+               "Увійди вручну й увімкни запам'ятовування входу."
     os.startfile("steam://open/main")
     return "Є, сер. " + chosen + " Надсилаю команду відкриття Steam. " \
            "Якщо Steam просить пароль або Steam Guard, увійди особисто."
