@@ -21,7 +21,7 @@ from urllib import request, error
 from desktop_actions import ActionPlan, plan_action, run_action
 from command_sequences import split_sequence
 from voice_engine import speak, clamp_volume, VOICE_PROFILES, VOICE_LABELS
-from assistant_persona import style_action_reply
+from assistant_persona import style_action_reply, concise_speech, cinematic_quick_reply
 
 ROOT_DIR = Path(__file__).resolve().parent
 SETTINGS_PATH = ROOT_DIR / "settings.json"
@@ -53,7 +53,17 @@ SYSTEM_PROMPT = (
     "до чужих комп'ютерів без дозволу. Якщо функція недоступна, скажи про це. "
     "Команди Windows обробляються окремим модулем, тому не стверджуй, "
     "що JARVIS взагалі не має доступу до програм на комп\u0027ютері. "
+    "Відповідай унікальними, короткими, корисними фразами. Не цитуй репліки з фільмів. "
+    "Ніколи не вдавай доступу до обладнання, програм чи результатів, яких реально не перевіряв. "
     "Можеш відповідати на запитання та допомагати користувачу з навчанням."
+)
+
+NEUTRAL_PROMPT = (
+    "Ти локальний україномовний асистент Windows. Відповідай українською "
+    "чітко й доброзичливо, без звертання «сер» і без кінематографічного стилю. "
+    "Не приписуй собі дій у Windows, яких не виконав модуль команд. "
+    "Не виконуй команди у відповідях: Windows контролюється окремими діями. "
+    "Не проси паролі, приватні ключі або коди доступу."
 )
 
 logging.basicConfig(filename=ROOT_DIR / "jarvis.log", encoding="utf-8",
@@ -85,8 +95,9 @@ def ollama_status() -> tuple[bool, str]:
         return False, "OLLAMA OFFLINE"
 
 
-def ollama_chat(text: str, history: list[dict[str, str]]) -> tuple[str, list[dict[str, str]]]:
-    conversation = [{"role": "system", "content": SYSTEM_PROMPT}] + history[-10:]
+def ollama_chat(text: str, history: list[dict[str, str]], cinematic: bool = True) -> tuple[str, list[dict[str, str]]]:
+    system_prompt = SYSTEM_PROMPT if cinematic else NEUTRAL_PROMPT
+    conversation = [{"role": "system", "content": system_prompt}] + history[-10:]
     conversation.append({"role": "user", "content": text})
     packet = {"model": MODEL, "messages": conversation, "stream": False,
               "think": False, "options": {"temperature": 0.55, "num_predict": 340}}
@@ -117,6 +128,7 @@ class JarvisApp:
         self.mic_lock = threading.Lock()
         self.handsfree = threading.Event()
         self.speaking = threading.Event()
+        self.mic_listening = threading.Event()
         self.alive = True
         self.busy = False
         self.pending: ActionPlan | None = None
@@ -126,6 +138,7 @@ class JarvisApp:
         self.history: list[dict[str, str]] = []
         self.settings = get_settings()
         self.voice_on = bool(self.settings.get("voice_on", True))
+        self.cinematic_mode = bool(self.settings.get("cinematic_mode", True))
         self.voice_volume = clamp_volume(self.settings.get("voice_volume", 80))
         self.window_mode = self.settings.get("window_mode", "compact")
         if self.window_mode not in {"compact", "wide"}:
@@ -143,6 +156,8 @@ class JarvisApp:
         self.root.after(150, self.check_ai)
         self.root.after(100, self.animate_reactor)
         threading.Thread(target=self.audio_worker, daemon=True).start()
+        if self.cinematic_mode and self.voice_on and self.voice_volume > 0:
+            self.enqueue_speech("До ваших послуг, сер. Джарвіс готовий до роботи.")
 
     def _setup_window(self):
         self.root.title("ONEL1T | JARVIS 3.0")
@@ -211,7 +226,8 @@ class JarvisApp:
         self.ai_state = self._label(side, "CHECKING OLLAMA...", size=9, color=MUTED, mono=True)
         self.ai_state.pack(pady=(0, 12))
         self._label(side, "VOICE CONTROL • LOCAL AI", color=GREEN, size=8, mono=True).pack(pady=(0, 4))
-        self._label(side, "VOICE OUTPUT: ONLINE NEURAL", color=MUTED, size=8, mono=True).pack(pady=(0, 13))
+        self.reactor_status = self._label(side, "◉  CORE: STANDBY", color=CYAN, size=9, mono=True)
+        self.reactor_status.pack(pady=(0, 12))
 
         self._label(side, "QUICK COMMANDS", size=10, color=MUTED, mono=True).pack(anchor="w", padx=19, pady=(0, 7))
         for title, cmd in [
@@ -262,6 +278,9 @@ class JarvisApp:
         controls.pack(fill="x", padx=22, pady=(0, 8))
         self._button(controls, "▶  TEST VOICE", self.test_voice, bg=PANEL_2).pack(side="left")
         self._button(controls, "■  STOP PLAN", self.stop_plan, bg="#4e3046").pack(side="left", padx=(8, 0))
+        self.persona_btn = self._button(controls, "◈  JARVIS MODE: " + ("ON" if self.cinematic_mode else "OFF"),
+                                        self.toggle_persona, bg="#15566c")
+        self.persona_btn.pack(side="right")
         self.refresh_voice_buttons()
 
         volume_bar = tk.Frame(panel, bg=PANEL)
@@ -328,17 +347,35 @@ class JarvisApp:
         x, y = 127, 87
         self.reactor_tick += 1
         phase = self.reactor_tick * 0.065
+        listening = self.mic_listening.is_set()
+        speaking = self.speaking.is_set()
+        glow = GREEN if listening else AMBER if speaking else CYAN
+        pulse = (math.sin(phase * 1.6) + 1.0) / 2.0
+        self.reactor_status.configure(
+            text="◉  CORE: LISTENING" if listening else
+                 "◉  CORE: SPEAKING" if speaking else
+                 "◉  CORE: PROCESSING" if self.busy else
+                 "◉  CORE: STANDBY", fg=glow)
         for radius, line in [(72, 1), (57, 2), (44, 2), (32, 1)]:
             self.orb.create_oval(x-radius, y-radius, x+radius, y+radius,
-                                 outline="#184158" if radius >= 70 else BLUE,
+                                 outline="#184158" if radius >= 70 else glow if radius <= 44 else BLUE,
                                  width=line, tags="rings")
         self.orb.create_arc(x-67, y-67, x+67, y+67,
                              start=(math.degrees(phase) % 360), extent=74,
-                             outline=CYAN, width=5, style="arc", tags="rings")
+                             outline=glow, width=5, style="arc", tags="rings")
         self.orb.create_arc(x-50, y-50, x+50, y+50,
                              start=(-math.degrees(phase) % 360), extent=100,
-                             outline=GREEN if self.handsfree.is_set() else CYAN,
+                             outline=GREEN if self.handsfree.is_set() else glow,
                              width=3, style="arc", tags="rings")
+        for mark in range(12):
+            angle = phase / 8 + mark * math.tau / 12
+            inner, outer = 78, 80 + (2 if mark % 3 == 0 else 0)
+            self.orb.create_line(x + math.cos(angle) * inner,
+                                 y + math.sin(angle) * inner,
+                                 x + math.cos(angle) * outer,
+                                 y + math.sin(angle) * outer,
+                                 fill=glow if mark < 3 or pulse > 0.85 else "#23556e",
+                                 width=2, tags="rings")
         self.orb.tag_lower("rings", "center")
         self.root.after(75, self.animate_reactor)
 
@@ -355,7 +392,8 @@ class JarvisApp:
             SETTINGS_PATH.write_text(json.dumps({"voice_on": self.voice_on,
                                                 "voice_profile": self.voice_profile,
                                                 "voice_volume": self.voice_volume,
-                                                "window_mode": self.window_mode},
+                                                "window_mode": self.window_mode,
+                                                "cinematic_mode": self.cinematic_mode},
                                                ensure_ascii=False, indent=2), encoding="utf-8")
         except OSError:
             logging.warning("Could not save preferences")
@@ -364,6 +402,16 @@ class JarvisApp:
         self.voice_volume = clamp_volume(value)
         self.volume_label.configure(text=f"VOICE VOLUME  /  {self.voice_volume}%")
         self.save_settings()
+
+    def toggle_persona(self):
+        self.cinematic_mode = not self.cinematic_mode
+        self.history.clear()  # Don't leak prior persona wording across modes.
+        self.persona_btn.configure(text="◈  JARVIS MODE: " +
+                                   ("ON" if self.cinematic_mode else "OFF"))
+        self.save_settings()
+        self.post("SYSTEM",
+                  "Кінематографічний режим активовано. Так, сер." if self.cinematic_mode
+                  else "Звичайний режим відповідей активовано.", "sys")
 
     def refresh_voice_buttons(self):
         self.voice_btn.configure(text="🔊  VOICE: ON" if self.voice_on else "🔇  VOICE: OFF")
@@ -411,6 +459,10 @@ class JarvisApp:
         if not text or self.busy or self.pending:
             return
         self.post("YOU 🎤" if via_voice else "YOU", text, "user")
+        quick = cinematic_quick_reply(text) if self.cinematic_mode else None
+        if quick is not None:
+            self.finish(quick)
+            return
         route = plan_action(text)
         segments = split_sequence(text)
         # Preserve a single fixed Steam URI for the established Steam+Dota phrase.
@@ -496,7 +548,7 @@ class JarvisApp:
             if action:
                 reply = run_action(action)
             else:
-                reply, self.history = ollama_chat(text, self.history)
+                reply, self.history = ollama_chat(text, self.history, self.cinematic_mode)
         except (ValueError, RuntimeError) as exc:
             success = False
             reply = "Дія не виконана: " + str(exc)
@@ -513,11 +565,12 @@ class JarvisApp:
         self.queue.put(("answer", (reply, success, action.kind if action else "")))
 
     def finish(self, text, success=True, action_kind=""):
-        text = style_action_reply(text, action_kind, success)
+        text = style_action_reply(text, action_kind, success, self.cinematic_mode)
         self.post("JARVIS", text, "ai")
-        # Do not send window titles or dictated text acknowledgments to online TTS.
-        if action_kind not in {"ui_windows", "ui_type", "ui_focus"}:
-            self.enqueue_speech(text)
+        # Speak only a concise acknowledgment; keep private details on-screen.
+        voice_line = concise_speech(text, action_kind, success, self.cinematic_mode)
+        if voice_line:
+            self.enqueue_speech(voice_line)
         self.busy = False
         if self.steps:
             if success:
@@ -578,6 +631,7 @@ class JarvisApp:
             return
         try:
             import speech_recognition as sr
+            self.mic_listening.set()
             self.queue.put(("mic_status", "●  LISTENING"))
             recognizer = sr.Recognizer()
             with sr.Microphone() as microphone:
@@ -597,7 +651,7 @@ class JarvisApp:
                         self.queue.put(("heard", command))
                     else:
                         self.followup_until = time.monotonic() + 12
-                        self.queue.put(("hint", "Слухаю наступну команду..."))
+                        self.queue.put(("hint", "Так, сер. Слухаю наступну команду..."))
             else:
                 self.queue.put(("heard", spoken))
         except ImportError:
@@ -611,6 +665,7 @@ class JarvisApp:
                 if reason in {"OSError", "RequestError"}:
                     self.handsfree.clear()
         finally:
+            self.mic_listening.clear()
             self.mic_lock.release()
             self.queue.put(("mic_status", "●  READY"))
 
