@@ -168,6 +168,9 @@ def spotify_music_plan(q: str) -> ActionPlan | None:
     if not m:
         return None
     verb, text = m.group(1), m.group(2).strip()
+    if q in {"постав музику на паузу", "зупини музику", "продовж музику"}:
+        return None  # Explicit playback transport commands handle these.
+    text = re.sub(r"^(?:мені|будь ласка)\s+", "", text)
     original = text
     explicit = bool(re.search(rf"\b{platform}\b", text, flags=re.I))
     named_song = bool(re.search(r"^(?:пісню|трек|композицію)\b", text))
@@ -175,6 +178,7 @@ def spotify_music_plan(q: str) -> ActionPlan | None:
     text = re.sub(r"^(?:пісню|трек|композицію|музику)\s+", "", text)
     text = re.sub(rf"\s+(?:(?:в|у|на|через)\s+)?{platform}$", "", text, flags=re.I)
     text = re.sub(r"^(?:пісню|трек|композицію|музику)\s+", "", text)
+    text = re.sub(r"\s+будь ласка$", "", text)
     text = text.strip(" !?.,:;«»\"'")
     blocked = {"", "звук", "гучність", "музику", "пісню", "трек",
                "spotify", "спотіфай", "спотифай",
