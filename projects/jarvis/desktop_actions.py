@@ -19,6 +19,7 @@ import uuid
 import webbrowser
 from window_control import parse_ui, perform_ui
 from spotify_control import spotify_connection, SpotifyError
+from spotify_desktop import play_in_desktop, SpotifyDesktopError
 from steam_control import (SteamError, find_installed_game, list_installed_games,
                            open_steam_first, launch_installed_game)
 
@@ -464,20 +465,24 @@ def run_action(action: ActionPlan) -> str:
     if action.kind == "spotify_connect":
         return spotify_connection.connect(action.target)
     if action.kind == "spotify_play":
-        if not spotify_connection.connected:
-            url = "https://open.spotify.com/search/" + quote(action.target, safe="")
-            webbrowser.open(url)
-            return ("Відкрив пошук «" + action.target + "» у Spotify. "
-                    "Автоматичне відтворення потребує CONNECT SPOTIFY, Spotify Premium "
-                    "і активного плеєра. Можна вибрати результат вручну.")
+        # Play music in the user's Windows Spotify application. Never replace
+        # this PLAY request with Google/Spotify web search.
+        api_reason = None
+        if spotify_connection.connected:
+            try:
+                return spotify_connection.play_track(action.target)
+            except SpotifyError as exc:
+                # API account may lack Premium or its current device might be
+                # a PHONE. Try the visible local Spotify desktop UI instead.
+                api_reason = str(exc)
         try:
-            return spotify_connection.play_track(action.target)
-        except SpotifyError as exc:
-            # Fail fast and still deliver a useful search result; never claim playback.
-            url = "https://open.spotify.com/search/" + quote(action.target, safe="")
-            webbrowser.open(url)
-            return ("Не вдалося автоматично відтворити: " + str(exc)
-                    + " Відкрив пошук у Spotify — вибери пісню вручну.")
+            return play_in_desktop(action.target)
+        except SpotifyDesktopError as exc:
+            message = "Не вдалося відтворити пісню у встановленому Spotify: " + str(exc)
+            if api_reason:
+                message += " Також Spotify API повідомив: " + api_reason
+            message += " Пошук у браузері замість відтворення не відкривав."
+            raise SpotifyError(message) from exc
     if action.kind in {"spotify_pause", "spotify_resume", "spotify_next", "spotify_previous"}:
         return spotify_connection.player_command(action.kind[len("spotify_"):])
     if action.kind == "spotify_search":
