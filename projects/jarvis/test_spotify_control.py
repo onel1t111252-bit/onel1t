@@ -42,6 +42,37 @@ class SpotifyPlanTests(unittest.TestCase):
                 self.assertEqual(plan.target, "numb")
                 self.assertFalse(plan.needs_approval)
 
+    def test_screenshot_jingle_bells_phrase_routes_to_spotify_song(self):
+        plan = plan_action("Увімкни пісню Jingle Bells Spotify")
+        self.assertEqual(plan.kind, "spotify_play")
+        self.assertEqual(plan.target, "jingle bells")
+
+    def test_current_track_means_resume_not_search_for_song_title(self):
+        commands = [
+            "Відтвори поточний трек",
+            "Джарвіс, відтвори поточну пісню",
+            "Увімкни поточний трек",
+            "продовж відтворення",
+            "відтвори цей трек",
+        ]
+        for phrase in commands:
+            with self.subTest(phrase=phrase):
+                plan = plan_action(phrase)
+                self.assertEqual(plan.kind, "spotify_resume_current")
+                self.assertEqual(plan.target, "")
+
+    def test_current_track_uses_native_play_not_browser_or_song_search(self):
+        from desktop_actions import run_action
+        with patch("desktop_actions.play_current_in_desktop",
+                   return_value="Надіслав Play") as play, \
+             patch("desktop_actions.play_in_desktop") as song_search, \
+             patch("desktop_actions.webbrowser.open") as browser:
+            reply = run_action(plan_action("Відтвори поточний трек"))
+        self.assertIn("Надіслав Play", reply)
+        play.assert_called_once_with()
+        song_search.assert_not_called()
+        browser.assert_not_called()
+
     def test_music_not_sent_to_ollama_or_steam(self):
         for command in ("увімкни пісню Numb", "увімкни Numb", "включи в Spotify Numb"):
             with self.subTest(command=command):

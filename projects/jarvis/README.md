@@ -140,6 +140,35 @@ JARVIS supports owner-approved Steam account selection and game launching withou
 
 **Why approval is required:** Selecting an account changes local sign-in preferences; starting an app/game is a visible local action. Every `steam_open_first` and `steam_game` action shows its purpose in JARVIS and needs an explicit **CONFIRM**. There is no automated password entry, credentials storage, Steam Guard workaround or game-file execution.
 
+## Spotify fix: missing Windows playback data ≠ song failed
+
+**Do not treat an absent Windows Media Session as a Spotify playback failure.**
+A user may have the installed Spotify application open and playing while
+Windows returns no track metadata. After the desktop search shortcut is sent,
+JARVIS now reports **UNVERIFIED** instead of a false "action failed" error in
+that case, without launching a web browser. Verified wrong tracks or a
+confirmed paused state still produce a clear warning; no action claims a
+correct song played unless the platform actually reports it.
+
+**"Відтвори поточний трек" and "продовж відтворення"** now mean "resume the
+already selected Spotify song", not a search for a song called "поточний
+трек". The native command first tries an existing Spotify Windows Media
+Session's idempotent PLAY operation. If that interface is unavailable, it
+sends Windows \`WM_APPCOMMAND / APPCOMMAND_MEDIA_PLAY\` to the verified Spotify
+desktop window (an explicit Play request, not the Space Play/Pause toggle).
+If Spotify does not support that command, manual playback may still be
+required. On-screen text distinguishes sending Play from verified audio.
+
+**Diagnosing the reported example:** say
+\`Джарвіс, увімкни пісню Jingle Bells Spotify\`, then view the **Spotify
+desktop window**, not just JARVIS's transcript. If Quick Search shows
+suggestions but nothing plays, capture the Spotify window with the track
+list visible; version-specific selection may need a different control.
+If music is already playing, but **SPOTIFY STATUS** says Windows has no
+media data, that is a Windows telemetry limitation, not proof the command
+failed. For precise selection of a particular "Jingle Bells" recording,
+include the artist's name — Spotify has multiple versions.
+
 ## Spotify playback verification fix (November 2026)
 
 The previous desktop Spotify code opened Quick Search (\`Ctrl+K\`), typed a
@@ -150,9 +179,9 @@ The new route waits for the suggestions, explicitly uses \`Down\` to select
 a suggestion and then \`Enter\` to request playback. It also checks the
 **Windows Media Session** via \`winsdk\` to see whether Spotify is **actually
 playing the requested song**, comparing the song title **and** artist words.
-If the result is wrong, playback is paused, or the Windows media information
-is unavailable, JARVIS **reports a failure or that playback is unverified**,
-never a false "song is playing" message. JARVIS cannot guarantee the correct
+If the result is wrong or playback is paused, JARVIS reports a failure.
+If Windows media information is **unavailable**, JARVIS reports
+**UNVERIFIED** rather than failing or claiming the song is playing. JARVIS cannot guarantee the correct
 suggestion exists in every Spotify version; for exact playback when supported,
 the authorized Spotify Web API remains an option. API search itself now
 rejects catalog results that do not contain all requested title/artist words.
