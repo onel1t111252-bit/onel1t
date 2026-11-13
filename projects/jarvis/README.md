@@ -82,7 +82,7 @@ JARVIS supports owner-approved Steam account selection and game launching withou
 
 | What you say | What JARVIS actually does |
 | --- | --- |
-| `Джарвіс, відкрий Steam` | When Steam is closed, configure the **first account recorded in Steam's saved account list** as auto-login and launch Steam |
+| `Джарвіс, відкрий Steam` | **Always attempt to open Steam**. If Steam is closed and it is possible, first configure the **first saved account**; when selection fails, Steam still opens for manual account choice |
 | `відкрий Steam і запусти Cyberpunk 2077` | Look up that *installed game* in local Steam libraries, set first saved account and send a Steam AppID launch URI |
 | `запусти гру Portal 2` | Find exact/unique installed title and launch through `steam://run/<AppID>` |
 | `запусти Доту` | Use installed Dota 2 entry with the same checks |
@@ -90,6 +90,12 @@ JARVIS supports owner-approved Steam account selection and game launching withou
 | `вибери перший акаунт` | Configure first saved account, then open Steam (only after confirmation) |
 
 **Important account behavior:** "First" means the **first stored entry in `Steam/config/loginusers.vdf`**. Steam's visible account-picker order can differ. The tool reads an existing remembered-login setting and requires `RememberPassword=1`; it neither reads nor requests a Steam password or Steam Guard code. If Steam is closed, it changes **`MostRecent` in `loginusers.vdf`** and the current user's **`HKCU\Software\Valve\Steam\AutoLoginUser`** preference, then asks Steam to open normally. Before changing the file it saves an owner-local backup named `loginusers.vdf.jarvis-backup`. No account data is sent to an online service.
+
+**Fix for Steam not opening due to account selection:** JARVIS now **separates opening Steam from selecting an account**. If the account file, Windows registry, or active-account check cannot be used, the program still sends `steam://open/main`; if the protocol is unregistered, it falls back to the installed `steam.exe`. It reports the account-selection problem on screen instead of pretending a login succeeded. If Steam presents the account chooser, select the account yourself; JARVIS never enters passwords or bypasses Steam Guard. One-time sign-in setup is not guaranteed to suppress the Steam client's chooser.
+
+**Games remain guarded:** If account selection fails when launching a game, JARVIS opens Steam but deliberately **does not start the game under an unverified account**. Select the correct account and repeat the game command. This preserves the prior rule not to launch a game on an unrelated saved account.
+
+**To install this fix:** download the **current ZIP** again, extract to a new folder (or replace the app's Python source files while JARVIS is closed) and relaunch `START_JARVIS.bat`. The previously extracted folder does not update itself.
 
 **If Steam is running:** JARVIS checks Steam's locally reported `ActiveUser`. It sends a game launch request only if the active account matches the first saved account. It does **not** close Steam, log out a user, interrupt a running game or silently start the game under the wrong account. If Steam's current account cannot be verified, the action stops and tells you to close Steam manually and retry.
 

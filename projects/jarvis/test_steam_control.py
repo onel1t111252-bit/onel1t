@@ -10,8 +10,8 @@ from unittest.mock import patch
 from desktop_actions import ActionPlan, plan_action, run_action
 from steam_control import (
     SteamError, SteamGame, choose_first_account, find_installed_game,
-    first_saved_account, installed_games, parse_vdf,
-    update_first_account_preference,
+    first_saved_account, installed_games, parse_vdf, open_steam_first,
+    launch_installed_game, _open_steam_client, update_first_account_preference,
 )
 
 USERS = r'''"users"
@@ -91,6 +91,91 @@ class SteamAccountTests(unittest.TestCase):
         self.assertFalse(action.needs_approval)
         with patch("desktop_actions.list_installed_games", return_value="Portal 2"):
             self.assertEqual(run_action(action), "Portal 2")
+
+    def test_steam_still_opens_when_first_account_is_unavailable(self):
+        # A missing loginusers.vdf or an unrecognized Steam account picker
+        # must never prevent the user's explicit "open Steam" request.
+        with patch("steam_control.os.name", "nt"), \
+             patch("steam_control.choose_first_account",
+                   side_effect=SteamError("Немає доступного списку збережених акаунтів Steam.")), \
+             patch("steam_control.os.startfile", create=True) as start:
+            message = open_steam_first()
+        start.assert_called_once_with("steam://open/main")
+        self.assertIn("Автоматичний вибір", message)
+        self.assertIn("вибери потрібний акаунт вручну", message)
+
+    def test_steam_still_opens_on_registry_read_error(self):
+        with patch("steam_control.os.name", "nt"), \
+             patch("steam_control.choose_first_account",
+                   side_effect=PermissionError("registry denied")), \
+             patch("steam_control.os.startfile", create=True) as start:
+            message = open_steam_first()
+        start.assert_called_once_with("steam://open/main")
+        self.assertIn("registry denied", message)
+
+    def test_steam_still_opens_if_already_running_on_different_account(self):
+        with patch("steam_control.os.name", "nt"), \
+             patch("steam_control.choose_first_account",
+                   side_effect=SteamError("Steam уже працює під іншим акаунтом")), \
+             patch("steam_control.os.startfile", create=True) as start:
+            message = open_steam_first()
+        start.assert_called_once_with("steam://open/main")
+        self.assertIn("іншим акаунтом", message)
+
+    def test_steam_still_opens_on_successful_first_account_preference(self):
+        with patch("steam_control.os.name", "nt"), \
+             patch("steam_control.choose_first_account",
+                   return_value="Налаштовано перший збережений акаунт Steam."), \
+             patch("steam_control.os.startfile", create=True) as start:
+            message = open_steam_first()
+        start.assert_called_once_with("steam://open/main")
+        self.assertIn("Надіслано команду відкриття Steam", message)
+        self.assertIn("не гарантує вхід", message)
+
+    def test_steam_uses_executable_if_uri_unregistered(self):
+        fake_dir = Path("C:/Program Files (x86)/Steam")
+        with patch("steam_control.os.name", "nt"), \
+             patch("steam_control.os.startfile", create=True,
+                   side_effect=OSError("URI not registered")) as start, \
+             patch("steam_control.steam_root", return_value=fake_dir), \
+             patch("steam_control.subprocess.Popen") as launch:
+            _open_steam_client()
+        start.assert_called_once_with("steam://open/main")
+        launch.assert_called_once_with([str(fake_dir / "steam.exe")], shell=False)
+
+    def test_steam_reports_real_error_if_both_launch_methods_fail(self):
+        with patch("steam_control.os.name", "nt"), \
+             patch("steam_control.os.startfile", create=True,
+                   side_effect=OSError("URI not registered")), \
+             patch("steam_control.steam_root",
+                   side_effect=SteamError("Steam відсутній")):
+            with self.assertRaisesRegex(SteamError, "Не вдалося відкрити Steam"):
+                _open_steam_client()
+
+    def test_game_does_not_launch_under_unverified_account(self):
+        sample = SteamGame("620", "Portal 2", "local")
+        with patch("steam_control.os.name", "nt"), \
+             patch("steam_control.find_installed_game", return_value=sample), \
+             patch("steam_control.choose_first_account",
+                   side_effect=SteamError("Не можу визначити активний акаунт")), \
+             patch("steam_control._open_steam_client") as open_client, \
+             patch("steam_control.os.startfile", create=True) as game_start:
+            message = launch_installed_game("Portal 2")
+        open_client.assert_called_once_with()
+        game_start.assert_not_called()
+        self.assertIn("поки не запускав", message)
+        self.assertIn("потім повтори", message)
+
+    def test_game_launch_when_first_account_is_configured(self):
+        sample = SteamGame("620", "Portal 2", "local")
+        with patch("steam_control.os.name", "nt"), \
+             patch("steam_control.find_installed_game", return_value=sample), \
+             patch("steam_control.choose_first_account",
+                   return_value="Перший збережений акаунт Steam уже активний."), \
+             patch("steam_control.os.startfile", create=True) as start:
+            message = launch_installed_game("Portal 2")
+        start.assert_called_once_with("steam://run/620")
+        self.assertIn("Команду запуску", message)
 
     @unittest.skipUnless(os.name == "nt", "Steam registry mutation is Windows-only")
     def test_first_account_file_change_with_backup_and_no_password(self):
