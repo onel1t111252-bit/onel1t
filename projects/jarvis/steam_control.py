@@ -310,24 +310,54 @@ def choose_first_account(steam_dir: Path | None = None) -> str:
     return "Налаштовано автоматичний вхід у перший збережений акаунт Steam."
 
 
-def open_steam_first() -> str:
+def _open_steam_client() -> None:
+    """Open Steam independently of whether account selection was successful.
+
+    Prefer Steam's normal registered protocol. A locally installed steam.exe
+    is a fallback if Windows has lost the URI association. No passwords,
+    commands from the model or account identifiers are passed to Steam.
+    """
     if os.name != "nt":
         raise SteamError("Steam доступний лише у Windows.")
     try:
-        chosen = choose_first_account()
-    except SteamError as exc:
-        # Steam is still launchable when there are no remembered accounts.
-        # Do not hide errors about Steam already running under a different user.
-        if not any(part in str(exc) for part in (
-                "не має збережених акаунтів", "Немає доступного списку",
-                "потребує ручного входу")):
-            raise
         os.startfile("steam://open/main")
-        return "Steam відкривається, але перший акаунт не можна вибрати автоматично. " \
-               "Увійди вручну й увімкни запам'ятовування входу."
-    os.startfile("steam://open/main")
-    return "Є, сер. " + chosen + " Надсилаю команду відкриття Steam. " \
-           "Якщо Steam просить пароль або Steam Guard, увійди особисто."
+        return
+    except OSError:
+        pass
+    try:
+        executable = steam_root() / "steam.exe"
+        subprocess.Popen([str(executable)], shell=False)
+    except (OSError, SteamError) as exc:
+        raise SteamError(
+            "Не вдалося відкрити Steam ні через steam://, ні через steam.exe. "
+            "Перевір, чи Steam встановлений і запускається вручну.") from exc
+
+
+def open_steam_first() -> str:
+    """Always try opening Steam; account selection is best-effort, never a blocker.
+
+    Changing a local remembered login preference does not guarantee which
+    account Steam will actually authenticate. Steam Guard remains manual.
+    """
+    if os.name != "nt":
+        raise SteamError("Steam доступний лише у Windows.")
+    account_note = None
+    try:
+        account_note = choose_first_account()
+    except SteamError as exc:
+        account_note = None
+        warning = str(exc)
+    _open_steam_client()
+    if account_note is None:
+        return ("Надіслано команду відкриття Steam. "
+                "Автоматичний вибір першого акаунта зараз недоступний: "
+                + warning + " У вікні Steam вибери потрібний акаунт вручну; "
+                "якщо потрібно, заверши вхід або Steam Guard. "
+                "JARVIS не вводив пароль і не перемикав акаунт примусово.")
+    return (account_note + " Надіслано команду відкриття Steam. "
+            "Налаштування першого збереженого акаунта ще не гарантує вхід: "
+            "якщо Steam покаже список акаунтів або Steam Guard, "
+            "вибери потрібний акаунт у Steam.")
 
 
 def _steam_libraries(directory: Path) -> list[Path]:
@@ -414,8 +444,23 @@ def launch_installed_game(title: str) -> str:
     if os.name != "nt":
         raise SteamError("Запуск Steam доступний лише у Windows.")
     game = find_installed_game(title)
-    chosen = choose_first_account()
-    os.startfile("steam://run/" + game.appid)
+    try:
+        chosen = choose_first_account()
+    except SteamError as exc:
+        # Open Steam so the user can choose the correct account. Do NOT send
+        # the game launch URI until the desired account can be verified: the
+        # current account might not own the game.
+        _open_steam_client()
+        return ("Steam відкривається, але гру «" + game.title
+                + "» поки не запускав: не вдалося вибрати перший акаунт ("
+                + str(exc) + "). Вибери правильний акаунт у Steam, "
+                "потім повтори команду запуску гри.")
+    try:
+        os.startfile("steam://run/" + game.appid)
+    except OSError as exc:
+        _open_steam_client()
+        raise SteamError("Steam відкрито, але не вдалося надіслати команду запуску гри. "
+                         "Спробуй запустити її з бібліотеки Steam.") from exc
     return (chosen + " Команду запуску «" + game.title + "» надіслано у Steam. "
             "Якщо Steam покаже вхід або Steam Guard, заверши авторизацію особисто. "
             "Надсилання команди не гарантує, що гра вже запущена.")
