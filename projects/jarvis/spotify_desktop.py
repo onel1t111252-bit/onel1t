@@ -9,11 +9,83 @@ its UI and results can vary, so playback is not claimed as verified.
 """
 from __future__ import annotations
 
+import asyncio
 import ctypes
 from ctypes import wintypes
+from dataclasses import dataclass
+import re
 import ntpath
 import os
 import time
+
+
+@dataclass(frozen=True)
+class SpotifyPlayback:
+    title: str
+    artist: str
+    playing: bool
+
+
+def _track_matches(request: str, playing: SpotifyPlayback) -> bool:
+    """Only confirm when all meaningful user words occur in title + artist."""
+    required = re.findall(r"[^\W_]+", request.casefold())
+    actual = " ".join(re.findall(
+        r"[^\W_]+", (playing.title + " " + playing.artist).casefold()))
+    tokens = set(actual.split())
+    return bool(required) and all(word in tokens for word in required)
+
+
+async def _read_spotify_playback_async() -> SpotifyPlayback | None:
+    """Read Windows media session, never Spotify tokens/credentials."""
+    from winsdk.windows.media.control import (
+        GlobalSystemMediaTransportControlsSessionManager as Manager,
+        GlobalSystemMediaTransportControlsSessionPlaybackStatus as Status,
+    )
+    manager = await Manager.request_async()
+    sessions = manager.get_sessions() or []
+    for session in sessions:
+        source = str(session.source_app_user_model_id).casefold()
+        if "spotify" not in source:
+            continue
+        props = await session.try_get_media_properties_async()
+        info = session.get_playback_info()
+        if props is None or info is None:
+            continue
+        title = str(props.title or "").strip()
+        artist = str(props.artist or "").strip()
+        if title:
+            return SpotifyPlayback(
+                title, artist, info.playback_status == Status.PLAYING)
+    return None
+
+
+def _read_spotify_playback() -> SpotifyPlayback | None:
+    """Spotify state via optional WinRT projection; None means unverified."""
+    if os.name != "nt":
+        return None
+    try:
+        return asyncio.run(asyncio.wait_for(_read_spotify_playback_async(), timeout=3))
+    except (ImportError, OSError, RuntimeError, ValueError, TimeoutError):
+        return None
+    except Exception:
+        # Some Spotify builds do not expose media properties to Windows.
+        return None
+
+
+def _playback_feedback(query: str, playback: SpotifyPlayback | None) -> str:
+    if playback is None:
+        return ("Spotify отримав команду, але Windows не надав інформації "
+                "про поточний трек. Не можу підтвердити відтворення. "
+                "Перевір список результатів у вікні Spotify.")
+    shown = "«" + playback.title + "» — " + playback.artist
+    if not _track_matches(query, playback):
+        return ("Spotify зараз показує " + shown + ", але це не відповідає "
+                "запиту «" + query + "». JARVIS не підтверджує запуск "
+                "неправильної пісні. Вибери потрібний трек у Spotify.")
+    if not playback.playing:
+        return ("Spotify знайшов " + shown + ", але відтворення НЕ активне. "
+                "Натисни Play у Spotify або перевір обмеження акаунта.")
+    return "Підтверджено у Windows: Spotify відтворює " + shown + "."
 
 
 class SpotifyDesktopError(RuntimeError):
@@ -187,11 +259,23 @@ def play_in_desktop(title: str) -> str:
         raise SpotifyDesktopError("Фокус перейшов з Spotify. Введення зупинено.")
     pyautogui.hotkey("ctrl", "a")
     _type_unicode(query)
-    time.sleep(1.25)  # Let Spotify fetch its first search suggestion.
+    # Quick Search suggestions require explicit keyboard selection:
+    # Enter alone can merely submit the query or open the search page.
+    time.sleep(1.9)
     if not _still_focused(hwnd):
         raise SpotifyDesktopError("Spotify втратив фокус до вибору треку.")
+    pyautogui.press("down")
+    if not _still_focused(hwnd):
+        raise SpotifyDesktopError("Після вибору результату Spotify втратив фокус.")
     pyautogui.press("enter")
-    return ("Надіслав команду пошуку та відтворення першого результату «"
-            + query + "» у встановлений Spotify, без браузера. "
-            "Перевір назву й відтворення в Spotify: автоматичний "
-            "вибір результату залежить від версії застосунку.")
+    time.sleep(.75)
+    # Verify what actually plays instead of asserting success after keypress.
+    result = _read_spotify_playback()
+    for _ in range(2):
+        if result is not None and result.playing and _track_matches(query, result):
+            break
+        time.sleep(.8)
+        updated = _read_spotify_playback()
+        if updated is not None:
+            result = updated
+    return _playback_feedback(query, result)
