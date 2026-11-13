@@ -466,6 +466,16 @@ def play_in_desktop(title: str) -> str:
         return (_playback_feedback(query, None) + " "
                 "Якщо Spotify показує кнопку ▶, пошук знайшов трек, "
                 "але відтворення не підтверджене.")
+    # A matching track can be selected correctly but remain PAUSED.
+    # Resume that verified selected track using idempotent PLAY, never a
+    # blind Space toggle which could pause another/playing song.
+    if not result.playing and _track_matches(query, result):
+        if not _try_media_session_play():
+            _ui_player_state(hwnd, query, try_play=True)
+        time.sleep(.4)
+        updated = _read_spotify_playback()
+        if updated is not None:
+            result = updated
     for _ in range(2):
         if result.playing and _track_matches(query, result):
             break
