@@ -62,6 +62,11 @@ def style_action_reply(reply: str, action_kind: str, success: bool,
         return reply
     if reply.lstrip().casefold().startswith(_PREFIXES):
         return reply
+    # Lack of Windows media metadata is neither a successful playback
+    # verification nor evidence the song failed. Do not prepend "Є, сер".
+    if action_kind.startswith("spotify_") and (
+            "НЕ ПІДТВЕРДЖЕНО" in reply or "Windows не надає даних" in reply):
+        return reply
     if not success:
         return "Перепрошую, сер. " + reply
     if action_kind in {"say", "ui_windows"}:
@@ -78,6 +83,10 @@ def concise_speech(reply: str, action_kind: str, success: bool,
     if not success:
         return ("Перепрошую, сер. Команду не виконано; деталі на екрані."
                 if cinematic else "Команду не виконано. Деталі на екрані.")
+    if action_kind.startswith("spotify_") and (
+            "НЕ ПІДТВЕРДЖЕНО" in reply or "Windows не надає даних" in reply):
+        return ("Команду Spotify надіслано, але відтворення не "
+                "вдалося перевірити. Переглянь повідомлення на екрані.")
     if action_kind == "youtube_search":
         # Do not send a private voice-dictated search term to the online TTS.
         return "Є, сер. Відкриваю пошук відео на YouTube." if cinematic else ""
