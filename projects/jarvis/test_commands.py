@@ -43,7 +43,8 @@ class CommandTests(unittest.TestCase):
 
     def test_steam_command(self):
         action = plan_action("відкрий стім")
-        self.assertEqual((action.kind, action.target), ("known_uri", "steam://open/main"))
+        self.assertEqual((action.kind, action.target), ("steam_open_first", ""))
+        self.assertTrue(action.needs_approval)
 
     def test_steam_dota_combined(self):
         for text in ("гаразд а відкрий стім і запусти доту",
@@ -54,7 +55,8 @@ class CommandTests(unittest.TestCase):
                      "добре, відкрий стім; і запусти доту"):
             with self.subTest(text=text):
                 plan = plan_action(text)
-                self.assertEqual((plan.kind, plan.target), ("known_uri", "steam://run/570"))
+                self.assertEqual((plan.kind, plan.target), ("steam_game", "Dota 2"))
+                self.assertTrue(plan.needs_approval)
 
     def test_steam_dota_only_approved_uri(self):
         with patch("desktop_actions.os.name", "nt"), patch("desktop_actions.os.startfile", create=True) as launch:
@@ -70,8 +72,8 @@ class CommandTests(unittest.TestCase):
 
     def test_known_dota_is_not_shell_command(self):
         a = plan_action("відкрий стім і запусти доту")
-        self.assertFalse(a.needs_approval)
-        self.assertEqual(a.target, "steam://run/570")
+        self.assertTrue(a.needs_approval)
+        self.assertEqual(a.target, "Dota 2")
 
     def test_file_picker(self):
         self.assertEqual(plan_action("відкрий файл").kind, "file_picker")
