@@ -77,10 +77,35 @@ class NativeSpotifyTests(unittest.TestCase):
                    return_value=SpotifyPlayback("Smells Like Teen Spirit", "Nirvana", True)), \
              patch("spotify_desktop.time.sleep"), \
              patch.dict(sys.modules, {"pyautogui": keys}):
-            feedback = play_in_desktop("Numb")
-        self.assertIn("не відповідає", feedback)
+            with self.assertRaisesRegex(SpotifyDesktopError, "не відповідає"):
+                play_in_desktop("Numb")
         keys.press.assert_any_call("down")
         keys.press.assert_any_call("enter")
+
+    def test_not_playing_is_not_reported_as_success(self):
+        keys = types.SimpleNamespace(hotkey=Mock(), press=Mock())
+        with patch("spotify_desktop.os.name", "nt"), \
+             patch("spotify_desktop._open_and_focus_spotify", return_value=42), \
+             patch("spotify_desktop._still_focused", return_value=True), \
+             patch("spotify_desktop._type_unicode"), \
+             patch("spotify_desktop._read_spotify_playback",
+                   return_value=SpotifyPlayback("Numb", "Linkin Park", False)), \
+             patch("spotify_desktop.time.sleep"), \
+             patch.dict(sys.modules, {"pyautogui": keys}):
+            with self.assertRaisesRegex(SpotifyDesktopError, "НЕ активне"):
+                play_in_desktop("Numb")
+
+    def test_unverifiable_song_reports_failure_not_false_playback(self):
+        keys = types.SimpleNamespace(hotkey=Mock(), press=Mock())
+        with patch("spotify_desktop.os.name", "nt"), \
+             patch("spotify_desktop._open_and_focus_spotify", return_value=42), \
+             patch("spotify_desktop._still_focused", return_value=True), \
+             patch("spotify_desktop._type_unicode"), \
+             patch("spotify_desktop._read_spotify_playback", return_value=None), \
+             patch("spotify_desktop.time.sleep"), \
+             patch.dict(sys.modules, {"pyautogui": keys}):
+            with self.assertRaisesRegex(SpotifyDesktopError, "Не можу підтвердити"):
+                play_in_desktop("Numb")
 
     def test_does_not_type_into_other_foreground_window(self):
         keys = types.SimpleNamespace(hotkey=Mock(), press=Mock())
