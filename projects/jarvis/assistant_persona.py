@@ -78,6 +78,9 @@ def concise_speech(reply: str, action_kind: str, success: bool,
     if not success:
         return ("Перепрошую, сер. Команду не виконано; деталі на екрані."
                 if cinematic else "Команду не виконано. Деталі на екрані.")
+    if action_kind == "youtube_search":
+        # Do not send a private voice-dictated search term to the online TTS.
+        return "Є, сер. Відкриваю пошук відео на YouTube." if cinematic else ""
     if sensitive:
         # Window titles, typed text, file names and their contents stay off online TTS.
         return "Є, сер." if cinematic else ""
