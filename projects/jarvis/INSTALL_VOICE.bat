@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 >nul
 cd /d "%~dp0"
-echo JARVIS 4.1 - installing voice and desktop dependencies...
+echo JARVIS 4.3 - installing voice, audio and foreground UI dependencies...
 echo Neural voice sends text to Microsoft. Microphone recognition sends audio to Google.
 where py >nul 2>nul
 if %errorlevel% equ 0 (
