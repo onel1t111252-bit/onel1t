@@ -54,6 +54,19 @@ class NativeSpotifyTests(unittest.TestCase):
         self.assertIn("НЕ активне", _playback_feedback("Numb", paused))
         self.assertIn("Не можу підтвердити", _playback_feedback("Numb", None))
 
+    def test_status_reports_app_missing_or_known_song(self):
+        from spotify_desktop import spotify_desktop_status
+        with patch("spotify_desktop.os.name", "nt"), \
+             patch("spotify_desktop._spotify_window", return_value=None):
+            self.assertIn("Не знайшов", spotify_desktop_status())
+        with patch("spotify_desktop.os.name", "nt"), \
+             patch("spotify_desktop._spotify_window", return_value=42), \
+             patch("spotify_desktop._read_spotify_playback",
+                   return_value=SpotifyPlayback("Numb", "Linkin Park", True)):
+            status = spotify_desktop_status()
+        self.assertIn("Numb", status)
+        self.assertIn("ВІДТВОРЮЄТЬСЯ", status)
+
     def test_wrong_song_never_reported_as_success(self):
         keys = types.SimpleNamespace(hotkey=Mock(), press=Mock())
         with patch("spotify_desktop.os.name", "nt"), \
