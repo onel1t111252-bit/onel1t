@@ -494,13 +494,11 @@ class JarvisApp:
             return
         self.spotify_client_id = client_id  # Public ID only; the OAuth token remains in RAM.
         self.save_settings()
-        self.pending = ActionPlan(
+        # User clicked CONNECT SPOTIFY and will grant permissions in Spotify's
+        # official browser consent screen. No redundant JARVIS CONFIRM button.
+        self.start_answer("", ActionPlan(
             "spotify_connect", client_id,
-            "Відкрити Spotify у браузері для OAuth PKCE. "
-            "Доступ надається лише після твого підтвердження у Spotify.", True)
-        self.confirm_description.configure(text="APPROVAL REQUIRED / " + self.pending.summary)
-        self.confirm_bar.pack(fill="x", padx=20, pady=(0, 10), before=self.input.master)
-        self.set_status("●  SPOTIFY APPROVAL", AMBER)
+            "Підключити Spotify з OAuth PKCE", True))
 
     def _refresh_spotify_button(self):
         if self.spotify_btn.winfo_exists():
@@ -561,7 +559,9 @@ class JarvisApp:
                 return
             self.steps = actions
             self.step_index = 0
-            self.post("SYSTEM", "Сценарій з " + str(len(actions)) + " кроків: кожен потрібно підтвердити окремо.", "sys")
+            self.post("SYSTEM", "Сценарій з " + str(len(actions))
+                      + " кроків: звичайні дії виконуються без CONFIRM; "
+                        "для введення тексту або кліків запитаю окремий дозвіл.", "sys")
             self.show_next_step()
             return
         if route and route.kind == "file_picker":
@@ -572,13 +572,37 @@ class JarvisApp:
                 return
             route = ActionPlan("user_file", selected,
                                "Відкрити вибраний файл: " + Path(selected).name, True)
-        if route and route.needs_approval:
-            self.pending = route
-            self.confirm_description.configure(text="APPROVAL REQUIRED   /   " + route.summary + "  /  Для дій у вікні після CONFIRM активуй потрібну програму.")
-            self.confirm_bar.pack(fill="x", padx=20, pady=(0, 10), before=self.input.master)
-            self.set_status("●  AWAITING APPROVAL", AMBER)
-            return
-        self.start_answer(text, route)
+        if route:
+            self.dispatch_action(route)
+        else:
+            self.start_answer(text, None)
+
+    def dispatch_action(self, action: ActionPlan):
+        """One explicit command is enough for harmless bounded actions.
+
+        Sensitive actions still need a separate yes/no prompt, but never
+        create a blocking CONFIRM button in the conversation layout.
+        """
+        if action.needs_approval and not can_execute_directly(action):
+            self.pending = action
+            self.set_status("●  ACTION PERMISSION", AMBER)
+            try:
+                allowed = messagebox.askyesno(
+                    "JARVIS • Дозвіл на дію",
+                    action.summary
+                    + "\n\nЦя дія змінює активне вікно, вводить текст або "
+                      "працює з локальним файлом. Дозволити?",
+                    parent=self.root)
+            finally:
+                self.pending = None
+            if not allowed:
+                self.steps.clear()
+                self.step_index = 0
+                self.flow_label.configure(text="◈  AUTOMATION QUEUE  /  STOPPED")
+                self.post("SYSTEM", "Дію скасовано. Наступні кроки не виконуються.", "sys")
+                self.set_status("●  READY", GREEN)
+                return
+        self.start_answer("", action)
 
     def show_next_step(self):
         if not self.steps or self.step_index >= len(self.steps):
@@ -587,14 +611,8 @@ class JarvisApp:
             return
         index = self.step_index + 1
         current = self.steps[self.step_index]
-        self.pending = current
         self.flow_label.configure(text=f"◈  AUTOMATION QUEUE  /  STEP {index} OF {len(self.steps)}")
-        self.confirm_description.configure(
-            text=f"КРОК {index}/{len(self.steps)} • {current.summary}. "
-                 "Підтверди саме цей крок. Для введення/кліку після CONFIRM "
-                 "активуй цільове вікно. Можна натиснути STOP PLAN.")
-        self.confirm_bar.pack(fill="x", padx=20, pady=(0, 10), before=self.input.master)
-        self.set_status("●  AWAITING STEP APPROVAL", AMBER)
+        self.dispatch_action(current)
 
     def stop_plan(self):
         if not self.steps and not self.pending:
@@ -603,24 +621,10 @@ class JarvisApp:
         self.steps.clear()
         self.step_index = 0
         self.pending = None
-        self.confirm_bar.pack_forget()
         self.flow_label.configure(text="◈  AUTOMATION QUEUE  /  STOPPED")
         self.post("SYSTEM", "Чергу скасовано. Уже запущену дію неможливо гарантовано зупинити.", "sys")
         if not self.busy:
             self.set_status("●  READY", GREEN)
-
-    def approve_action(self):
-        if not self.pending:
-            return
-        action = self.pending
-        self.pending = None
-        self.confirm_bar.pack_forget()
-        self.start_answer("", action)
-
-    def cancel_action(self):
-        if self.pending:
-            self.stop_plan()
-            self.finish("Дію скасовано за бажанням користувача.")
 
     def start_answer(self, text, action: ActionPlan | None):
         self.busy = True
@@ -664,7 +668,7 @@ class JarvisApp:
                 if self.step_index < len(self.steps):
                     self.show_next_step()
                     return
-                self.post("SYSTEM", "Усі підтверджені кроки завершено.", "sys")
+                self.post("SYSTEM", "Усі кроки сценарію виконано.", "sys")
             else:
                 self.post("SYSTEM", "Сценарій зупинено після невдалого кроку.", "sys")
             self.steps.clear()
