@@ -38,7 +38,7 @@ class SpotifyPlanTests(unittest.TestCase):
 
     def test_no_interference_with_dota_or_safety(self):
         self.assertEqual(plan_action("Джарвіс, відкрий Steam і запусти Доту").kind,
-                         "known_uri")
+                         "steam_game")
         self.assertEqual(plan_action("увімкни звук").kind, "volume")
         self.assertNotEqual(plan_action("запусти доту").kind, "spotify_play")
 

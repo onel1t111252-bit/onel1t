@@ -62,6 +62,27 @@ The slider applies to online Microsoft Ukrainian voice synthesis (played with py
 | `прокрути вниз`, `клацни мишею` | Scroll / one click at current cursor after approval |
 | `відкрий блокнот, потім надрукуй Привіт` | Up to four explicit steps, each approved separately |
 
+## 🎮 Steam: first saved account + installed games (Windows 11)
+
+JARVIS supports owner-approved Steam account selection and game launching without passwords or Steam Guard bypass.
+
+| What you say | What JARVIS actually does |
+| --- | --- |
+| `Джарвіс, відкрий Steam` | When Steam is closed, configure the **first account recorded in Steam's saved account list** as auto-login and launch Steam |
+| `відкрий Steam і запусти Cyberpunk 2077` | Look up that *installed game* in local Steam libraries, set first saved account and send a Steam AppID launch URI |
+| `запусти гру Portal 2` | Find exact/unique installed title and launch through `steam://run/<AppID>` |
+| `запусти Доту` | Use installed Dota 2 entry with the same checks |
+| `покажи ігри Steam` | Read local game manifests, showing up to 50 installed titles |
+| `вибери перший акаунт` | Configure first saved account, then open Steam (only after confirmation) |
+
+**Important account behavior:** "First" means the **first stored entry in `Steam/config/loginusers.vdf`**. Steam's visible account-picker order can differ. The tool reads an existing remembered-login setting and requires `RememberPassword=1`; it neither reads nor requests a Steam password or Steam Guard code. If Steam is closed, it changes **`MostRecent` in `loginusers.vdf`** and the current user's **`HKCU\Software\Valve\Steam\AutoLoginUser`** preference, then asks Steam to open normally. Before changing the file it saves an owner-local backup named `loginusers.vdf.jarvis-backup`. No account data is sent to an online service.
+
+**If Steam is running:** JARVIS checks Steam's locally reported `ActiveUser`. It sends a game launch request only if the active account matches the first saved account. It does **not** close Steam, log out a user, interrupt a running game or silently start the game under the wrong account. If Steam's current account cannot be verified, the action stops and tells you to close Steam manually and retry.
+
+**Limitations:** Steam must be installed on Windows, the first account must already have a remembered login, and the requested game must appear as **installed** in the detected Steam library manifests. Games that are purchased but **not installed** cannot be launched this way. Steam can still display its own account chooser, login, Steam Guard or game-license dialog; complete those in Steam yourself. If you enabled "Ask which account to use each time Steam starts", disable that option in Steam settings to allow remembered auto-login. JARVIS only confirms that the `steam://` launch request was sent, not that the game successfully started. Steam account ownership and age restrictions remain in effect.
+
+**Why approval is required:** Selecting an account changes local sign-in preferences; starting an app/game is a visible local action. Every `steam_open_first` and `steam_game` action shows its purpose in JARVIS and needs an explicit **CONFIRM**. There is no automated password entry, credentials storage, Steam Guard workaround or game-file execution.
+
 ## 🎵 Spotify — opt-in voice music control (new)
 
 JARVIS now understands these commands:
@@ -108,7 +129,7 @@ To control playback, you must **personally connect your Spotify account** throug
 Run from the extracted folder:
 
 ```powershell
-python -m py_compile jarvis.py desktop_actions.py window_control.py command_sequences.py assistant_persona.py voice_engine.py spotify_control.py
+python -m py_compile jarvis.py desktop_actions.py window_control.py command_sequences.py assistant_persona.py voice_engine.py spotify_control.py steam_control.py
 python -m unittest discover -p "test_*.py" -v
 ```
 
@@ -122,6 +143,7 @@ The repository contains a GitHub Actions workflow testing Python syntax and pure
 - `desktop_actions.py`, `window_control.py` — allowlisted local desktop actions
 - `command_sequences.py` — fixed multi-command splitter
 - `spotify_control.py` — optional user-authorized Spotify PKCE session and playback API
+- `steam_control.py` — local Steam manifests, first-saved-account preference and URI-only game launch
 - `Modelfile` — initial Ollama assistant persona
 - `test_*.py` — command, permission, voice level and persona tests
 
