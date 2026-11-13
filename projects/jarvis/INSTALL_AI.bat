@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 >nul
 cd /d "%~dp0"
-echo JARVIS 4.3 - local AI model setup.
+echo JARVIS 3.0 - local AI model setup.
 echo This step downloads about 2.5 GB if Qwen3 4B Instruct is not already installed.
 echo If you already have Ollama model 'jarvis', you can skip this setup.
 where ollama >nul 2>nul
