@@ -18,10 +18,11 @@ import tkinter as tk
 from tkinter import scrolledtext, messagebox, filedialog, simpledialog
 from urllib import request, error
 
-from desktop_actions import ActionPlan, plan_action, run_action
+from desktop_actions import ActionPlan, plan_action, run_action, can_execute_directly
 from command_sequences import split_sequence
 from voice_engine import speak, clamp_volume, VOICE_PROFILES, VOICE_LABELS
-from assistant_persona import style_action_reply, concise_speech, cinematic_quick_reply, normalize_spoken
+from assistant_persona import (style_action_reply, concise_speech, cinematic_quick_reply,
+                               normalize_spoken, extract_wake_command)
 from spotify_control import spotify_connection, valid_client_id
 
 ROOT_DIR = Path(__file__).resolve().parent
@@ -79,11 +80,6 @@ def get_settings() -> dict:
         return {}
 
 
-def extract_wake_command(text: str) -> str | None:
-    match = re.search(r"(?:джарвісе|джарвіс|джарвис|jarvis)\b[\s,!:;.-]*(.*)", text, re.I)
-    return match.group(1).strip() if match else None
-
-
 def ollama_status() -> tuple[bool, str]:
     try:
         with request.urlopen(API_URL + "/api/tags", timeout=4) as stream:
@@ -130,6 +126,12 @@ class JarvisApp:
         self.handsfree = threading.Event()
         self.speaking = threading.Event()
         self.mic_listening = threading.Event()
+        self.mic_index = None
+        self.mic_energy_threshold = 350.0
+        self.mic_calibrated = False
+        self.mic_error_streak = 0
+        self.last_mic_warning = 0.0
+        self.handsfree_thread = None
         self.alive = True
         self.busy = False
         self.pending: ActionPlan | None = None
@@ -138,6 +140,8 @@ class JarvisApp:
         self.followup_until = 0.0
         self.history: list[dict[str, str]] = []
         self.settings = get_settings()
+        mic = self.settings.get("microphone_index")
+        self.mic_index = mic if type(mic) is int and 0 <= mic < 128 else None
         self.voice_on = bool(self.settings.get("voice_on", True))
         self.spotify_client_id = str(self.settings.get("spotify_client_id", "")).strip()
         if self.spotify_client_id and not valid_client_id(self.spotify_client_id):
@@ -159,7 +163,8 @@ class JarvisApp:
         self._build_ui()
         self.post("JARVIS", "Так, сер. Системи готові. Скажи «Джарвіс, відкрий Steam і запусти Доту», "
                   "«Джарвіс, відкрий Spotify» або запитай мене про щось. "
-                  "Встановлені програми запускаються після підтвердження.", "ai")
+                  "Звичайні команди працюють без CONFIRM. "
+                  "Вибір мікрофона: правий клік на HANDS-FREE.", "ai")
         self.root.after(80, self.pump)
         self.root.after(150, self.check_ai)
         self.root.after(100, self.animate_reactor)
@@ -280,6 +285,7 @@ class JarvisApp:
         bar.pack(fill="x", padx=22, pady=(0, 6))
         self.handsfree_btn = self._button(bar, "🎙  HANDS-FREE: OFF", self.toggle_handsfree, bg=PANEL_2)
         self.handsfree_btn.pack(side="left", padx=(0, 7))
+        self.handsfree_btn.bind("<Button-3>", lambda _event: self.choose_microphone())
         self.voice_btn = self._button(bar, "🔊  VOICE: ON", self.toggle_voice, bg=PANEL_2)
         self.voice_btn.pack(side="left", padx=(0, 7))
         self.voice_select = self._button(bar, "VOICE: JARVIS DEEP", self.cycle_voice, bg=PANEL_2)
@@ -327,14 +333,6 @@ class JarvisApp:
         self.chat.tag_config("body", foreground=WHITE)
         self.chat.tag_config("muted", foreground=MUTED)
 
-        confirm_bar = tk.Frame(panel, bg="#183047")
-        self.confirm_bar = confirm_bar
-        self.confirm_description = self._label(confirm_bar, "", size=10, color=WHITE,
-                                                wraplength=420, justify="left")
-        self.confirm_description.pack(side="left", fill="x", expand=True, padx=9)
-        self._button(confirm_bar, "CANCEL", self.cancel_action, bg="#593544").pack(side="right", padx=(4, 8), pady=7)
-        self._button(confirm_bar, "CONFIRM", self.approve_action, bg="#13728d").pack(side="right", pady=7)
-
         compose = tk.Frame(panel, bg=PANEL)
         compose.pack(fill="x", padx=20, pady=(0, 8))
         self.input = tk.Entry(compose, bg=INPUT, fg=WHITE, insertbackground=CYAN,
@@ -348,7 +346,7 @@ class JarvisApp:
         bottom.pack(fill="x", padx=22, pady=(0, 16))
         self.status = self._label(bottom, "●  READY", size=9, color=GREEN, mono=True)
         self.status.pack(side="left")
-        self._label(bottom, "LOCAL ACTIONS  /  EXPLICIT APPROVAL  /  MIC OFF BY DEFAULT", size=8,
+        self._label(bottom, "RIGHT-CLICK HANDS-FREE FOR MIC  /  SAFE ACTIONS AUTO", size=8,
                     color=MUTED, mono=True).pack(side="right")
         self.input.focus_set()
 
@@ -407,7 +405,8 @@ class JarvisApp:
                                                 "voice_volume": self.voice_volume,
                                                 "window_mode": self.window_mode,
                                                 "cinematic_mode": self.cinematic_mode,
-                                                "spotify_client_id": self.spotify_client_id},
+                                                "spotify_client_id": self.spotify_client_id,
+                                                "microphone_index": self.mic_index},
                                                ensure_ascii=False, indent=2), encoding="utf-8")
         except OSError:
             logging.warning("Could not save preferences")
