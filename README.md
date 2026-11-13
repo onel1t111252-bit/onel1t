@@ -16,10 +16,10 @@ Responsive personal cybersecurity portfolio built with HTML, CSS and vanilla Jav
   - Project: [projects/cyber-lab/](projects/cyber-lab/)
 
 
-- **JARVIS 4.1** — Ukrainian-language Windows 11 desktop assistant powered by local Ollama, with voice commands, speech output and allowlisted system actions.
+- **JARVIS 4.2** — Ukrainian-language Windows 11 desktop assistant powered by local Ollama, with voice commands, speech output and allowlisted system actions.
   - Project page: https://onel1t111252-bit.github.io/onel1t/projects/jarvis/
   - Source and setup: [projects/jarvis/](projects/jarvis/)
-  - **[⬇ Download JARVIS 4.1 (ZIP — only this project)](https://github.com/onel1t111252-bit/onel1t/raw/refs/heads/main/projects/jarvis/JARVIS_4_1_Windows11.zip)**
+  - **[Download JARVIS 4.2 ZIP](https://raw.githubusercontent.com/onel1t111252-bit/onel1t/main/projects/jarvis/JARVIS_4_2_Windows11.zip)**
 
 ## Run locally
 
