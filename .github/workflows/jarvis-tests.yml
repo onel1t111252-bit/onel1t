@@ -1,0 +1,33 @@
+name: JARVIS desktop tests
+on:
+  push:
+    paths:
+      - "projects/jarvis/**"
+      - ".github/workflows/jarvis-tests.yml"
+  pull_request:
+    paths:
+      - "projects/jarvis/**"
+      - ".github/workflows/jarvis-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Syntax check
+        working-directory: projects/jarvis
+        run: python -m py_compile jarvis.py desktop_actions.py window_control.py command_sequences.py voice_engine.py
+      - name: Unit tests (no microphone/game launch)
+        working-directory: projects/jarvis
+        run: python -m unittest discover -p "test_*.py" -v
