@@ -50,6 +50,15 @@ class SirPersonaTests(unittest.TestCase):
         self.assertEqual(spoken, "Є, сер. Відкриваю пошук відео на YouTube.")
         self.assertNotIn("приватна", spoken)
 
+    def test_unverified_spotify_does_not_claim_playback_success(self):
+        uncertain = ("Надіслав команду Spotify. НЕ ПІДТВЕРДЖЕНО: "
+                     "Windows не надав назви треку.")
+        self.assertEqual(style_action_reply(uncertain, "spotify_play", True),
+                         uncertain)
+        spoken = concise_speech(uncertain, "spotify_play", True)
+        self.assertIn("не вдалося перевірити", spoken)
+        self.assertNotIn("назви треку", spoken)
+
     def test_neutral_mode(self):
         self.assertEqual(style_action_reply("Готово", "app", True, False), "Готово")
         self.assertEqual(concise_speech("Текст", "ui_type", True, False), "")
