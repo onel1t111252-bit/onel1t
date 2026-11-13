@@ -235,6 +235,26 @@ def _type_unicode(text: str) -> None:
             raise SpotifyDesktopError("Windows не приймає введення тексту в Spotify.")
 
 
+def spotify_desktop_status() -> str:
+    """Read-only diagnosis of locally installed Spotify and Windows media."""
+    if os.name != "nt":
+        return "Діагностика Spotify доступна лише у Windows."
+    if _spotify_window() is None:
+        return ("Не знайшов відкрите вікно Spotify.exe. "
+                "Відкрий встановлений Spotify через меню «Пуск» "
+                "і ввійди у власний акаунт.")
+    state = _read_spotify_playback()
+    if state is None:
+        return ("Вікно Spotify.exe знайдено, але Windows не показує "
+                "поточну композицію. Відкрий Spotify і вручну ввімкни "
+                "будь-яку пісню, щоб перевірити медіасесію. "
+                "Повтори команду «статус Spotify».")
+    return ("Вікно Spotify.exe знайдено. У медіасистемі Windows: «"
+            + state.title + "» — " + state.artist
+            + (". ВІДТВОРЮЄТЬСЯ." if state.playing else
+               ". Відтворення призупинено."))
+
+
 def play_in_desktop(title: str) -> str:
     """Focus user's Spotify app and play quick-search top suggestion.
 
