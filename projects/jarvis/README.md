@@ -140,44 +140,34 @@ JARVIS supports owner-approved Steam account selection and game launching withou
 
 **Why approval is required:** Selecting an account changes local sign-in preferences; starting an app/game is a visible local action. Every `steam_open_first` and `steam_game` action shows its purpose in JARVIS and needs an explicit **CONFIRM**. There is no automated password entry, credentials storage, Steam Guard workaround or game-file execution.
 
-## 🎵 Spotify — fast search and opt-in playback
+## 🎵 Spotify: play songs in the INSTALLED Windows app
 
-**Search is immediate and does NOT need Spotify Developer API, Premium, or Ollama**:
-- Say `Джарвіс, знайди пісню Numb в Spotify`, `знайди в Spotify Numb`, or `знайди пісню Numb`, or click **♫ FIND SONG** in the sidebar.
-- JARVIS opens the official Spotify search result in your browser immediately. You choose the result if the account is not connected.
-- Say `Джарвіс, увімкни Linkin Park Numb`: when no authorized API session is connected, JARVIS **falls back to Spotify search** instead of silently waiting or claiming playback. When connected, it requests playback on your active device; if that fails, it opens search and shows the reason.
-- Manual search does not require an approval prompt; playback and login still do.
-- The optional official API requests now have **six-second per-request timeouts**, avoiding the prior up-to-20-second waits per call. Network speed still affects real latency.
+**The key difference: "увімкни/включи/відтвори пісню" is a PLAY command, not a web search.**
+For example:
+- \`Джарвіс, увімкни пісню Numb в Spotify\`
+- \`Джарвіс, включи пісню в Спотіфай Numb\`
+- \`Джарвіс, увімкни Linkin Park Numb\`
+- Click **♫ PLAY IN SPOTIFY** and enter the song/artist.
 
+JARVIS first tries an already authorized, **active desktop Computer** through the optional Spotify Web API. If the API is not connected, is unavailable or refuses playback, it uses the **installed Spotify.exe Windows app** directly. It identifies the real Spotify process/window (not a web browser), brings it to the foreground, opens Spotify's native Quick Search with **Ctrl+K**, types the title (Ukrainian/Unicode supported, no clipboard), waits for suggestions and presses **Enter** on the top result. This is a best-effort playback request: Spotify's interface, account state, network and result order may change, so the top track or playback are **not guaranteed**. JARVIS reports the attempt rather than claiming it definitely played.
 
+**This desktop route requires no Spotify Developer app, Client ID, Premium API access or Ollama.** It requires Windows, the installed Spotify app and a signed-in Spotify account whose playback is available. It may work with Spotify Free subject to Spotify's own playback restrictions. If the app is not open, JARVIS tries the registered \`spotify:\` Windows protocol, then verifies a genuine Spotify.exe window before sending **any keys**. If Windows refuses to bring Spotify to the foreground or the app isn't installed, JARVIS explains the issue; it **does not open Google or browser search as a hidden fallback**.
 
-JARVIS now understands these commands:
+**"Знайди пісню ... у Spotify" remains a separate explicit SEARCH command**. It opens a normal Spotify browser search for manual selection. If you specifically want audio playback in the installed app, say **"увімкни"** or **"включи"** rather than "знайди".
 
-| Command | Result |
+| Command | JARVIS behavior |
 | --- | --- |
-| `Джарвіс, відкрий Spotify` | Open Spotify, if discoverable in the Windows Start menu |
-| `Джарвіс, увімкни Linkin Park Numb` | Request playback **if connected**, otherwise quickly open Spotify search |
-| `відтвори пісню Numb в Spotify` | Same explicit, owner-approved Spotify music command |
-| `знайди в Spotify Numb` | Immediately open Spotify search (no API, no Ollama, no confirmation required) |
-| `наступна пісня`, `попередній трек` | Spotify next/previous media control |
-| `постав музику на паузу`, `продовж музику` | Spotify pause/resume media control |
+| \`відкрий Spotify\` | Launch installed app if discoverable in Windows Start menu |
+| \`увімкни пісню Numb у Spotify\` | Try to play the first matching track in installed Spotify (NO Google/browser fallback) |
+| \`відкрий Spotify і увімкни Numb\` | Open Spotify then play via optional API or the local Quick Search |
+| \`знайди пісню Numb у Spotify\` | Explicit browser search only, no automatic playback |
+| \`постав музику на паузу\`, \`наступна пісня\` | Spotify Web API controls when an authorized active player is connected |
 
-To control playback, you must **personally connect your Spotify account** through its official browser consent screen. JARVIS cannot log into your account for you and does not ask for your password.
+**Optional Spotify API (Premium/Developer account):** The button **♫ CONNECT API (OPTIONAL)** still offers the official Spotify OAuth PKCE flow, for those who want more precise track catalog matching and player controls. It needs a valid *public* Spotify Developer Client ID, the exact \`http://127.0.0.1:8765/callback\` redirect URI configured on the user's app, an eligible Spotify account, Premium for API playback, and permission on the official Spotify authorization page. API tokens remain in JARVIS process memory only; the public Client ID is saved in local settings. Spotify's API integration currently targets only an **active Computer device** and never silently redirects requested computer playback to a phone or speaker.
 
-**Spotify setup (at home):**
+**Privacy and safety:** The local native route does not scrape Spotify credentials, touch stored passwords, inspect browser cookies or expose your system clipboard. It only types a validated, short song query into the verified Spotify application after your explicit play command, and stops if focus changes. No guarantee of auto-start: if JARVIS says the desktop request was sent but no music plays, check the Spotify window, which account is signed in and whether the top search result is selectable.
 
-1. You need an eligible Spotify account with **Spotify Premium** for playback, and a Spotify Developer app with a public **Client ID**. Spotify development-mode access has additional account and user limits as of February 2026; follow Spotify's eligibility rules. Never share a Client Secret.
-2. In your Spotify Developer Dashboard, add the redirect URI **`http://127.0.0.1:8765/callback`** exactly.
-3. Open Spotify on your PC and **activate playback on the device you want to control** (you may need to manually play something first). JARVIS deliberately does not transfer playback to another person's device.
-4. Click **♫ CONNECT SPOTIFY** in JARVIS, enter your **public Client ID**, review the on-screen approval, then grant the two Spotify permissions in the official Spotify browser page.
-5. Now try the voice command `Джарвіс, увімкни Numb`. Review the command in JARVIS and press CONFIRM.
-6. Spotify may accept playback commands asynchronously; JARVIS reports **"command sent"**, not that the audio definitely started.
-
-**Privacy:** OAuth uses authorization-code **PKCE**, a fixed **127.0.0.1** loopback callback and a random anti-forgery state. The temporary access/refresh tokens exist **only in JARVIS process memory** and disappear when it closes. Only the **public Client ID** is saved in local `settings.json`. There is no Client Secret, embedded Spotify password, credential harvesting or hidden API connection. You must reconnect when starting a fresh JARVIS process. Search queries go to Spotify only after action approval; player searches through Spotify API are not sent to the assistant AI model for autonomous use. The local detailed result may include the track title; spoken online replies use a generic confirmation instead.
-
-**Limitations:** Playback depends on Spotify account eligibility, Premium, API quotas and an active supported Spotify Connect device. The top catalog result can be an alternate version/remaster, so verify the track in Spotify. A spoken song command cannot guarantee that Spotify started playback. When login/Premium is unavailable, both the search request and a play request fall back to the Spotify search page (manual song selection).
-
-**Official Spotify references:** https://developer.spotify.com/documentation/web-api/tutorials/code-pkce-flow , https://developer.spotify.com/documentation/web-api/reference/start-a-users-playback , https://developer.spotify.com/documentation/web-api/tutorials/february-2026-migration-guide
+**Official reference:** https://support.spotify.com/us/article/keyboard-shortcuts/ (Ctrl+K Quick Search). Spotify staff have confirmed pressing Enter on a Quick Search suggestion initiates playback, though desktop releases can vary. API playback requirements: https://developer.spotify.com/documentation/web-api/reference/start-a-users-playback
 
 ## Safety, privacy and limitations
 
@@ -209,6 +199,7 @@ The repository contains a GitHub Actions workflow testing Python syntax and pure
 - `desktop_actions.py`, `window_control.py` — allowlisted local desktop actions
 - `command_sequences.py` — fixed multi-command splitter
 - `spotify_control.py` — optional user-authorized Spotify PKCE session and playback API
+- `spotify_desktop.py` — safe, best-effort Windows Spotify desktop Quick Search and playback without an API
 - `steam_control.py` — local Steam manifests, first-saved-account preference and URI-only game launch
 - `Modelfile` — initial Ollama assistant persona
 - `test_*.py` — command, permission, voice level and persona tests
