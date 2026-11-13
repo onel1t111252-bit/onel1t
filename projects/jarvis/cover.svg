@@ -1,1 +1,78 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="700" viewBox="0 0 1280 700" role="img" aria-label="ONEL1T JARVIS 4.1 interface concept"><defs><radialGradient id="bg"><stop stop-color="#18384f"/><stop offset="1" stop-color="#030812"/></radialGradient><linearGradient id="line"><stop stop-color="#2be9fc"/><stop offset="1" stop-color="#4785f2"/></linearGradient></defs><rect width="1280" height="700" fill="url(#bg)"/><path d="M50 50h1180v600H50z" fill="none" stroke="#14405a" stroke-width="4"/><g stroke="#12364d" opacity=".7"><path d="M50 180h1180M50 530h1180M450 50v600M900 50v600"/></g><g transform="translate(350 348)" fill="none" stroke="url(#line)"><circle r="218" stroke-width="2" opacity=".6"/><circle r="178" stroke-width="12" stroke-dasharray="78 22"/><circle r="146" stroke-width="3"/><circle r="110" stroke-width="3" stroke-dasharray="36 15"/></g><text x="350" y="390" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="130" font-weight="700" fill="#29eafa">J</text><g fill="#ecfcff" font-family="Consolas,monospace"><text x="650" y="205" fill="#29eafa" font-size="30">ONEL1T  /  PERSONAL AI</text><text x="650" y="311" font-size="100" font-weight="800">JARVIS</text><text x="652" y="367" font-size="34" fill="#56aaff">VERSION 4.1</text><text x="650" y="438" font-size="22">LOCAL OLLAMA  ·  UKRAINIAN VOICE</text><text x="650" y="482" font-size="22">APP CONTROL  ·  USER APPROVAL</text><text x="650" y="545" font-size="25" fill="#61edb6">●  SYSTEM READY</text></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+<title id="title">ONEL1T JARVIS 3.0 futuristic interface preview</title>
+<desc id="desc">Dark cinematic Ukrainian desktop assistant dashboard with a cyan circular reactor, truthful status panels, voice volume slider, command queue and a visible confirmation control. Concept graphic, not a live Windows screenshot.</desc>
+<defs>
+  <radialGradient id="space" cx="44%" cy="47%" r="85%">
+    <stop offset="0" stop-color="#133a52"/>
+    <stop offset=".58" stop-color="#061728"/>
+    <stop offset="1" stop-color="#030812"/>
+  </radialGradient>
+  <linearGradient id="edge" x1="0" y1="0" x2="1" y2="1">
+    <stop stop-color="#3ff2ff"/><stop offset="1" stop-color="#3b79ed"/>
+  </linearGradient>
+  <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
+    <stop stop-color="#112c43"/><stop offset="1" stop-color="#071624"/>
+  </linearGradient>
+  <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur stdDeviation="8" result="blur"/>
+    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+    <path d="M48 0H0V48" fill="none" stroke="#1b465b" stroke-width=".75" opacity=".36"/>
+  </pattern>
+</defs>
+<rect width="1280" height="720" fill="url(#space)"/>
+<rect width="1280" height="720" fill="url(#grid)"/>
+<path d="M0 2H1280 M0 718H1280" stroke="#3fe9fc" stroke-width="2" opacity=".45"/>
+<text x="64" y="69" font-family="Segoe UI,Arial,sans-serif" font-size="23" font-weight="700" letter-spacing="6" fill="#54e7fa">◆ ONEL1T</text>
+<text x="1207" y="68" font-family="Consolas,monospace" font-size="15" text-anchor="end" letter-spacing="2" fill="#99d6ea">JARVIS 3.0   /   PERSONAL COMMAND CENTER</text>
+<path d="M64 92H1216" stroke="#32718a" stroke-width="2" opacity=".8"/>
+<rect x="53" y="116" width="456" height="543" rx="24" fill="#071b2a" stroke="#28647f" stroke-width="2"/>
+<rect x="526" y="116" width="699" height="543" rx="24" fill="url(#panel)" stroke="#28647f" stroke-width="2"/>
+<text x="82" y="154" font-family="Consolas,monospace" letter-spacing="3" font-size="17" fill="#3ce1fa">VOICE-OPERATED CORE</text>
+<circle cx="282" cy="351" r="159" fill="none" stroke="#235a71" stroke-width="2"/>
+<circle cx="282" cy="351" r="137" fill="none" stroke="#37e3fb" stroke-width="7" stroke-dasharray="65 16 19 10" opacity=".85"/>
+<circle cx="282" cy="351" r="115" fill="none" stroke="#225b80" stroke-width="2"/>
+<circle cx="282" cy="351" r="98" fill="none" stroke="url(#edge)" stroke-width="5" stroke-dasharray="27 12" opacity=".75"/>
+<circle cx="282" cy="351" r="72" fill="#0c3145" stroke="#50e7f7" stroke-width="2"/>
+<circle cx="282" cy="351" r="49" fill="#0b2536" stroke="#30dffc" stroke-width="2" opacity=".72"/>
+<circle cx="282" cy="351" r="20" fill="#4ef2ff" opacity=".75" filter="url(#glow)"/>
+<text x="282" y="372" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-weight="900" font-size="64" fill="#eaffff">J</text>
+<g stroke="#32cce9" stroke-width="2">
+<path d="M282 177v20 M282 505v20 M108 351h20 M436 351h20" opacity=".8"/>
+<path d="M160 229l12 12 M404 473l12 12 M160 473l12-12 M404 229l12-12" opacity=".45"/>
+</g>
+<text x="282" y="562" text-anchor="middle" font-family="Consolas,monospace" letter-spacing="3" font-size="20" fill="#38e5f8">◉ CORE: STANDBY</text>
+<text x="282" y="598" text-anchor="middle" font-family="Consolas,monospace" letter-spacing="2" font-size="14" fill="#91b8cc">OWNER APPROVAL • LOCAL AI</text>
+<text x="557" y="158" font-family="Consolas,monospace" letter-spacing="3" font-size="15" fill="#3ce1fa">NEURAL COMMAND INTERFACE</text>
+<text x="557" y="221" font-family="Segoe UI,Arial,sans-serif" font-size="61" font-weight="800" fill="#ecfdff">JAR<tspan fill="#39e7fa">VIS</tspan></text>
+<text x="559" y="250" font-family="Consolas,monospace" font-size="15" letter-spacing="2" fill="#9ccbdd">UKRAINIAN VOICE  /  CINEMATIC MODE</text>
+<g font-family="Consolas,monospace">
+<rect x="558" y="284" width="205" height="84" rx="11" fill="#102f41" stroke="#366b89"/>
+<text x="578" y="313" font-size="14" fill="#90b9ca">INTELLIGENCE</text>
+<text x="578" y="342" font-size="19" fill="#5beed1">AI CONNECTED</text>
+<rect x="778" y="284" width="195" height="84" rx="11" fill="#102f41" stroke="#366b89"/>
+<text x="798" y="313" font-size="14" fill="#90b9ca">MICROPHONE</text>
+<text x="798" y="342" font-size="19" fill="#5beed1">MIC OFF</text>
+<rect x="988" y="284" width="206" height="84" rx="11" fill="#102f41" stroke="#366b89"/>
+<text x="1008" y="313" font-size="14" fill="#90b9ca">SPEECH</text>
+<text x="1008" y="342" font-size="19" fill="#4db6ff">VOICE 80%</text>
+<rect x="558" y="397" width="635" height="65" rx="10" fill="#0c273b" stroke="#36788b"/>
+<text x="580" y="423" font-size="14" fill="#83b6c8">VOICE VOLUME</text>
+<path d="M790 429H1116" stroke="#1e5369" stroke-width="8" stroke-linecap="round"/>
+<path d="M790 429H1050" stroke="#3ce8f8" stroke-width="8" stroke-linecap="round"/>
+<circle cx="1050" cy="429" r="11" fill="#ddfdff" stroke="#3ce8f8" stroke-width="3"/>
+<text x="1155" y="435" text-anchor="end" font-size="16" fill="#d8faff">80%</text>
+<rect x="558" y="488" width="635" height="67" rx="10" fill="#091c2d" stroke="#28617b"/>
+<text x="577" y="513" font-size="14" fill="#53dff6">YOU ›</text>
+<text x="648" y="513" font-size="15" fill="#e3fbff">Джарвіс, відкрий Steam</text>
+<text x="577" y="540" font-size="14" fill="#8bf5cc">JARVIS ›</text>
+<text x="676" y="540" font-size="15" fill="#e3fbff">Є, сер. Надсилаю команду.</text>
+<rect x="558" y="580" width="411" height="47" rx="9" fill="#0a2233" stroke="#2a697f"/>
+<text x="578" y="610" font-size="15" fill="#97bbcb">TYPE A COMMAND OR USE VOICE</text>
+<rect x="989" y="580" width="204" height="47" rx="9" fill="#23def1"/>
+<text x="1091" y="610" font-size="17" text-anchor="middle" font-weight="800" fill="#052033">SEND ↗</text>
+</g>
+<text x="66" y="694" font-family="Consolas,monospace" font-size="13" letter-spacing="1" fill="#6ea2b8">VISUAL CONCEPT • NOT A VERIFIED APP SCREENSHOT</text>
+<text x="1215" y="694" text-anchor="end" font-family="Consolas,monospace" font-size="13" fill="#6ea2b8">WINDOWS 11  /  OWNER-CONTROLLED</text>
+</svg>

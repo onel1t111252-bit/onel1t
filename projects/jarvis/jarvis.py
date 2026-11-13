@@ -22,6 +22,7 @@ from desktop_actions import ActionPlan, plan_action, run_action
 from command_sequences import split_sequence
 from voice_engine import speak, clamp_volume, VOICE_PROFILES, VOICE_LABELS
 from assistant_persona import style_action_reply, concise_speech, cinematic_quick_reply, normalize_spoken
+from ui_status import hud_statuses
 
 ROOT_DIR = Path(__file__).resolve().parent
 SETTINGS_PATH = ROOT_DIR / "settings.json"
@@ -136,6 +137,7 @@ class JarvisApp:
         self.step_index = 0
         self.followup_until = 0.0
         self.history: list[dict[str, str]] = []
+        self.ai_online: bool | None = None
         self.settings = get_settings()
         self.voice_on = bool(self.settings.get("voice_on", True))
         self.cinematic_mode = bool(self.settings.get("cinematic_mode", True))
@@ -166,6 +168,9 @@ class JarvisApp:
         self.root.attributes("-fullscreen", False)
         self._apply_window_size()
         self.root.protocol("WM_DELETE_WINDOW", self.close)
+        self.root.bind("<Control-l>", self.focus_command)
+        self.root.bind("<F1>", self.help_shortcut)
+        self.root.bind("<Escape>", self.escape_shortcut)
 
     def _apply_window_size(self):
         """Launch in an ordinary resizable window, never forced fullscreen."""
@@ -187,6 +192,28 @@ class JarvisApp:
                                         else "◫  WINDOW: COMPACT"))
         self.save_settings()
 
+    def focus_command(self, _event=None):
+        """Keep keyboard focus movement inside the visible owner UI."""
+        self.input.focus_set()
+        return "break"
+
+    def help_shortcut(self, _event=None):
+        self.submit("допомога")
+        return "break"
+
+    def escape_shortcut(self, _event=None):
+        if self.pending:
+            self.cancel_action()
+        return "break"
+
+    def _refresh_telemetry(self):
+        labels = hud_statuses(self.ai_online, self.voice_on, self.voice_volume,
+                              self.handsfree.is_set(), self.mic_listening.is_set())
+        for name, value in labels.items():
+            target = self.telemetry_values.get(name)
+            if target is not None and target.cget("text") != value:
+                target.configure(text=value)
+
     def _label(self, parent, text, size=11, color=WHITE, weight="normal", mono=False, **kwargs):
         font = MONO if mono else FONT
         return tk.Label(parent, text=text, bg=parent.cget("bg"), fg=color,
@@ -203,33 +230,33 @@ class JarvisApp:
 
     def _build_ui(self):
         header = tk.Frame(self.root, bg=BG, height=72)
-        header.pack(fill="x", padx=26, pady=(18, 10))
+        header.pack(fill="x", padx=22, pady=(12, 7))
         self._label(header, "◆  ONEL1T", size=17, color=CYAN, weight="bold").pack(side="left")
         self._label(header, "    /    JARVIS 3.0    /    PERSONAL COMMAND CENTER", size=10, color=MUTED, mono=True).pack(side="left")
         self.header_status = self._label(header, "●  STARTING", size=10, color=GREEN, mono=True)
         self.header_status.pack(side="right")
 
         full = tk.Frame(self.root, bg=BG)
-        full.pack(fill="both", expand=True, padx=24, pady=(0, 16))
-        side = tk.Frame(full, bg=SIDEBAR, width=284)
-        side.pack(side="left", fill="y", padx=(0, 14))
+        full.pack(fill="both", expand=True, padx=18, pady=(0, 8))
+        side = tk.Frame(full, bg=SIDEBAR, width=264)
+        side.pack(side="left", fill="y", padx=(0, 10))
         side.pack_propagate(False)
         panel = tk.Frame(full, bg=PANEL)
         panel.pack(side="left", fill="both", expand=True)
 
         tk.Frame(side, bg=CYAN, height=3).pack(fill="x")
-        self._label(side, "◈  VOICE-OPERATED SYSTEM", size=9, color=CYAN, mono=True).pack(pady=(19, 1))
-        self.orb = tk.Canvas(side, height=176, width=254, bg=SIDEBAR, highlightthickness=0)
+        self._label(side, "◈  VOICE-OPERATED SYSTEM", size=9, color=CYAN, mono=True).pack(pady=(10, 1))
+        self.orb = tk.Canvas(side, height=150, width=254, bg=SIDEBAR, highlightthickness=0)
         self.orb.pack(pady=(0, 4))
-        self.orb.create_text(127, 87, text="J", font=(FONT, 46, "bold"), fill=CYAN, tags="center")
+        self.orb.create_text(127, 75, text="J", font=(FONT, 43, "bold"), fill=CYAN, tags="center")
         self._label(side, "J A R V I S   //   CORE", size=13, weight="bold").pack(pady=(0, 4))
         self.ai_state = self._label(side, "CHECKING OLLAMA...", size=9, color=MUTED, mono=True)
-        self.ai_state.pack(pady=(0, 12))
+        self.ai_state.pack(pady=(0, 8))
         self._label(side, "VOICE CONTROL • LOCAL AI", color=GREEN, size=8, mono=True).pack(pady=(0, 4))
         self.reactor_status = self._label(side, "◉  CORE: STANDBY", color=CYAN, size=9, mono=True)
-        self.reactor_status.pack(pady=(0, 12))
+        self.reactor_status.pack(pady=(0, 7))
 
-        self._label(side, "QUICK COMMANDS", size=10, color=MUTED, mono=True).pack(anchor="w", padx=19, pady=(0, 7))
+        self._label(side, "QUICK COMMANDS", size=10, color=MUTED, mono=True).pack(anchor="w", padx=16, pady=(0, 5))
         for title, cmd in [
             ("▣  NOTEPAD", "відкрий блокнот"),
             ("◉  STEAM", "відкрий стім"),
@@ -239,35 +266,41 @@ class JarvisApp:
             ("?  COMMANDS", "допомога"),
         ]:
             self._button(side, title, lambda cmd=cmd: self.submit(cmd), bg=PANEL, pad=(11, 6)).pack(
-                fill="x", padx=16, pady=3)
+                fill="x", padx=14, pady=2)
 
         self._label(side, "SAFE ACTIONS  /  CONSENT FIRST", size=8, color=MUTED, mono=True,
-                    wraplength=232, justify="left").pack(side="bottom", padx=18, pady=17)
+                    wraplength=225, justify="left").pack(side="bottom", padx=15, pady=10)
 
         top = tk.Frame(panel, bg=PANEL)
-        top.pack(fill="x", padx=22, pady=(24, 8))
-        self._label(top, "NEURAL COMMAND INTERFACE", size=15, weight="bold").pack(side="left")
+        top.pack(fill="x", padx=16, pady=(12, 6))
+        self._label(top, "NEURAL COMMAND INTERFACE", size=14, weight="bold").pack(side="left")
         self._button(top, "↻  CHECK AI", self.check_ai, bg=PANEL_2).pack(side="right")
         self.window_btn = self._button(top, "◫  WINDOW: " + ("LARGE" if self.window_mode == "wide" else "COMPACT"),
                                       self.toggle_window_mode, bg=PANEL_2)
         self.window_btn.pack(side="right", padx=(0, 8))
 
         self._label(panel, "AI ASSISTANT  /  UKRAINIAN VOICE  /  LOCAL WINDOWS CONTROL", size=9,
-                    color=MUTED, mono=True).pack(anchor="w", padx=22, pady=(0, 11))
+                    color=MUTED, mono=True).pack(anchor="w", padx=16, pady=(0, 6))
 
         telemetry = tk.Frame(panel, bg=PANEL)
-        telemetry.pack(fill="x", padx=22, pady=(0, 14))
-        for title, value, color in [
-            ("INTELLIGENCE", "OLLAMA LOCAL", CYAN),
-            ("CONTROL", "OWNER APPROVAL", GREEN),
-            ("VOICE LINK", "UKRAINIAN TTS", BLUE),
+        telemetry.pack(fill="x", padx=16, pady=(0, 8))
+        self.telemetry_values: dict[str, tk.Label] = {}
+        for title, color in [
+            ("INTELLIGENCE", CYAN),
+            ("MICROPHONE", GREEN),
+            ("SPEECH", BLUE),
         ]:
-            card = tk.Frame(telemetry, bg="#12283b", highlightbackground="#255168", highlightthickness=1)
-            card.pack(side="left", fill="x", expand=True, padx=(0, 8))
-            self._label(card, title, size=8, mono=True, color=MUTED).pack(anchor="w", padx=13, pady=(10, 1))
-            self._label(card, value, size=10, weight="bold", mono=True, color=color).pack(anchor="w", padx=13, pady=(0, 10))
+            card = tk.Frame(telemetry, bg="#102b3c",
+                            highlightbackground="#28647d", highlightthickness=1)
+            card.pack(side="left", fill="x", expand=True, padx=(0, 6))
+            self._label(card, title, size=8, mono=True, color=MUTED).pack(
+                anchor="w", padx=10, pady=(7, 1))
+            label = self._label(card, "...", size=10, weight="bold", mono=True, color=color)
+            label.pack(anchor="w", padx=10, pady=(0, 7))
+            self.telemetry_values[title] = label
+        self._refresh_telemetry()
         bar = tk.Frame(panel, bg=PANEL)
-        bar.pack(fill="x", padx=22, pady=(0, 6))
+        bar.pack(fill="x", padx=16, pady=(0, 4))
         self.handsfree_btn = self._button(bar, "🎙  HANDS-FREE: OFF", self.toggle_handsfree, bg=PANEL_2)
         self.handsfree_btn.pack(side="left", padx=(0, 7))
         self.voice_btn = self._button(bar, "🔊  VOICE: ON", self.toggle_voice, bg=PANEL_2)
@@ -275,7 +308,7 @@ class JarvisApp:
         self.voice_select = self._button(bar, "VOICE: JARVIS DEEP", self.cycle_voice, bg=PANEL_2)
         self.voice_select.pack(side="left", padx=(0, 7))
         controls = tk.Frame(panel, bg=PANEL)
-        controls.pack(fill="x", padx=22, pady=(0, 8))
+        controls.pack(fill="x", padx=16, pady=(0, 6))
         self._button(controls, "▶  TEST VOICE", self.test_voice, bg=PANEL_2).pack(side="left")
         self._button(controls, "■  STOP PLAN", self.stop_plan, bg="#4e3046").pack(side="left", padx=(8, 0))
         self.persona_btn = self._button(controls, "◈  JARVIS MODE: " + ("ON" if self.cinematic_mode else "OFF"),
@@ -284,7 +317,7 @@ class JarvisApp:
         self.refresh_voice_buttons()
 
         volume_bar = tk.Frame(panel, bg=PANEL)
-        volume_bar.pack(fill="x", padx=22, pady=(0, 10))
+        volume_bar.pack(fill="x", padx=16, pady=(0, 6))
         self.volume_label = self._label(volume_bar, f"VOICE VOLUME  /  {self.voice_volume}%",
                                         size=9, color=CYAN, mono=True)
         self.volume_label.pack(side="left")
@@ -298,15 +331,15 @@ class JarvisApp:
         self._label(volume_bar, "VOICE ONLY", size=8, color=MUTED, mono=True).pack(side="right")
 
         flow = tk.Frame(panel, bg="#12283b", highlightbackground="#255168", highlightthickness=1)
-        flow.pack(fill="x", padx=22, pady=(0, 10))
+        flow.pack(fill="x", padx=16, pady=(0, 6))
         self.flow_label = self._label(flow, "◈  AUTOMATION QUEUE  /  IDLE", size=9, mono=True, color=CYAN)
         self.flow_label.pack(anchor="w", padx=14, pady=6)
 
         conversation = tk.Frame(panel, bg=PANEL)
-        conversation.pack(fill="both", expand=True, padx=20, pady=(0, 12))
+        conversation.pack(fill="both", expand=True, padx=16, pady=(0, 6))
         self.chat = scrolledtext.ScrolledText(conversation, bg="#081622", fg=WHITE,
                                               selectbackground="#225477", insertbackground=CYAN,
-                                              wrap="word", font=(FONT, 11), relief="flat", bd=0, height=9,
+                                              wrap="word", font=(FONT, 11), relief="flat", bd=0, height=7,
                                               padx=15, pady=15, state="disabled", spacing3=8)
         self.chat.pack(fill="both", expand=True)
         self.chat.tag_config("speaker_ai", foreground=CYAN, font=(MONO, 10, "bold"))
@@ -324,19 +357,19 @@ class JarvisApp:
         self._button(confirm_bar, "CONFIRM", self.approve_action, bg="#13728d").pack(side="right", pady=7)
 
         compose = tk.Frame(panel, bg=PANEL)
-        compose.pack(fill="x", padx=20, pady=(0, 8))
+        compose.pack(fill="x", padx=16, pady=(0, 5))
         self.input = tk.Entry(compose, bg=INPUT, fg=WHITE, insertbackground=CYAN,
                               relief="flat", font=(FONT, 11), bd=0)
-        self.input.pack(side="left", fill="x", expand=True, ipady=13, ipadx=12)
+        self.input.pack(side="left", fill="x", expand=True, ipady=9, ipadx=10)
         self.input.bind("<Return>", lambda _: self.send())
         self._button(compose, "SEND ↗", self.send, bg=CYAN, fg=BG, pad=(16, 12)).pack(side="left", padx=(8, 0))
         self._button(compose, "🎤", self.push_to_talk, bg=PANEL_2, pad=(13, 12)).pack(side="left", padx=(8, 0))
 
         bottom = tk.Frame(panel, bg=PANEL)
-        bottom.pack(fill="x", padx=22, pady=(0, 16))
+        bottom.pack(fill="x", padx=16, pady=(0, 8))
         self.status = self._label(bottom, "●  READY", size=9, color=GREEN, mono=True)
         self.status.pack(side="left")
-        self._label(bottom, "LOCAL ACTIONS  /  EXPLICIT APPROVAL  /  MIC OFF BY DEFAULT", size=8,
+        self._label(bottom, "F1 HELP  /  CTRL+L INPUT  /  ESC CANCEL", size=8,
                     color=MUTED, mono=True).pack(side="right")
         self.input.focus_set()
 
@@ -344,7 +377,7 @@ class JarvisApp:
         if not self.alive:
             return
         self.orb.delete("rings")
-        x, y = 127, 87
+        x, y = 127, 75
         self.reactor_tick += 1
         phase = self.reactor_tick * 0.065
         listening = self.mic_listening.is_set()
@@ -401,6 +434,7 @@ class JarvisApp:
     def set_voice_volume(self, value):
         self.voice_volume = clamp_volume(value)
         self.volume_label.configure(text=f"VOICE VOLUME  /  {self.voice_volume}%")
+        self._refresh_telemetry()
         self.save_settings()
 
     def toggle_persona(self):
@@ -416,6 +450,7 @@ class JarvisApp:
     def refresh_voice_buttons(self):
         self.voice_btn.configure(text="🔊  VOICE: ON" if self.voice_on else "🔇  VOICE: OFF")
         self.voice_select.configure(text="VOICE: " + VOICE_LABELS[self.voice_profile])
+        self._refresh_telemetry()
 
     def toggle_voice(self):
         self.voice_on = not self.voice_on
@@ -715,6 +750,7 @@ class JarvisApp:
                     self.finish(str(message), success=success, action_kind=action_kind)
                 elif kind == "ai_status":
                     online, label = data
+                    self.ai_online = bool(online)
                     self.ai_state.configure(text=label, fg=GREEN if online else AMBER)
                 elif kind == "heard" and not self.busy and not self.pending:
                     self.submit(str(data), via_voice=True)
@@ -727,7 +763,8 @@ class JarvisApp:
         except queue.Empty:
             pass
         if self.alive:
-            self.root.after(90, self.pump)
+            self._refresh_telemetry()
+            self.root.after(160, self.pump)
 
     def close(self):
         self.alive = False
