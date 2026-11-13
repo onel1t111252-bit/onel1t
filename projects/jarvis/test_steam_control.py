@@ -160,10 +160,11 @@ class SteamAccountTests(unittest.TestCase):
             cfg = Path(td) / "config"
             cfg.mkdir()
             (cfg / "loginusers.vdf").write_text(USERS, encoding="utf-8")
+            home = Path(td)  # Construct native path before patching os.name.
             with patch("steam_control.os.name", "nt"), \
                  patch("steam_control.steam_running", return_value=True), \
                  patch("steam_control.active_steam_user", return_value=2):
-                self.assertEqual(verified_active_saved_account(Path(td)), "another_user")
+                self.assertEqual(verified_active_saved_account(home), "another_user")
 
     def test_active_account_without_login_remains_unverified(self):
         with tempfile.TemporaryDirectory() as td:
@@ -233,6 +234,7 @@ class SteamAccountTests(unittest.TestCase):
         sample = SteamGame("620", "Portal 2", "local")
         with patch("steam_control.os.name", "nt"), \
              patch("steam_control.find_installed_game", return_value=sample), \
+             patch("steam_control.steam_running", return_value=False), \
              patch("steam_control.choose_first_account",
                    return_value="Перший збережений акаунт Steam уже активний."), \
              patch("steam_control.os.startfile", create=True) as start:
