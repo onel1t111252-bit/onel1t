@@ -1,4 +1,4 @@
-# ONEL1T JARVIS 3.0 — Windows 11 Desktop Assistant
+# ONEL1T Jarvis — Windows 11 Desktop Assistant
 
 An owner-controlled Ukrainian voice assistant with local Ollama AI, a resizable sci-fi HUD, **one-command launch for ordinary apps and games**, and separate permission prompts for sensitive Windows automation. It is a prototype, not an administrator, an unrestricted autonomous agent, or remote-control software.
 
@@ -6,7 +6,7 @@ An owner-controlled Ukrainian voice assistant with local Ollama AI, a resizable 
 
 ## Download only JARVIS
 
-**[Download JARVIS 3.0 for Windows 11 (ZIP)](https://github.com/onel1t111252-bit/onel1t/raw/refs/heads/main/projects/jarvis/JARVIS_3_0_Windows11.zip)**
+**[Download Jarvis for Windows 11 (ZIP)](https://github.com/onel1t111252-bit/onel1t/raw/refs/heads/main/projects/jarvis/Jarvis.zip)**
 
 The archive contains Python sources, the Ollama Modelfile, installation scripts, dependencies and tests. It does not include Python, installed Ollama models, Steam, private files or credentials.
 
