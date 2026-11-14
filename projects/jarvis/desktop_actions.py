@@ -21,6 +21,7 @@ from window_control import parse_ui, perform_ui
 from spotify_control import spotify_connection, SpotifyError
 from spotify_desktop import (play_in_desktop, play_current_in_desktop,
                              spotify_desktop_status, SpotifyDesktopError)
+from security_tools import choose_and_inspect_email, local_network_report, deploy_portfolio
 from steam_control import (SteamError, find_installed_game, list_installed_games,
                            open_steam_first, launch_installed_game)
 
@@ -45,6 +46,7 @@ DIRECT_EXECUTION_KINDS = frozenset({
     "spotify_search", "spotify_play", "spotify_resume_current", "spotify_pause", "spotify_status",
     "spotify_resume", "spotify_next", "spotify_previous",
     "say", "volume", "ui_windows", "youtube_search",
+    "phishing_check", "network_report",
 })
 
 
@@ -63,6 +65,8 @@ HELP_TEXT = (
     "вибрати перший збережений акаунт ПЕРЕД запуском Steam і запустити встановлену гру за назвою. "
     "Можу шукати пісні у Spotify, а після добровільного підключення офіційного Spotify API — "
     "відтворювати композиції, ставити на паузу й перемикати треки за наявності Spotify Premium. "
+    "Можу локально перевірити .eml на ознаки фішингу та показати пасивний стан мережі. "
+    "Команда деплою ONEL1T вимагає вибору папки та підтвердження. "
     "Системні та небезпечні дії не виконую без дозволу."
 )
 
@@ -293,6 +297,16 @@ def plan_action(raw_text: str) -> ActionPlan | None:
     q = re.sub(r"\s*[,;]\s*", " ", q).strip()
     if not q:
         return None
+    if q in {"перевір цей email на фішинг", "перевір email на фішинг",
+             "перевір лист на фішинг", "аналіз фішингу",
+             "перевір пошту на фішинг"}:
+        return ActionPlan("phishing_check", "", "Локально перевірити обраний .eml")
+    if q in {"перевір безпеку локальної мережі", "перевір локальну мережу",
+             "діагностика локальної мережі", "статус локальної мережі"}:
+        return ActionPlan("network_report", "", "Пасивна діагностика мережі Windows")
+    if q in {"задеплой onel1t", "задеплой онеліт", "деплой onel1t",
+             "опублікуй onel1t", "deploy onel1t"}:
+        return ActionPlan("onel1t_deploy", "", "Опублікувати локальні зміни ONEL1T", True)
     # "Відтвори поточний трек" means PLAY/RESUME the existing selection.
     # Do not route "поточний трек" as the literal title of a new song.
     if q in {"відтвори поточний трек", "відтвори поточну пісню",
@@ -470,6 +484,12 @@ def run_action(action: ActionPlan) -> str:
     """Call only after explicit approval for sensitive plans, on the local PC."""
     if action.kind in APPROVAL_REQUIRED and not action.needs_approval:
         raise ValueError("Approval metadata required")
+    if action.kind == "phishing_check":
+        return choose_and_inspect_email()
+    if action.kind == "network_report":
+        return local_network_report()
+    if action.kind == "onel1t_deploy":
+        return deploy_portfolio()
     if action.kind == "say":
         return action.target
     if action.kind in {"ui_hotkey", "ui_type", "ui_scroll", "ui_click", "ui_focus", "ui_windows"}:
