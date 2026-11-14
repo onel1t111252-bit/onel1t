@@ -1,4 +1,4 @@
-"""ONEL1T JARVIS 3.0 — consent-first Windows desktop assistant.
+"""ONEL1T Jarvis — consent-first Windows desktop assistant.
 
 Local Ollama chat; online microphone recognition and optional online voice.
 No arbitrary OS command execution. No remote control. No admin privileges.
@@ -183,7 +183,7 @@ class JarvisApp:
             self.enqueue_speech("До ваших послуг, сер. Джарвіс готовий до роботи.")
 
     def _setup_window(self):
-        self.root.title("ONEL1T | JARVIS 3.0")
+        self.root.title("ONEL1T | Jarvis")
         self.root.configure(bg=BG)
         self.root.resizable(True, True)
         self.root.attributes("-fullscreen", False)
@@ -228,7 +228,7 @@ class JarvisApp:
         header = tk.Frame(self.root, bg=BG, height=72)
         header.pack(fill="x", padx=26, pady=(18, 10))
         self._label(header, "◆  ONEL1T", size=17, color=CYAN, weight="bold").pack(side="left")
-        self._label(header, "    /    JARVIS 3.0    /    PERSONAL COMMAND CENTER", size=10, color=MUTED, mono=True).pack(side="left")
+        self._label(header, "    /    Jarvis    /    PERSONAL COMMAND CENTER", size=10, color=MUTED, mono=True).pack(side="left")
         self.header_status = self._label(header, "●  STARTING", size=10, color=GREEN, mono=True)
         self.header_status.pack(side="right")
 
