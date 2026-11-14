@@ -355,3 +355,11 @@ The repository contains a GitHub Actions workflow testing Python syntax and pure
 ## License
 
 MIT. Independent fan-inspired interface; not affiliated with Marvel, Valve or other rights holders.
+
+## Security and development voice commands
+
+- **«Джарвісе, перевір цей email на фішинг»**: choose a local `.eml` file (max 2 MB). JARVIS inspects sender/reply-to, authentication-failure hints, text link hostnames and attachment names. It does NOT open links or attachments, connect to the internet or guarantee the email is safe.
+- **«Джарвісе, перевір безпеку локальної мережі»**: passive, local Windows diagnostics using `ipconfig`, cached `arp -a` and listening TCP sockets from `netstat`. It does NOT scan other devices or validate their vulnerabilities. Use only on PCs you control.
+- **«Джарвісе, задеплой ONEL1T»**: choose your local ONEL1T Git checkout. Only the exact `onel1t111252-bit/onel1t` origin on branch `main` is supported. Review tracked changes and explicitly approve publishing; it commits tracked changes only (`git add -u`) and pushes to GitHub. It does not stage untracked files, manage credentials or bypass GitHub authentication. Check GitHub Actions for Pages deployment status.
+
+These commands work without installing Nmap or a paid API. Windows dialogs and local Git must be available for corresponding actions. Never open or execute suspicious email attachments.
