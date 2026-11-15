@@ -101,6 +101,20 @@ class CommandTests(unittest.TestCase):
                 self.assertEqual((plan.kind, plan.target), ("steam_game", "Dota 2"))
                 self.assertTrue(plan.needs_approval)
 
+    def test_speech_recognition_merged_steam_conjunction(self):
+        # Regression: actual recognized text "стімта запусти доту 2".
+        for spoken in (
+            "Джарвіс відкрий стімта запусти доту 2",
+            "відкрий стімі запусти доту",
+            "відкрий steamта запусти Dota 2",
+        ):
+            with self.subTest(spoken=spoken):
+                action = plan_action(spoken)
+                self.assertEqual((action.kind, action.target),
+                                 ("steam_game", "Dota 2"))
+        # Do not silently normalize arbitrary app names.
+        self.assertEqual(plan_action("відкрий стімта").kind, "say")
+
     def test_actual_speech_transcript_misheard_steam_without_and(self):
         # Real user screenshot: Google hears "стіні" and drops the "і".
         spoken = [
