@@ -295,6 +295,13 @@ def plan_action(raw_text: str) -> ActionPlan | None:
     # Spoken commands can include acknowledgments before the actual request.
     q = re.sub(r"^(?:(?:гаразд|окей|добре|ну|слухай)[,\s]+)+(?:а\s+)?", "", q)
     q = re.sub(r"\s*[,;]\s*", " ", q).strip()
+    # Speech-to-text may merge Steam with the conjunction ("стімта").
+    # Repair only when a second explicit launch verb follows; do not rewrite
+    # unrelated app names or user-provided arguments.
+    q = re.sub(
+        r"\b(стім|стим|steam)(і|та)(?=\s+(?:запусти|запустити|відкрий|відкрити|увімкни|включи)\b)",
+        r"\1 \2", q,
+    )
     if not q:
         return None
     if q in {"перевір цей email на фішинг", "перевір email на фішинг",
