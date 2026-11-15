@@ -16,6 +16,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import time
 
 
 class SteamError(RuntimeError):
@@ -480,31 +481,113 @@ def verified_active_saved_account(steam_dir: Path | None = None) -> str:
     return matches[0]
 
 
+
+def _pick_first_visible_steam_account() -> bool:
+    """Use Steam's accessible account chooser only; never guess click coordinates.
+
+    No credential entry, Steam Guard interaction or generic window clicking.
+    If the Chromium-based Steam picker does not expose accessible controls,
+    leave it alone and return False.
+    """
+    if os.name != "nt":
+        return False
+    try:
+        from pywinauto import Desktop
+        directory = steam_root()
+        users = _entry(_read_vdf(directory / "config" / "loginusers.vdf", 2_000_000), "users")
+        if not isinstance(users, dict):
+            return False
+        labels = set()
+        for account in users.values():
+            if not isinstance(account, dict):
+                continue
+            if _value(account, "RememberPassword") != "1":
+                continue
+            for key in ("PersonaName", "AccountName"):
+                name = _value(account, key).strip()
+                if len(name) >= 3:
+                    labels.add(name.casefold())
+        if not labels:
+            return False
+        for window in Desktop(backend="uia").windows():
+            title = window.window_text().casefold()
+            if "steam" not in title or not window.is_visible():
+                continue
+            items = window.descendants()
+            texts = [item.window_text().strip().casefold() for item in items]
+            # Require an actual Steam account chooser, not the ordinary library.
+            if not any(t in ("хто грає?", "who's playing?", "who is playing?",
+                             "хто грає", "who's playing") for t in texts):
+                continue
+            candidates = []
+            for item in items:
+                label = item.window_text().strip().casefold()
+                if label not in labels or not item.is_visible():
+                    continue
+                rect = item.rectangle()
+                if rect.width() < 10 or rect.height() < 10:
+                    continue
+                candidates.append((rect.left, rect.top, item))
+            if not candidates:
+                continue
+            # Steam displays saved accounts in a horizontal row. Only click a
+            # recognized saved-account label, never an arbitrary UI element.
+            _, _, first = min(candidates, key=lambda e: (e[0], e[1]))
+            first.click_input()
+            return True
+    except Exception:
+        return False
+    return False
+
+
+def _wait_for_steam_login(timeout: float = 16.0) -> str | None:
+    """Wait briefly for an authenticated saved Steam user after selecting."""
+    deadline = time.monotonic() + timeout
+    attempted = False
+    while time.monotonic() < deadline:
+        try:
+            return verified_active_saved_account()
+        except SteamError:
+            pass
+        if not attempted:
+            attempted = _pick_first_visible_steam_account()
+        time.sleep(0.6)
+    return None
+
+
 def launch_installed_game(title: str) -> str:
     if os.name != "nt":
         raise SteamError("Запуск Steam доступний лише у Windows.")
     game = find_installed_game(title)
     try:
         if steam_running():
-            # Do not block a user's signed-in Steam session merely because
-            # it is NOT the first entry in loginusers.vdf (which is not the
-            # same as the first visually displayed account on Steam).
+            # Already signed in: respect the active account, no switching.
             active_name = verified_active_saved_account()
             chosen = ("Steam уже працює під підтвердженим акаунтом «"
                       + active_name + "». Акаунт не перемикав.")
         else:
-            # Steam is closed: keep the owner's original first-saved account
-            # preference, without making a password-less-login guarantee.
             chosen = choose_first_account()
+            _open_steam_client()
+            # Startup can show a saved-account chooser despite MostRecent.
+            active_name = _wait_for_steam_login()
+            if active_name:
+                chosen += " Steam увійшов під акаунтом «" + active_name + "»."
+            else:
+                return ("Steam відкрито, але вхід не підтверджено. "
+                        "Не вдалося автоматично вибрати збережений акаунт. "
+                        "Вибери його у Steam та повтори запуск гри.")
     except (SteamError, OSError, ValueError) as exc:
-        # Open Steam so the user can choose the correct account. Do NOT send
-        # the game launch URI until the desired account can be verified: the
-        # current account might not own the game.
+        # Steam may already be running at its account picker (without login).
         _open_steam_client()
-        return ("Steam відкривається, але гру «" + game.title
-                + "» поки не запускав: не вдалося вибрати перший акаунт ("
-                + str(exc) + "). Вибери правильний акаунт у Steam "
-                "і дочекайся входу, потім повтори команду запуску гри.")
+        active_name = _wait_for_steam_login()
+        if active_name:
+            chosen = "Steam увійшов під збереженим акаунтом «" + active_name + "»."
+        else:
+            return ("Steam відкривається, але гру «" + game.title
+                    + "» поки не запускав: не вдалося підтвердити вхід ("
+                    + str(exc) + "). Вибери правильний акаунт у Steam "
+                    "і дочекайся входу, потім повтори команду запуску гри.")
+
     try:
         os.startfile("steam://run/" + game.appid)
     except OSError as exc:
