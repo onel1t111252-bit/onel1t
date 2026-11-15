@@ -199,6 +199,7 @@ class SteamAccountTests(unittest.TestCase):
              patch("steam_control.verified_active_saved_account",
                    side_effect=SteamError("Не підтверджено вхід у Steam")), \
              patch("steam_control._open_steam_client") as open_client, \
+             patch("steam_control._wait_for_steam_login", return_value=None), \
              patch("steam_control.os.startfile", create=True) as game_start:
             result = launch_installed_game("Dota 2")
         open_client.assert_called_once_with()
@@ -211,8 +212,11 @@ class SteamAccountTests(unittest.TestCase):
              patch("steam_control.find_installed_game", return_value=game), \
              patch("steam_control.steam_running", return_value=False), \
              patch("steam_control.choose_first_account", return_value="Перший вибраний"), \
+             patch("steam_control._wait_for_steam_login", return_value="first_user"), \
+             patch("steam_control._open_steam_client") as open_client, \
              patch("steam_control.os.startfile", create=True) as game_start:
             result = launch_installed_game("Dota 2")
+        open_client.assert_called_once_with()
         game_start.assert_called_once_with("steam://run/570")
         self.assertIn("Перший вибраний", result)
 
@@ -223,6 +227,7 @@ class SteamAccountTests(unittest.TestCase):
              patch("steam_control.choose_first_account",
                    side_effect=SteamError("Не можу визначити активний акаунт")), \
              patch("steam_control._open_steam_client") as open_client, \
+             patch("steam_control._wait_for_steam_login", return_value=None), \
              patch("steam_control.os.startfile", create=True) as game_start:
             message = launch_installed_game("Portal 2")
         open_client.assert_called_once_with()
@@ -237,10 +242,42 @@ class SteamAccountTests(unittest.TestCase):
              patch("steam_control.steam_running", return_value=False), \
              patch("steam_control.choose_first_account",
                    return_value="Перший збережений акаунт Steam уже активний."), \
+             patch("steam_control._wait_for_steam_login", return_value="first_user"), \
+             patch("steam_control._open_steam_client"), \
              patch("steam_control.os.startfile", create=True) as start:
             message = launch_installed_game("Portal 2")
         start.assert_called_once_with("steam://run/620")
         self.assertIn("Команду запуску", message)
+
+    def test_login_picker_can_complete_then_launch_dota(self):
+        game = SteamGame("570", "Dota 2", "local")
+        with patch("steam_control.os.name", "nt"), \
+             patch("steam_control.find_installed_game", return_value=game), \
+             patch("steam_control.steam_running", return_value=True), \
+             patch("steam_control.verified_active_saved_account",
+                   side_effect=SteamError("Steam ще показує вибір")), \
+             patch("steam_control._open_steam_client") as open_client, \
+             patch("steam_control._wait_for_steam_login", return_value="first_user") as wait, \
+             patch("steam_control.os.startfile", create=True) as start:
+            message = launch_installed_game("Dota 2")
+        wait.assert_called_once_with()
+        open_client.assert_called_once_with()
+        start.assert_called_once_with("steam://run/570")
+        self.assertIn("first_user", message)
+
+    def test_closed_steam_unverified_login_does_not_launch_game(self):
+        game = SteamGame("570", "Dota 2", "local")
+        with patch("steam_control.os.name", "nt"), \
+             patch("steam_control.find_installed_game", return_value=game), \
+             patch("steam_control.steam_running", return_value=False), \
+             patch("steam_control.choose_first_account", return_value="Налаштовано"), \
+             patch("steam_control._open_steam_client") as open_client, \
+             patch("steam_control._wait_for_steam_login", return_value=None), \
+             patch("steam_control.os.startfile", create=True) as start:
+            message = launch_installed_game("Dota 2")
+        open_client.assert_called_once_with()
+        start.assert_not_called()
+        self.assertIn("вхід не підтверджено", message)
 
     @unittest.skipUnless(os.name == "nt", "Steam registry mutation is Windows-only")
     def test_first_account_file_change_with_backup_and_no_password(self):
