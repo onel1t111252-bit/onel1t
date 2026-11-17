@@ -28,19 +28,33 @@ footer{border-top:1px solid #1a3649;margin-top:62px;padding-top:18px;color:var(-
 <h1>JAR<span>V</span>IS</h1><div class="kicker">PERSONAL AI ASSISTANT</div>
 <p>An owner-controlled Ukrainian AI assistant with a cinematic HUD, natural «Так, сер» replies, local Ollama, Spotify controls, and Steam first-account game launching.</p>
 <div class="buttons"><a class="btn" href="Jarvis.zip" download>⬇ DOWNLOAD JARVIS ZIP</a><a class="btn alt" href="https://github.com/onel1t111252-bit/onel1t/tree/main/projects/jarvis" target="_blank" rel="noopener">VIEW SOURCE ↗</a>
-<a class="btn alt" href="README.md">SETUP GUIDE</a></div></div>
+<a class="btn alt" href="#setup">ІНСТРУКЦІЯ ВСТАНОВЛЕННЯ</a></div></div>
 <img src="cover.svg" alt="Concept illustration of the JARVIS interface; not an actual app screenshot">
 </section>
 <h2>Features</h2><section class="grid">
-<article class="tile"><h3>🧠 Local AI</h3><p>Ollama and a customized Qwen-based model called jarvis. Chat context stays in memory during a session.</p></article>
+<article class="tile"><h3>🧠 Local AI</h3><p>Ollama with Qwen3.5 4B by default and an optional larger 9B model. Chat context stays in memory during a session.</p></article>
 <article class="tile"><h3>🎙 Voice control</h3><p>Original cinematic JARVIS MODE, male Ukrainian Ostap-based voice, truthful short replies, 0–100% voice volume, startup greeting and opt-in wake phrase.</p></article>
 <article class="tile"><h3>🛡 Allowlisted actions</h3><p>Open Steam using your first saved account, list installed games and launch them by name. Also control desktop apps and optional Spotify playback. Sensitive actions require approval.</p></article>
 </section>
-<h2>Run it on Windows</h2><pre>1. Install Python 3.12 and Ollama
-2. Confirm: ollama list
-3. Download the standalone JARVIS ZIP
-4. Run INSTALL_VOICE.bat
-5. Run START_JARVIS.bat, test voice, then enable HANDS-FREE</pre>
-<div class="note"><strong>Prototype note:</strong> AI chat runs locally. Google processes microphone audio in hands-free mode; the Microsoft Edge online service processes spoken response text for neural voices. Windows SAPI is only used when an installed Ukrainian male voice is available; it does not silently switch to English. The illustration above is a concept, not a verified app screenshot.</div>
+<section id="setup" lang="uk">
+<h2>Встановлення на Windows 11</h2>
+<ol>
+<li>Встанови <a href="https://www.python.org/downloads/release/python-31210/" style="text-decoration:underline">Python 3.12 (Windows installer, 64-bit)</a>. Увімкни Add python.exe to PATH і Python Launcher. Перевір у PowerShell: <code>py -3.12 --version</code>.</li>
+<li>Встанови й запусти <a href="https://ollama.com/download/windows" style="text-decoration:underline">Ollama</a>. Перевір: <code>ollama list</code>.</li>
+<li>Завантаж <a href="Jarvis.zip" download style="text-decoration:underline">Jarvis.zip</a> і вибери «Видобути все». Не запускай файли всередині ZIP.</li>
+<li>У розпакованій папці послідовно запусти файли нижче. Після кожного дочекайся завершення.</li>
+</ol>
+<pre>1. INSTALL_VOICE.bat  — базові компоненти, Spotify, YouTube
+2. INSTALL_AI.bat     — локальна AI-модель Qwen3.5 4B
+3. INSTALL_SPEECH.bat — Whisper для мовлення (приблизно 500 МБ)
+4. START_JARVIS.bat   — запуск Джарвіса</pre>
+<p>Whisper рекомендований для голосових команд; без нього використовується Google Speech. Модель 9B необов’язкова й потребує більше ресурсів.</p>
+<h3>Перший запуск</h3>
+<p>Обери AI: QWEN3.5:4B, натисни CHECK AI, потім TEST VOICE. Перевір текстову команду «відкрий блокнот». Увімкни HANDS-FREE, дочекайся «Мікрофон готовий» і скажи «Джарвіс, котра година?». Щоб вибрати мікрофон, вимкни HANDS-FREE і натисни на його кнопку правою кнопкою миші.</p>
+<h3>Як оновити</h3>
+<p>Закрий Джарвіса, збережи копію settings.json та models/, заміни програмні файли з нового ZIP. Залиш налаштування й моделі на місці. Запусти INSTALL_VOICE.bat; якщо Whisper ще не встановлений — INSTALL_SPEECH.bat. Запускай START_JARVIS.bat з оновленої папки.</p>
+<div class="buttons"><a class="btn alt" href="https://github.com/onel1t111252-bit/onel1t/blob/main/projects/jarvis/README.md">ПОВНА ІНСТРУКЦІЯ ТА ВИРІШЕННЯ ПОМИЛОК ↗</a></div>
+<div class="note"><strong>Про обробку даних:</strong> Ollama працює локально. Встановлений Whisper обробляє аудіо локально; якщо він відсутній або виникла помилка, аудіо надсилається Google Speech. Стандартний голос відповіді надсилає текст Microsoft. YouTube та Spotify потребують інтернету. Точність і швидкість залежать від ПК та мікрофона.</div>
+</section>
 <footer>© 2026 ONEL1T · JARVIS · Open-source educational project</footer>
 </main></body></html>
