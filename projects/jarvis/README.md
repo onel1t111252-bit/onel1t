@@ -363,3 +363,11 @@ MIT. Independent fan-inspired interface; not affiliated with Marvel, Valve or ot
 - **«Джарвісе, задеплой ONEL1T»**: choose your local ONEL1T Git checkout. Only the exact `onel1t111252-bit/onel1t` origin on branch `main` is supported. Review tracked changes and explicitly approve publishing; it commits tracked changes only (`git add -u`) and pushes to GitHub. It does not stage untracked files, manage credentials or bypass GitHub authentication. Check GitHub Actions for Pages deployment status.
 
 These commands work without installing Nmap or a paid API. Windows dialogs and local Git must be available for corresponding actions. Never open or execute suspicious email attachments.
+
+### YouTube: пошук і відкриття відео
+
+Після оновлення запустіть INSTALL_VOICE.bat, щоб встановити yt-dlp.
+Команда «увімкни відео в ютубі опенінг токійського» відкриває перше знайдене відео.
+Команда «знайди відео на ютубі про Python» відкриває результати пошуку.
+Відео не завантажується на диск. Автозапуск залежить від браузера; за потреби натисніть Play.
+Перший результат може не бути потрібною версією — уточніть назву або скористайтеся пошуком.

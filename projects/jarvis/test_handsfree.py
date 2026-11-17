@@ -81,6 +81,21 @@ class HandsFreeDispatchTests(unittest.TestCase):
         self.assertEqual(planned.target, "програмуванню")
         app.start_answer.assert_not_called()
 
+    def test_youtube_play_voice_dispatch(self):
+        for sentence in ("Джарвіс Увімкни відео в Ютубі опенінг токійського",
+                         "включи ютуб і увімкни відео опенінг токійського"):
+            app = build_app()
+            app.handsfree.clear()
+            app.cinematic_mode = False
+            app.steps = []
+            app.dispatch_action = MagicMock()
+            app.start_answer = MagicMock()
+            app.submit(sentence, via_voice=True)
+            action = app.dispatch_action.call_args.args[0]
+            self.assertEqual((action.kind, action.target),
+                             ("youtube_play", "опенінг токійського"))
+            app.start_answer.assert_not_called()
+
     def test_sensitive_typing_requires_explicit_yes_no(self):
         app = build_app()
         app.start_answer = MagicMock()

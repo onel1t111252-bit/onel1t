@@ -19,6 +19,45 @@ class CommandTests(unittest.TestCase):
             self.assertIsNone(spotify_music_plan(phrase))
         self.assertEqual(plan_action("увімкни пісню Numb у Spotify").kind, "spotify_play")
 
+    def test_youtube_play_spoken_screenshot(self):
+        phrases = {
+            "Джарвіс Увімкни відео в Ютубі опенінг токійського": "опенінг токійського",
+            "увімкни на ютубі відео про Python": "python",
+            "відкрий відео Numb на YouTube": "numb",
+            "включи ютуб і увімкни відео про Python": "python",
+            "увімкни YouTube Numb": "numb",
+        }
+        from desktop_actions import can_execute_directly
+        for phrase, target in phrases.items():
+            with self.subTest(phrase=phrase):
+                action = plan_action(phrase)
+                self.assertEqual((action.kind, action.target), ("youtube_play", target))
+                self.assertTrue(can_execute_directly(action))
+
+    def test_youtube_play_opens_validated_watch_url(self):
+        from subprocess import CompletedProcess
+        with patch("desktop_actions.subprocess.run", return_value=CompletedProcess(
+                [], 0, stdout="dQw4w9WgXcQ\n")) as resolve, patch(
+                "desktop_actions.webbrowser.open", return_value=True) as browser:
+            run_action(plan_action("увімкни відео на ютубі приклад"))
+        browser.assert_called_once_with("https://www.youtube.com/watch?v=dQw4w9WgXcQ&autoplay=1")
+        self.assertEqual(resolve.call_args.args[0][-1], "ytsearch1:приклад")
+        self.assertIn("--skip-download", resolve.call_args.args[0])
+
+    def test_youtube_resolution_failures_do_not_open_other_apps(self):
+        from subprocess import CompletedProcess, TimeoutExpired, CalledProcessError
+        from desktop_actions import first_youtube_video_url
+        for output in ("", "https://evil.example", "bad_id", "abcdefghijk\nabcdefghijk"):
+            with patch("desktop_actions.subprocess.run", return_value=CompletedProcess(
+                    [], 0, stdout=output)), patch("desktop_actions.webbrowser.open") as browser:
+                with self.assertRaises(RuntimeError):
+                    run_action(plan_action("увімкни відео на ютубі приклад"))
+                browser.assert_not_called()
+        for error in (TimeoutExpired("yt_dlp", 20), CalledProcessError(1, "yt_dlp")):
+            with patch("desktop_actions.subprocess.run", side_effect=error):
+                with self.assertRaises(RuntimeError):
+                    first_youtube_video_url("приклад")
+
     def test_allowlist(self):
         a = plan_action("Джарвіс, відкрий блокнот")
         self.assertEqual((a.kind, a.target), ("app", "notepad.exe"))

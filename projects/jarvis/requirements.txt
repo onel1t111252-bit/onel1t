@@ -8,3 +8,6 @@ pyautogui>=0.9.54,<1
 winsdk==1.0.0b10; sys_platform == "win32"
 # Inspect the installed Spotify desktop player Play/Pause button safely.
 pywinauto==0.6.9; sys_platform == "win32"
+
+# Resolve YouTube search results; playback stays in the browser.
+yt-dlp>=2025.1.15

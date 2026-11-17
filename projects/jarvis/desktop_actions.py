@@ -15,6 +15,7 @@ import ctypes
 import os
 import re
 import subprocess
+import sys
 import uuid
 import webbrowser
 from window_control import parse_ui, perform_ui
@@ -45,7 +46,7 @@ DIRECT_EXECUTION_KINDS = frozenset({
     "steam_open_first", "steam_game", "steam_list",
     "spotify_search", "spotify_play", "spotify_resume_current", "spotify_pause", "spotify_status",
     "spotify_resume", "spotify_next", "spotify_previous",
-    "say", "volume", "ui_windows", "youtube_search",
+    "say", "volume", "ui_windows", "youtube_search", "youtube_play",
     "phishing_check", "network_report",
 })
 
@@ -210,10 +211,15 @@ def youtube_search_plan(q: str) -> ActionPlan | None:
     if re.match(rf"^{_YOUTUBE_NAME}\s+", phrase):
         platform_was_explicit = True
     phrase = re.sub(rf"^{_YOUTUBE_NAME}\s+", "", phrase)
-    match = re.fullmatch(rf"{_YOUTUBE_SEARCH_VERB}\s+(.+)", phrase)
+    play_verb = rf"(?:{_YOUTUBE_OPEN_VERB}|відтвори|програй|постав|play)"
+    match = re.fullmatch(rf"({_YOUTUBE_SEARCH_VERB}|{play_verb})\s+(.+)", phrase)
+    # "увімкни YouTube Numb" has already consumed its launch verb.
+    if not match and opener:
+        match = re.fullmatch(rf"({play_verb})\s+(.+)", "увімкни " + phrase)
     if not match:
         return None
-    detail = match.group(1).strip()
+    playback = bool(re.fullmatch(play_verb, match.group(1)))
+    detail = match.group(2).strip()
     detail = re.sub(r"^(?:мені|будь ласка)\s+", "", detail)
     has_youtube = bool(re.search(rf"(?<!\w){_YOUTUBE_NAME}\b", detail))
     has_video = bool(re.search(rf"(?<!\w){_YOUTUBE_VIDEO_CUE}\b", detail))
@@ -242,9 +248,37 @@ def youtube_search_plan(q: str) -> ActionPlan | None:
         return ActionPlan("say", "Яке саме відео знайти на YouTube? Назви тему.",
                           "Уточнення пошуку YouTube")
     return ActionPlan(
-        "youtube_search", detail,
-        "Знайти відео на YouTube за запитом: " + detail,
+        "youtube_play" if playback else "youtube_search", detail,
+        ("Відкрити перше відео на YouTube: " if playback else "Знайти відео на YouTube за запитом: ") + detail,
     )
+
+
+
+def first_youtube_video_url(term: str) -> str:
+    """Resolve one search result without downloading media or reading user config."""
+    if not 2 <= len(term.strip()) <= 160:
+        raise ValueError("Некоректний запит YouTube.")
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "yt_dlp", "--ignore-config",
+             "--flat-playlist", "--skip-download", "--no-warnings",
+             "--socket-timeout", "8", "--retries", "0",
+             "--extractor-retries", "0", "--print", "%(id)s",
+             "--", "ytsearch1:" + term],
+            capture_output=True, text=True, encoding="utf-8", errors="replace",
+            timeout=20, check=True,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError("YouTube не відповів вчасно. Спробуй ще раз.") from exc
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise RuntimeError(
+            "Не вдалося отримати відео з YouTube. Перевір інтернет і запусти "
+            "INSTALL_VOICE.bat для встановлення або оновлення компонентів.") from exc
+    video_id = result.stdout.strip()
+    if not re.fullmatch(r"[A-Za-z0-9_-]{11}", video_id):
+        raise RuntimeError("YouTube не повернув відео. Уточни назву.")
+    return "https://www.youtube.com/watch?v=" + video_id + "&autoplay=1"
 
 
 def spotify_music_plan(q: str) -> ActionPlan | None:
@@ -545,6 +579,12 @@ def run_action(action: ActionPlan) -> str:
         url = "https://open.spotify.com/search/" + quote(action.target, safe="")
         webbrowser.open(url)
         return "Відкриваю пошук Spotify для «" + action.target + "». Обери композицію в плеєрі."
+    if action.kind == "youtube_play":
+        url = first_youtube_video_url(action.target)
+        if not webbrowser.open(url):
+            raise RuntimeError("Не вдалося відкрити браузер для YouTube.")
+        return ("Відкриваю перше знайдене відео на YouTube за запитом «"
+                + action.target + "». Якщо браузер призупинив автозапуск, натисни Play.")
     if action.kind == "youtube_search":
         term = action.target.strip()
         if not 2 <= len(term) <= 160:

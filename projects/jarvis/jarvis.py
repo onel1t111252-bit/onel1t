@@ -589,7 +589,7 @@ class JarvisApp:
         route = plan_action(text)
         segments = split_sequence(text)
         # Preserve a single fixed Steam URI for the established Steam+Dota phrase.
-        if segments is not None and not (route and route.kind in {"known_uri", "steam_game", "youtube_search"}):
+        if segments is not None and not (route and route.kind in {"known_uri", "steam_game", "youtube_search", "youtube_play"}):
             if not segments:
                 self.finish("Сценарій відхилено: не більше 4 кроків; введення тексту має бути останнім кроком.")
                 return
