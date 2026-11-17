@@ -152,9 +152,9 @@ class HandsFreeMicrophoneTests(unittest.TestCase):
         fake_sr.Microphone = lambda device_index=None: _FakeMic()
         with patch.dict(sys.modules, {"speech_recognition": fake_sr}):
             app.listen_once(True)
-        self.assertEqual(recognizer.pause_threshold, 1.4)
-        self.assertEqual(recognizer.non_speaking_duration, 0.5)
-        self.assertEqual(recognizer.listen.call_args.kwargs["phrase_time_limit"], 16)
+        self.assertEqual(recognizer.pause_threshold, 1.8)
+        self.assertEqual(recognizer.non_speaking_duration, 0.7)
+        self.assertEqual(recognizer.listen.call_args.kwargs["phrase_time_limit"], 22)
         self.assertIn(("heard", "відкрий ютуб і знайди відео по програмуванню"),
                       list(app.queue.queue))
 
@@ -210,6 +210,20 @@ class HandsFreeMicrophoneTests(unittest.TestCase):
             app.listen_once(True, session_id=0)  # Session 0 already stopped.
         self.assertFalse(any(kind == "heard" for kind, _ in list(app.queue.queue)))
         self.assertTrue(app.handsfree.is_set())
+
+    def test_stopped_session_discards_slow_transcription(self):
+        app = build_app()
+        recognizer = MagicMock()
+        fake_sr = types.ModuleType("speech_recognition")
+        fake_sr.Recognizer = lambda: recognizer
+        fake_sr.Microphone = lambda device_index=None: _FakeMic()
+        def stop_during_transcription(*args, **kwargs):
+            app.handsfree.clear()
+            return "Джарвіс, увімкни пісню Numb"
+        with patch.dict(sys.modules, {"speech_recognition": fake_sr}), patch(
+                "jarvis.recognize_speech", side_effect=stop_during_transcription):
+            app.listen_once(True)
+        self.assertFalse(any(kind == "heard" for kind, _ in list(app.queue.queue)))
 
     def test_transient_online_error_does_not_turn_off_handsfree(self):
         app = build_app()

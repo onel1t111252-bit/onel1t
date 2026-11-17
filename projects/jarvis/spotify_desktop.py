@@ -433,12 +433,11 @@ def play_in_desktop(title: str) -> str:
         raise SpotifyDesktopError("Фокус перейшов з Spotify. Введення зупинено.")
     pyautogui.hotkey("ctrl", "a")
     _type_unicode(query)
-    # Quick Search suggestions require explicit keyboard selection:
-    # Enter alone can merely submit the query or open the search page.
+    # Quick Search already highlights its first suggestion after typing.
+    # Do not press Down: that skips the requested first result.
     time.sleep(1.9)
     if not _still_focused(hwnd):
         raise SpotifyDesktopError("Spotify втратив фокус до вибору треку.")
-    pyautogui.press("down")
     if not _still_focused(hwnd):
         raise SpotifyDesktopError("Після вибору результату Spotify втратив фокус.")
     # Spotify Quick Search supports Shift+Enter to PLAY just the selected

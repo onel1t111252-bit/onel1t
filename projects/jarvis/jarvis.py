@@ -25,6 +25,7 @@ from assistant_persona import (style_action_reply, concise_speech, cinematic_qui
                                normalize_spoken, extract_wake_command)
 from spotify_control import spotify_connection, valid_client_id
 from ai_router import suggest_action
+from speech_input import recognize_speech
 
 ROOT_DIR = Path(__file__).resolve().parent
 SETTINGS_PATH = ROOT_DIR / "settings.json"
@@ -830,8 +831,8 @@ class JarvisApp:
             recognizer.energy_threshold = self.mic_energy_threshold
             # A short thinking pause must not split "знайди відео на
             # YouTube ... по програмуванню" into only the first clause.
-            recognizer.pause_threshold = 1.4
-            recognizer.non_speaking_duration = 0.5
+            recognizer.pause_threshold = 1.8
+            recognizer.non_speaking_duration = 0.7
             recognizer.phrase_threshold = 0.25
             self.mic_listening.set()
             self.queue.put(("mic_status", "●  LISTENING"))
@@ -839,14 +840,16 @@ class JarvisApp:
                 # Calibrate once per selected mic, not at the start of every
                 # phrase where someone may already be speaking.
                 if not self.mic_calibrated:
-                    recognizer.adjust_for_ambient_noise(microphone, duration=.65)
+                    self.queue.put(("mic_status", "●  CALIBRATING — PLEASE WAIT"))
+                    recognizer.adjust_for_ambient_noise(microphone, duration=.9)
                     self.mic_calibrated = True
+                    self.queue.put(("mic_status", "●  LISTENING"))
                     self.queue.put(("hint", "Мікрофон готовий. Скажи «Джарвіс, "
                                     "котра година»."))
                 try:
                     audio = recognizer.listen(
                         microphone, timeout=6 if with_wake_word else 7,
-                        phrase_time_limit=16 if with_wake_word else 18)
+                        phrase_time_limit=22 if with_wake_word else 25)
                 finally:
                     # Even on silence/timeout, preserve the updated automatic
                     # threshold across recognition attempts.
@@ -856,7 +859,11 @@ class JarvisApp:
                                        session_id != self.handsfree_generation)):
                 return
             self.queue.put(("mic_status", "●  RECOGNIZING"))
-            spoken = recognizer.recognize_google(audio, language="uk-UA").strip()
+            spoken = recognize_speech(recognizer, audio, notice=self._mic_notice)
+            if with_wake_word and (not self.handsfree.is_set()
+                                   or (session_id is not None and
+                                       session_id != self.handsfree_generation)):
+                return
             self.mic_error_streak = 0
             if not spoken:
                 return

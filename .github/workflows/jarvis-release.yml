@@ -41,6 +41,7 @@ jobs:
               "test_commands.py", "test_window_control.py", "test_voice_engine.py",
               "test_ui_v43.py", "test_persona.py", "test_spotify_control.py",
               "test_steam_control.py", "test_handsfree.py",
+              "speech_input.py", "test_speech_input.py", "INSTALL_SPEECH.bat",
               "test_spotify_desktop.py", "test_ai_router.py", "test_security_tools.py",
           ]
           missing = [name for name in names if not (root / name).is_file()]

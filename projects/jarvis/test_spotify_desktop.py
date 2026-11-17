@@ -39,7 +39,7 @@ class NativeSpotifyTests(unittest.TestCase):
         self.assertEqual(keys.hotkey.call_args_list[1].args, ("ctrl", "a"))
         self.assertEqual(keys.hotkey.call_args_list[2].args, ("shift", "enter"))
         entered.assert_called_once_with("Океан Ельзи")
-        keys.press.assert_called_once_with("down")
+        keys.press.assert_not_called()
         self.assertIn("Підтверджено у Windows", reply)
 
     def test_selected_song_must_match_user_request(self):
@@ -78,7 +78,7 @@ class NativeSpotifyTests(unittest.TestCase):
              patch.dict(sys.modules, {"pyautogui": keys}):
             with self.assertRaisesRegex(SpotifyDesktopError, "не відповідає"):
                 play_in_desktop("Numb")
-        keys.press.assert_any_call("down")
+        keys.press.assert_not_called()
         keys.hotkey.assert_any_call("shift", "enter")
 
     def test_not_playing_is_not_reported_as_success(self):

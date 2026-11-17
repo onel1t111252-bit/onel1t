@@ -8,3 +8,4 @@ jarvis.log
 *.mp3
 .env
 *.db
+models/
