@@ -1,5 +1,7 @@
 # JARVIS — встановлення та запуск на Windows 11
 
+**Українська** · [English](README.en.md)
+
 Україномовний помічник для ПК: голосові команди, локальний AI через Ollama, YouTube, Spotify, Steam та дозволені дії Windows.
 
 **[Завантажити актуальний Jarvis.zip](https://github.com/onel1t111252-bit/onel1t/raw/refs/heads/main/projects/jarvis/Jarvis.zip)** · [Сторінка проєкту](https://onel1t111252-bit.github.io/onel1t/projects/jarvis/)

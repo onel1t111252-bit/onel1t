@@ -6,7 +6,7 @@ on:
       - ".github/workflows/jarvis-release.yml"
       - "projects/jarvis/*.py"
       - "projects/jarvis/*.bat"
-      - "projects/jarvis/README.md"
+      - "projects/jarvis/README*.md"
       - "projects/jarvis/Modelfile"
       - "projects/jarvis/requirements.txt"
       - "projects/jarvis/cover.svg"
@@ -33,7 +33,7 @@ jobs:
 
           root = Path("projects/jarvis")
           names = [
-              "README.md", "LICENSE", "Modelfile", "cover.svg",
+              "README.md", "README.en.md", "LICENSE", "Modelfile", "cover.svg",
               "jarvis.py", "desktop_actions.py", "window_control.py",
               "command_sequences.py", "assistant_persona.py", "ai_router.py", "security_tools.py", "voice_engine.py",
               "spotify_control.py", "spotify_desktop.py", "steam_control.py", "requirements.txt",
