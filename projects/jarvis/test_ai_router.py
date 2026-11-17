@@ -7,6 +7,12 @@ from ai_router import validate_suggestion, should_infer, suggest_action
 
 
 class AiRouterSafetyTests(unittest.TestCase):
+    def test_youtube_cannot_be_routed_to_spotify(self):
+        for platform in ("YouTube", "ютубі", "You Tube", "ютюбі"):
+            self.assertIsNone(validate_suggestion(
+                f"увімкни пісню Numb на {platform}",
+                {"intent": "spotify_play", "target": "Numb"}))
+
     def test_natural_language_music_and_video_intents(self):
         examples = [
             ("Я хочу послухати пісню Jingle Bells у Spotify",

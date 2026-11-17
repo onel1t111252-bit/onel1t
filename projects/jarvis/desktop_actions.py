@@ -180,7 +180,8 @@ def find_installed_app(query: str) -> tuple[str, str] | None:
 
 
 _YOUTUBE_NAME = r"(?:youtube|you\s*tube|ютуб(?:і|у|а|е)?|ютюб(?:і|у)?)"
-_YOUTUBE_SEARCH_VERB = r"(?:знайди|знайти|пошукай|шукай|відшукай|покажи|search|find)"
+_YOUTUBE_SEARCH_VERB = r"(?:знайди|найди|знайти|пошукай|шукай|відшукай|покажи|search|find)"
+_YOUTUBE_OPEN_VERB = r"(?:відкрий|відкрити|запусти|запустити|увімкни|увімки|ввімкни|включи)"
 _YOUTUBE_VIDEO_CUE = r"(?:відео|відеоролики?|ролики?|уроки?|відеоуроки?|туторіали?)"
 
 
@@ -192,9 +193,11 @@ def youtube_search_plan(q: str) -> ActionPlan | None:
     the search term is URL-encoded into YouTube's known HTTPS search page.
     """
     phrase = q.strip()
+    if re.fullmatch(rf"{_YOUTUBE_OPEN_VERB}\s+(?:сайт\s+)?{_YOUTUBE_NAME}", phrase):
+        return ActionPlan("website", "https://www.youtube.com", "Відкрити YouTube")
     # Sometimes speech recognition omits "і" or punctuation between verbs.
     opener = re.fullmatch(
-        rf"(?:відкрий|відкрити|запусти|запустити|увімкни)\s+"
+        rf"{_YOUTUBE_OPEN_VERB}\s+"
         rf"(?:сайт\s+)?{_YOUTUBE_NAME}\s+"
         rf"(?:(?:і|та|а потім|потім)\s+)?(.+)",
         phrase,
@@ -236,7 +239,8 @@ def youtube_search_plan(q: str) -> ActionPlan | None:
     if not 2 <= len(detail) <= 160 or detail in {
         "відео", "урок", "уроки", "ютуб", "ютубі", "youtube", "пошук",
     }:
-        return None
+        return ActionPlan("say", "Яке саме відео знайти на YouTube? Назви тему.",
+                          "Уточнення пошуку YouTube")
     return ActionPlan(
         "youtube_search", detail,
         "Знайти відео на YouTube за запитом: " + detail,
@@ -249,6 +253,9 @@ def spotify_music_plan(q: str) -> ActionPlan | None:
     Spotify searches open its official search page without requiring Developer API.
     Automatic playback is a separate, approval-gated command.
     """
+    # An explicit video platform must never become a Spotify track title.
+    if re.search(rf"(?<!\w){_YOUTUBE_NAME}\b", q, flags=re.I):
+        return None
     platform = r"(?:spotify|спотіфай|спотифай|спотефай|спотіфаї|спотифаї)"
     m = re.fullmatch(
         r"(знайди|пошукай|шукай|відшукай|search|увімкни|включи|відтвори|програй|постав|запусти|play)\s+(.+)",

@@ -4,6 +4,21 @@ from unittest.mock import patch
 
 
 class CommandTests(unittest.TestCase):
+    def test_youtube_launch_search_regression(self):
+        for opener in ("увімкни", "увімки", "ввімкни", "включи", "відкрий"):
+            for search in ("знайди", "найди", "пошукай"):
+                with self.subTest(opener=opener, search=search):
+                    action = plan_action(f"Джарвіс, {opener} ютуб і {search} відео про Python")
+                    self.assertEqual((action.kind, action.target), ("youtube_search", "python"))
+            self.assertEqual(plan_action(f"{opener} ютуб").kind, "website")
+        action = plan_action("увімкни ютуб і найди відео")
+        self.assertEqual(action.kind, "say")
+        from desktop_actions import spotify_music_plan
+        for phrase in ("включи ютуб", "увімкни пісню Numb на YouTube",
+                       "увімкни You Tube і найди відео"):
+            self.assertIsNone(spotify_music_plan(phrase))
+        self.assertEqual(plan_action("увімкни пісню Numb у Spotify").kind, "spotify_play")
+
     def test_allowlist(self):
         a = plan_action("Джарвіс, відкрий блокнот")
         self.assertEqual((a.kind, a.target), ("app", "notepad.exe"))

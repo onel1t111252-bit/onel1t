@@ -10,7 +10,7 @@ import json
 import re
 from urllib import error, request
 
-from desktop_actions import ActionPlan
+from desktop_actions import ActionPlan, _YOUTUBE_NAME
 
 # Action hint detection is intentionally narrow and fast: normal questions
 # never trigger an extra model call before conversational chat.
@@ -20,7 +20,7 @@ _ACTION_WORDS = re.compile(
     r"передивитися|подивитися|play|find|search|open|put|"
     r"listen|watch)\b", re.I)
 _SPOTIFY_WORD = re.compile(r"\b(?:spotify|спотіфай|спотифай|спотефай)\b", re.I)
-_YOUTUBE_WORD = re.compile(r"\b(?:youtube|ютуб|ютубі|ютюб|ютубу)\b", re.I)
+_YOUTUBE_WORD = re.compile(rf"(?<!\w){_YOUTUBE_NAME}\b", re.I)
 _MUSIC_WORD = re.compile(r"\b(?:пісню|пісня|трек|композицію|музику|song|track)\b", re.I)
 _VIDEO_WORD = re.compile(r"\b(?:відео|урок|уроки|відеоурок|відеоуроки|video|videos)\b", re.I)
 _PLAY_WORD = re.compile(r"\b(?:увімкни|включи|запусти|програй|відтвори|постав|"
@@ -79,6 +79,8 @@ def validate_suggestion(user_text: str, answer: object) -> ActionPlan | None:
     if target.casefold() in {"spotify", "youtube", "пісню", "трек", "відео", "song", "music", "video"}:
         return None
     if kind == "spotify_play":
+        if _YOUTUBE_WORD.search(user_text):
+            return None
         if not _PLAY_WORD.search(user_text) or not (
                 _SPOTIFY_WORD.search(user_text) or _MUSIC_WORD.search(user_text)):
             return None
