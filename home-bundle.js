@@ -440,7 +440,7 @@ if(exp&&!document.querySelector('.project-spotlight')){
 }
 
 const contact=document.getElementById('contact');
-if(contact&&!document.querySelector('.opportunity-cta')){const s=document.createElement('section');s.className='opportunity-cta';s.innerHTML=`<div><small>${T.opLabel}</small><h2>${T.opTitle}</h2><p>${T.opText}</p></div><div class="opportunity-actions"><a href="mailto:${email}">${T.mail} ↗</a><a href="${cvHref}">${T.cv} ↗</a><a href="https://github.com/onel1t111252-bit" target="_blank" rel="noopener">${T.github} ↗</a></div>`;contact.insertAdjacentElement('beforebegin',s);}
+if(contact&&!document.querySelector('.opportunity-cta')){const s=document.createElement('section');s.className='opportunity-cta';s.innerHTML=`<div><small>${T.opLabel}</small><h2>${T.opTitle}</h2><p>${T.opText}</p></div><div class="opportunity-actions"><a href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;to=${encodeURIComponent(email)}" target="_blank" rel="noopener">${T.mail} ↗</a><a href="${cvHref}">${T.cv} ↗</a><a href="https://github.com/onel1t111252-bit" target="_blank" rel="noopener">${T.github} ↗</a></div>`;contact.insertAdjacentElement('beforebegin',s);}
 })();
 
 /* SOURCE 6: home-13.js */
