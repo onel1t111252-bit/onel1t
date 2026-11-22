@@ -685,3 +685,12 @@ html.perf-lite .back-top{
 @media(max-width:620px){
   .node-map.node-map--pipeline{min-height:0;padding:14px 12px}
 }
+
+@media (max-width: 900px) {
+  html, .shell {
+    overflow-x: clip;
+  }
+  .command-overlay {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
