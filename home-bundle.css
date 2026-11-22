@@ -687,6 +687,10 @@ html.perf-lite .back-top{
 }
 
 @media (max-width: 900px) {
+  .career-layer, .proof-section, .experience-lab, .project-spotlight,
+  .opportunity-cta, .build-path, .github-signal, .aegis-showcase {
+    contain-intrinsic-inline-size: 0;
+  }
   html, .shell {
     overflow-x: clip;
   }
