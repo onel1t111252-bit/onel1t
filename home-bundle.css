@@ -259,7 +259,7 @@ body.page-leaving{opacity:.2;transform:scale(.995);transition:opacity .16s ease,
 
 /* SOURCE 6: home-11-fix.css */
 /* ONEL1T 11/10 final mobile pass */
-@media(max-width:900px){.quick-command{display:inline-flex;width:34px;min-width:34px;padding:0;justify-content:center;font-size:0}.quick-command:before{content:'⌘';font:700 13px var(--x-mono);color:#d9dbe0}.quick-command kbd{display:none}.tools{gap:7px}}
+@media(max-width:900px){.quick-command{display:inline-flex;width:34px;min-width:34px;padding:0;gap:0;justify-content:center;font-size:0}.quick-command:before{content:'⌘';font:700 13px var(--x-mono);color:#d9dbe0}.quick-command kbd{display:none}.tools{gap:7px}}
 @media(max-width:480px){.lang a{padding-inline:8px}.quick-command{width:30px;min-width:30px}.command-overlay{padding-inline:10px}.command-head{padding-inline:11px}}
 
 /* SOURCE 7: home-12.css */
